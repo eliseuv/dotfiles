@@ -10,6 +10,7 @@
     # GUI
     ./emacs/default.nix
     ./zed.nix
+    ./antigravity.nix
 
   ];
 
