@@ -11,6 +11,7 @@
     ./emacs/default.nix
     ./zed.nix
     ./antigravity.nix
+    ./vscode.nix
 
   ];
 
