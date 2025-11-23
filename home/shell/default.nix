@@ -40,7 +40,7 @@
 
   home.sessionVariables = {
     # Config files path
-    DOTFILES = "$HOME/.dotfiles";
+    DOTFILES = "$HOME/dotfiles";
   };
 
   # Aliases

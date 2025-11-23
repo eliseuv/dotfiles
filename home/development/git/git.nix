@@ -26,7 +26,7 @@
 
     maintenance = {
       enable = true;
-      repositories = [ "/home/evf/.dotfiles" ];
+      repositories = [ "/home/evf/dotfiles" ];
     };
 
     delta = {

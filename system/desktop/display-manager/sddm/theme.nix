@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  imageLink = "https://github.com/eliseuv/.dotfiles/blob/master/wallpapers/dunes.webp";
+  imageLink = "https://github.com/eliseuv/dotfiles/blob/master/wallpapers/dunes.webp";
   image = pkgs.fetchurl {
     url = imageLink;
     hash = "sha256-e03e6d5a6a831eea2885b9f536388a65845852adeaefd8dedac170208793e014=";
