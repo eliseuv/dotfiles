@@ -13,6 +13,13 @@
         hostname = "alpine-vm.local";
         user = "root";
       };
+      # Dani WSL
+      "dani-wsl" = {
+        hostname = "localhost";
+        port = 2222;
+        proxyCommand = "ssh -W %h:%p danis@DESKTOP-8D6IO5L.local";
+        extraOptions."StrictHostKeyChecking" = "no";
+      };
       # Personal computer at IF-UFRGS
       "if-ufrgs" = {
         hostname = "143.54.45.50";
