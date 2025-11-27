@@ -42,7 +42,7 @@
     # Neovim
     neovim-nightly-overlay = {
       url = "github:nix-community/neovim-nightly-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     # Spicetify
@@ -74,13 +74,13 @@
         inherit system;
         config.allowUnfree = true;
         overlays = [
-          inputs.neovim-nightly-overlay.overlays.default
         ];
       };
       pkgs-unstable = import nixpkgs-unstable {
         inherit system;
         config.allowUnfree = true;
         overlays = [
+          inputs.neovim-nightly-overlay.overlays.default
         ];
       };
     in

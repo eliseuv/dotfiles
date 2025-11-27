@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 {
 
   imports = [
@@ -13,7 +13,7 @@
 
   programs.neovim = {
     enable = true;
-    package = pkgs.neovim;
+    package = pkgs-unstable.neovim;
   };
 
   home.shellAliases = {
