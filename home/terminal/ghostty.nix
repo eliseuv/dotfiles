@@ -9,7 +9,7 @@
     installBatSyntax = true;
     installVimSyntax = true;
     settings = {
-      theme = "tokyonight";
+      theme = "TokyoNight";
       font-family = "IosevkaTerm Nerd Font";
       font-size = 9;
       font-feature = "+calt, +liga, +dlig";
