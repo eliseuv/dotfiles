@@ -7,7 +7,7 @@
     ffmpeg
 
     # yt-x: YouTube TUI client
-    inputs.yt-x.packages."${system}".default
+    inputs.yt-x.packages."${stdenv.hostPlatform.system}".default
 
   ];
 
