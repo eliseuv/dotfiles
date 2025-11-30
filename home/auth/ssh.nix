@@ -13,6 +13,11 @@
         hostname = "alpine-vm.local";
         user = "root";
       };
+      # Dani Windows
+      "dani-win" = {
+        hostname = "DESKTOP-8D6IO5L.local";
+        user = "danis";
+      };
       # Dani WSL
       "dani-wsl" = {
         hostname = "localhost";
