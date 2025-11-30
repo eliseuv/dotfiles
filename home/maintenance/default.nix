@@ -34,13 +34,21 @@
   };
 
   # Automatically expire old generations
-  services.home-manager.autoExpire = {
-    enable = true;
-    frequency = "monthly";
-    timestamp = "-30 days";
-    store = {
-      cleanup = true;
-      options = "--delete-older-than 30d";
+  services.home-manager = {
+    autoUpgrade = {
+      enable = true;
+      frequency = "daily";
+      useFlake = true;
+      flakeDir = "/home/evf/dotfiles";
+    };
+    autoExpire = {
+      enable = true;
+      frequency = "monthly";
+      timestamp = "-30 days";
+      store = {
+        cleanup = true;
+        options = "--delete-older-than 30d";
+      };
     };
   };
 
