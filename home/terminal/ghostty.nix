@@ -23,6 +23,8 @@
       keybind = [
         # Remove default fullscreen bind
         "ctrl+enter=unbind"
+        # Quake-style terminal
+        "global:ctrl+backquote=toggle_quick_terminal"
       ];
     };
   };
