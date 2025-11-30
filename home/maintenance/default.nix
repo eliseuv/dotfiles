@@ -25,7 +25,7 @@
   nix.gc = {
     automatic = true;
     options = "--delete-older-than 7d";
-    frequency = "weekly";
+    dates = "weekly";
     persistent = true;
     randomizedDelaySec = "45min";
   };
