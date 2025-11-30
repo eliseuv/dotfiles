@@ -1,8 +1,8 @@
 { pkgs, ... }:
 {
 
-  # GNOME Display Manager
-  services.xserver.displayManager.gdm = {
+  # GNOME Display Manager (GDM)
+  services.displayManager.gdm = {
     enable = true;
     autoSuspend = false;
   };
