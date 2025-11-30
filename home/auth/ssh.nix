@@ -30,10 +30,8 @@
       };
       # Dani WSL
       "dani-wsl" = {
-        hostname = "localhost";
+        hostname = "DESKTOP-8D6IO5L.local";
         port = 2222;
-        proxyJump = "dani-win";
-        extraOptions."StrictHostKeyChecking" = "no";
       };
       # Personal computer at IF-UFRGS
       "if-ufrgs" = {
