@@ -22,7 +22,7 @@
       "dani-wsl" = {
         hostname = "localhost";
         port = 2222;
-        proxyCommand = "ssh -W %h:%p danis@DESKTOP-8D6IO5L.local";
+        proxyJump = "dani-win";
         extraOptions."StrictHostKeyChecking" = "no";
       };
       # Personal computer at IF-UFRGS
