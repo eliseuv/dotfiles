@@ -3,10 +3,6 @@
 
   home.packages = with pkgs; [
 
-    # Screenshot
-    grim
-    slurp
-
     # Audio mixer
     pulsemixer
 
@@ -25,6 +21,11 @@
   home.file.".config/hypr/catppuccin" = {
     source = ./hyprland/themes/catppuccin;
     recursive = true;
+  };
+
+  # Screenshot
+  programs.hyprshot = {
+    enable = true;
   };
 
 }
