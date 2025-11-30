@@ -6,10 +6,20 @@
     ./kitty.nix
   ];
 
-  # Default terminal
+  # Default terminal environment variables
   home.sessionVariables = {
     TERMINAL = "ghostty";
     TERM = "xterm-ghostty";
+  };
+
+  # Set default terminal emulator
+  xdg.terminal-exec = {
+    enable = true;
+    settings = {
+      default = [
+        "ghostty.desktop"
+      ];
+    };
   };
 
 }
