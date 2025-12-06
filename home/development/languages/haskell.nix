@@ -22,6 +22,7 @@
     cabal-install
     cabal2nix
     stack
+    haskellPackages.implicit-hie
 
     # Hoogle
     haskellPackages.hoogle
