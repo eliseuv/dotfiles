@@ -5,14 +5,14 @@
 }:
 let
   gemini-cli-override = pkgs-unstable.gemini-cli.overrideAttrs (old: rec {
-    version = "0.18.4";
+    version = "0.19.4";
     src = pkgs-unstable.fetchFromGitHub {
       owner = "google-gemini";
       repo = "gemini-cli";
       tag = "v${version}";
-      hash = "sha256-TSHL3X+p74yFGTNFk9r4r+nnul2etgVdXxy8x9BjsRg=";
+      hash = "sha256-bXolK7TEfrmSuntE0uP6MpLNypgyqjaL85bbPi19T5k=";
     };
-    npmDepsHash = "sha256-2Z6YrmUHlYKRU3pR0ZGwQbBgzNFqakBB6LYZqf66nSs=";
+    npmDepsHash = "sha256-sE3dTngvVukcL7Cwm5MG1NVCBGDbSW2YrkJyGEbg2Ow=";
     npmDeps = pkgs-unstable.fetchNpmDeps {
       inherit src;
       name = "${old.pname}-${version}-npm-deps";
