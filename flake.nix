@@ -18,8 +18,7 @@
 
   inputs = {
 
-    nixpkgs.url = "nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "nixpkgs/nixos-unstable";
 
     # Home Manager
     home-manager = {
@@ -42,7 +41,7 @@
     # Neovim
     neovim-nightly-overlay = {
       url = "github:nix-community/neovim-nightly-overlay";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Spicetify
@@ -63,7 +62,6 @@
     {
       self,
       nixpkgs,
-      nixpkgs-unstable,
       home-manager,
       ...
     }@inputs:
@@ -71,12 +69,6 @@
       system = "x86_64-linux";
       lib = nixpkgs.lib;
       pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        overlays = [
-        ];
-      };
-      pkgs-unstable = import nixpkgs-unstable {
         inherit system;
         config.allowUnfree = true;
         overlays = [
@@ -108,7 +100,6 @@
           inherit pkgs;
           extraSpecialArgs = {
             inherit inputs;
-            inherit pkgs-unstable;
           };
           modules = [
 
@@ -134,7 +125,6 @@
           inherit pkgs;
           extraSpecialArgs = {
             inherit inputs;
-            inherit pkgs-unstable;
           };
           modules = [
 
