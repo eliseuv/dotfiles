@@ -26,6 +26,8 @@ update *inputs:
     git add flake.lock
     git commit --message "[flake] update {{inputs}}"
 
+update-os: update system-switch home-switch
+
 update-home: (update "home-manager" "sops-nix" "spicetify-nix" "yt-x" "neovim-nightly-overlay") home-switch
 
 update-neovim: (update "neovim-nightly-overlay") home-switch
