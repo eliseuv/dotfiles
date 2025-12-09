@@ -2,7 +2,7 @@
 let
   # lazy.nvim sync script
   lazy-sync = pkgs.writeShellScriptBin "lazy-sync" ''
-    ${lib.getExe pkgs.neovim} --headless "+Lazy! sync" +qa && ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync completed" || ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync failed" -u critical
+    ${lib.getExe pkgs.neovim-unwrapped} --headless "+Lazy! sync" +qa && ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync completed" || ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync failed" -u critical
   '';
 in
 {
