@@ -12,7 +12,6 @@
     # Languages
     ./languages/nix.nix
     ./languages/c.nix
-    ./languages/rust.nix
     ./languages/julia.nix
     ./languages/haskell.nix
     ./languages/python.nix
