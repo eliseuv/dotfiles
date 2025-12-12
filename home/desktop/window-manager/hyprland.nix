@@ -4,7 +4,7 @@
   home.packages = with pkgs; [
 
     # Audio mixer
-    pulsemixer
+    wiremix
 
   ];
 
