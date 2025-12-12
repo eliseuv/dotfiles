@@ -17,8 +17,4 @@
 
   programs.neovim.defaultEditor = true;
 
-  home.sessionVariables = {
-    VISUAL = "emacsclient -c -a emacs";
-  };
-
 }
