@@ -24,9 +24,6 @@
     # Clipboard integration
     wl-clipboard
 
-    # Tree-sitter required for :TSInstallFromGrammar
-    tree-sitter
-
   ];
 
 }

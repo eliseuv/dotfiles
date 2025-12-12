@@ -18,6 +18,9 @@ in
     # LiSt Open Files
     lsof
 
+    # Tree-sitter required for :TSInstallFromGrammar
+    tree-sitter
+
   ];
 
   # lazy.nvim sync
