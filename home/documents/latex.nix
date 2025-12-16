@@ -7,6 +7,9 @@
 
     texlab
 
+    # Formatter
+    tex-fmt
+
   ];
 
   programs.tex-fmt = {
