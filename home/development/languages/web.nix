@@ -3,9 +3,6 @@
 
   home.packages = with pkgs; [
 
-    # Node
-    nodejs
-
     # yarn
     yarn
 
@@ -25,10 +22,18 @@
 
   ];
 
-  # Bun JS runtime
-  programs.bun = {
-    enable = true;
-    enableGitIntegration = true;
+  programs = {
+
+    # NodeJS
+    npm = {
+      enable = true;
+    };
+
+    # Bun JS runtime
+    bun = {
+      enable = true;
+      enableGitIntegration = true;
+    };
   };
 
 }
