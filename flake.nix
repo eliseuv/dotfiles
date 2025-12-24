@@ -38,6 +38,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Neovim
+    neovim-nightly-overlay = {
+      url = "github:nix-community/neovim-nightly-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Antigravity
     antigravity-nix = {
       url = "github:jacopone/antigravity-nix";
@@ -72,6 +78,7 @@
         inherit system;
         config.allowUnfree = true;
         overlays = [
+          inputs.neovim-nightly-overlay.overlays.default
         ];
       };
     in
