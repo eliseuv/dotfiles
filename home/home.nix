@@ -52,6 +52,7 @@
     ./extra/inkscape.nix
     ./extra/qbittorrent.nix
     ./extra/sniffnet.nix
+    ./extra/wireshark.nix
 
   ];
 
