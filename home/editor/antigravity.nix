@@ -1,9 +1,9 @@
-{ pkgs, ... }:
+{ inputs, ... }:
 {
 
-  home.packages = with pkgs; [
+  home.packages = [
 
-    antigravity-fhs
+    inputs.antigravity-nix.packages.x86_64-linux.default
 
   ];
 
