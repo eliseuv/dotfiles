@@ -46,6 +46,9 @@
     # wget
     wget
 
+    # DB TUI
+    sqlit-tui
+
   ];
 
 }
