@@ -1,0 +1,29 @@
+{
+    "workbench": {
+        "colorTheme": "Tokyo Night",
+    },
+    "editor": {
+        "fontFamily": "IosevkaTerm NerdFont",
+        "fontLigatures": true,
+        "fontSize": 13,
+        "inlayHints.enabled": "on",
+        "wordWrap": "on",
+    },
+    "vim": {
+        "useSystemClipboard": true,
+    },
+    "terminal": {
+        "external.linuxExec": "ghostty",
+        "integrated.fontLigatures.enabled": true,
+    },
+    "git": {
+        "confirmSync": false,
+        "autofetch": true,
+    },
+    "latex-workshop": {
+        "formatting.latex": "tex-fmt",
+        "latex.outDir": "output/",
+        "synctex.afterBuild.enabled": true,
+        "view.outline.sync.viewer": true,
+    },
+}
