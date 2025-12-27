@@ -10,7 +10,7 @@
     # GUI
     ./emacs/default.nix
     ./zed.nix
-    ./antigravity.nix
+    ./antigravity/default.nix
     ./vscode.nix
 
   ];
