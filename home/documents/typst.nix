@@ -15,9 +15,6 @@
     # Packager manager
     utpm
 
-    # Font Awesome for icons in documents
-    font-awesome
-
   ];
 
 }
