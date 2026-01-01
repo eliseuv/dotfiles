@@ -1,7 +1,7 @@
 { ... }:
 {
 
-  services.xserver.desktopManager.gnome = {
+  services.desktopManager.gnome = {
     enable = true;
   };
 
