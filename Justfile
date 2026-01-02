@@ -29,4 +29,4 @@ system-boot: && commit-gen gc home-switch
 
 update-system: (update "nixpkgs") system-switch
 
-update-home: (update "home-manager" "sops-nix" "spicetify-nix" "yt-x") home-switch
+update-home: update home-switch
