@@ -1,29 +1,21 @@
 {
-    "workbench": {
-        "colorTheme": "Tokyo Night",
-    },
-    "editor": {
-        "fontFamily": "IosevkaTerm NerdFont",
-        "fontLigatures": true,
-        "fontSize": 13,
-        "inlayHints.enabled": "on",
-        "wordWrap": "on",
-    },
-    "vim": {
-        "useSystemClipboard": true,
-    },
-    "terminal": {
-        "external.linuxExec": "ghostty",
-        "integrated.fontLigatures.enabled": true,
-    },
-    "git": {
-        "confirmSync": false,
-        "autofetch": true,
-    },
-    "latex-workshop": {
-        "formatting.latex": "tex-fmt",
-        "latex.outDir": "output/",
-        "synctex.afterBuild.enabled": true,
-        "view.outline.sync.viewer": true,
-    },
+    "workbench.colorTheme": "Tokyo Night",
+    "editor.fontFamily": "IosevkaTerm Nerd Font",
+    "editor.fontLigatures": true,
+    "editor.inlayHints.enabled": "on",
+    "editor.wordWrap": "on",
+    "vim.useSystemClipboard": true,
+    "terminal.external.linuxExec": "ghostty",
+    "terminal.integrated.fontFamily": "IosevkaTerm Nerd Font",
+    "terminal.integrated.fontLigatures.enabled": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    "latex-workshop.formatting.latex": "tex-fmt",
+    "latex-workshop.latex.outDir": "output/",
+    "latex-workshop.synctex.afterBuild.enabled": true,
+    "latex-workshop.view.outline.sync.viewer": true,
+    "python.languageServer": "Default",
+    "haskell.manageHLS": "PATH",
+    "makefile.configureOnOpen": true,
+    "editor.fontSize": 13,
 }
