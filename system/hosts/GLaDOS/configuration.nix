@@ -81,6 +81,12 @@
 
   };
 
+  # Configure GDM monitors
+  environment.etc."xdg/monitors.xml" = {
+    source = ../../desktop/display-manager/gdm/monitors/GLaDOS.xml;
+    mode = "0644";
+  };
+
   system.stateVersion = "24.11";
 
 }
