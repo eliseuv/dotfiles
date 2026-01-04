@@ -33,7 +33,7 @@
     ../../environment/default.nix
 
     # Display manager
-    ../../desktop/display-manager/gdm.nix
+    ../../desktop/display-manager/gdm/default.nix
 
     # Window manager
     ../../desktop/window-manager/hyprland.nix
