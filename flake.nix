@@ -122,7 +122,6 @@
 
             # Extra stuff
             ./home/extra/rclone/default.nix
-            ./home/extra/synology.nix
 
           ];
         };
