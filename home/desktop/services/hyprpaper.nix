@@ -6,8 +6,13 @@
   services.hyprpaper = {
     enable = true;
     settings = {
-      preload = [ "~/.wallpapers/dunes.webp" ];
-      wallpaper = [ ", ~/.wallpapers/dunes.webp" ];
+      splash = false;
+      wallpaper = [
+        {
+          path = "~/.wallpapers/dunes.webp";
+          fit_mode = "cover";
+        }
+      ];
     };
   };
 
