@@ -167,7 +167,7 @@ myStartupHook = do
 
     spawn myWallpaperScript -- Set wallpaper
     -- spawnOnce "picom -b --config ~/.config/picom/picom.conf &" -- Compositor
-    spawnOnce "synology-drive &" -- Synology Drive
+    -- spawnOnce "synology-drive &" -- Synology Drive
     -- spawnOnce "emacs --daemon" -- emacs daemon for the emacsclient
     -- spawnOnce "nm-applet &"                     -- NetworkManager in tray
     -- spawnOnce "volumeicon &"                    -- Volume controls in tray
