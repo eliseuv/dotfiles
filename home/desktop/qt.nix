@@ -1,9 +1,12 @@
-{ ... }:
+{ pkgs, ... }:
 {
 
   qt = {
     enable = true;
-    style.name = "adwaita-dark";
+    style = {
+      name = "kvantum";
+      package = pkgs.catppuccin-kvantum;
+    };
   };
 
 }
