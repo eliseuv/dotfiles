@@ -20,7 +20,7 @@
     config = {
       hwdec = "auto";
       ytdl-raw-options = "force-ipv4=";
-      screenshot-directory = "~/Storage/Images/screenshots";
+      screenshot-directory = "~/Pictures/screenshots/";
     };
     scripts = [
       pkgs.mpvScripts.thumbfast
