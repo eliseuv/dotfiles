@@ -9,6 +9,7 @@
       splash = false;
       wallpaper = [
         {
+          monitor = "";
           path = "~/.wallpapers/dunes.webp";
           fit_mode = "cover";
         }
