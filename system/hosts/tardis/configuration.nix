@@ -41,6 +41,9 @@
 
     # Boot graphics
     ../../extra/plymouth.nix
+
+    # Tailscale
+    ../../extra/tailscale.nix
   ];
 
   # Flakes support
