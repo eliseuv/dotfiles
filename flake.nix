@@ -111,7 +111,7 @@
 
             ./home/home.nix
 
-            # Syncthing folders
+            # Syncthing
             ./home/services/syncthing/folders/GLaDOS.nix
 
             # Music Player Daemon
@@ -135,7 +135,7 @@
 
             ./home/home.nix
 
-            # Syncthing folders
+            # Syncthing
             ./home/services/syncthing/folders/tardis.nix
 
           ];
