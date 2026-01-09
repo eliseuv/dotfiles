@@ -62,7 +62,7 @@
   nix.settings.trusted-users = [ "evf" ];
 
   # Select default session for Display Manager
-  services.displayManager.defaultSession = "hyprland-uwsm";
+  services.displayManager.defaultSession = "hyprland";
 
   # Mount disks
   fileSystems = {

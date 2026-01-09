@@ -59,7 +59,7 @@
   nix.settings.trusted-users = [ "evf" ];
 
   # Select default session for Display Manager
-  services.displayManager.defaultSession = "hyprland-uwsm";
+  services.displayManager.defaultSession = "hyprland";
 
   # Disk encryption
   boot.initrd.luks.devices."luks-2ac9cd27-6ff4-4407-9808-c63a5251c44c".device =
