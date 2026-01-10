@@ -35,10 +35,6 @@
     # Display manager
     ../../desktop/display-manager/gdm/default.nix
 
-    # Window manager
-    ../../desktop/window-manager/hyprland.nix
-    ../../desktop/window-manager/gnome.nix
-
     # Boot graphics
     ../../extra/plymouth.nix
 
@@ -57,9 +53,6 @@
 
   # Allow user to install system-wide packages
   nix.settings.trusted-users = [ "evf" ];
-
-  # Select default session for Display Manager
-  services.displayManager.defaultSession = "hyprland";
 
   # Disk encryption
   boot.initrd.luks.devices."luks-2ac9cd27-6ff4-4407-9808-c63a5251c44c".device =
