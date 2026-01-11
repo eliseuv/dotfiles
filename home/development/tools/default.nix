@@ -36,7 +36,7 @@
     prettierd
 
     # Reverse engineering
-    ghidra
+    ghidra-bin
 
   ];
 
