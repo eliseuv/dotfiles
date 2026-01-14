@@ -6,7 +6,7 @@
     ./services/hyprpaper.nix
     ./services/hypridle.nix
     ./lock/hyprlock.nix
-    ./bar/waybar.nix
+    ./bar/waybar/default.nix
     ./menu/rofi.nix
     ./notifications/dunst.nix
   ];

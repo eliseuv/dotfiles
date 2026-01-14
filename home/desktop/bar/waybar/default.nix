@@ -17,9 +17,9 @@
   ];
 
   # Modules
-  home.file.".config/waybar/modules.json".source = ./waybar/modules.json;
+  home.file.".config/waybar/modules.json".source = ./modules.json;
 
   # Styling
-  home.file.".config/waybar/style.css".source = ./waybar/style.css;
+  home.file.".config/waybar/style.css".source = ./style.css;
 
 }
