@@ -26,6 +26,33 @@ window#waybar {
     transition: 0.3s;
 }
 
+#custom-flake {
+    padding: 0 10px;
+    background-color: transparent;
+    color: #cdd6f4;
+}
+
+/* Hide when clean */
+#custom-flake.clean {
+    padding: 0;
+    margin: 0;
+}
+
+/* Standard updates (e.g., home-manager, neovim plugins) */
+#custom-flake.updates {
+    background-color: #bd93f9;
+    color: #1e1e2e;
+    border-radius: 10px;
+}
+
+/* Nixpkgs updates (System upgrades) - Make this one pop! */
+#custom-flake.nixpkgs {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
 #language {
     margin-top: 5px;
     margin-left: 8px;

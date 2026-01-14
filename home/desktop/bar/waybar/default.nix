@@ -22,4 +22,7 @@
   # Styling
   home.file.".config/waybar/style.css".source = ./style.css;
 
+  # Copy scripts
+  home.file.".config/waybar/scripts/check_flake_updates.sh".source = ./check_flake_updates.sh;
+
 }
