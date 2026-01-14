@@ -11,9 +11,14 @@
       enable = true;
       enabledExtensions = with spicePkgs.extensions; [
         adblock
+        keyboardShortcut
+        powerBar
         shuffle
         beautifulLyrics
         hidePodcasts
+        fullAppDisplayMod
+        coverAmbience
+
       ];
       theme = spicePkgs.themes.catppuccin;
       colorScheme = "mocha";
