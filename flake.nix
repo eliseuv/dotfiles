@@ -81,6 +81,18 @@
           inputs.neovim-nightly-overlay.overlays.default
         ];
       };
+      mkHome =
+        modules:
+        home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          extraSpecialArgs = {
+            inherit inputs;
+          };
+          modules = [
+            ./home/home.nix
+          ]
+          ++ modules;
+        };
     in
     {
 
@@ -102,44 +114,24 @@
 
       homeConfigurations = {
 
-        "evf@GLaDOS" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          extraSpecialArgs = {
-            inherit inputs;
-          };
-          modules = [
+        "evf@GLaDOS" = mkHome [
+          # Syncthing
+          ./home/services/syncthing/folders/GLaDOS.nix
 
-            ./home/home.nix
+          # Music Player Daemon
+          ./home/media/music/mpd.nix
 
-            # Syncthing
-            ./home/services/syncthing/folders/GLaDOS.nix
+          # Games
+          ./home/games/default.nix
 
-            # Music Player Daemon
-            ./home/media/music/mpd.nix
+          # Extra stuff
+          ./home/extra/rclone/default.nix
+        ];
 
-            # Games
-            ./home/games/default.nix
-
-            # Extra stuff
-            ./home/extra/rclone/default.nix
-
-          ];
-        };
-
-        "evf@tardis" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          extraSpecialArgs = {
-            inherit inputs;
-          };
-          modules = [
-
-            ./home/home.nix
-
-            # Syncthing
-            ./home/services/syncthing/folders/tardis.nix
-
-          ];
-        };
+        "evf@tardis" = mkHome [
+          # Syncthing
+          ./home/services/syncthing/folders/tardis.nix
+        ];
 
       };
 
