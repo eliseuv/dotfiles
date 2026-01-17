@@ -30,7 +30,7 @@
 
   # Use deathemonic's config
   home.file.".config/rofi" = {
-    source = ./rofi/deathemonic;
+    source = ./deathemonic;
     recursive = true;
   };
 

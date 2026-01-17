@@ -2,13 +2,20 @@
 {
 
   imports = [
-    ./window-manager/hyprland.nix
+    # Window Manager
+    ./window-manager/hyprland/default.nix
+
+    # Bar
+    ./bar/waybar/default.nix
+
+    # Menu
+    ./menu/rofi/default.nix
+
+    # Services
     ./services/hyprpaper.nix
     ./services/hypridle.nix
-    ./lock/hyprlock.nix
-    ./bar/waybar/default.nix
-    ./menu/rofi.nix
-    ./notifications/dunst.nix
+    ./services/hyprlock.nix
+    ./services/dunst.nix
   ];
 
 }

@@ -15,11 +15,11 @@
   services.copyq.enable = true;
 
   # Hyprland config
-  home.file.".config/hypr/hyprland.conf".source = ./hyprland/hyprland.conf;
+  home.file.".config/hypr/hyprland.conf".source = ./hyprland.conf;
 
   # Catppuccin theme
   home.file.".config/hypr/catppuccin" = {
-    source = ./hyprland/themes/catppuccin;
+    source = ./themes/catppuccin;
     recursive = true;
   };
 
