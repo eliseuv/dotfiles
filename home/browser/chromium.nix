@@ -4,10 +4,9 @@
   programs.chromium = {
     enable = true;
     extensions = [
-      "chlffgpmiacpedhhbkiomidkjlcfhogd" # pushbullet
-      "mbniclmhobmnbdlbpiphghaielnnpgdp" # lightshot
-      "gcbommkclmclpchllfjekcdonpmejbdp" # https everywhere
-      "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin
+      { id = "ddkjiahejlhfcafbddmgiahcphecmpfh"; } # uBlock Origin Lite
+      { id = "pkehgijcmpdhfbdbbnkijodmdjhbjlgp"; } # Privacy Badger
+      { id = "mlomiejdfkolichcflejclcbmpeaniij"; } # Ghostery
     ];
   };
 
