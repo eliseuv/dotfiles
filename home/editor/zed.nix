@@ -4,8 +4,6 @@
   programs.zed-editor = {
     enable = true;
     extensions = [
-      "catppuccin"
-      "zed-tokyo-night"
       "nix"
       "julia"
       "just"
@@ -23,11 +21,6 @@
       buffer_font_size = 12;
       # UI
       ui_font_size = 14;
-      theme = {
-        mode = "dark";
-        light = "Andromeda";
-        dark = "Catppuccin Mocha";
-      };
       # Terminal
       terminal = {
         dock = "right";
@@ -71,6 +64,10 @@
       # Language servers
       nixd
     ];
+  };
+
+  catppuccin.zed = {
+    enable = true;
   };
 
 }
