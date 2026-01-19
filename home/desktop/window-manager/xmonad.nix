@@ -1,11 +1,6 @@
 { pkgs, ... }:
 {
 
-  imports = [
-    # Wallpapers
-    ../wallpapers.nix
-  ];
-
   home.packages = with pkgs; [
     # Audio mixer
     pulsemixer

@@ -1,7 +1,11 @@
 { ... }:
 {
 
-  imports = [ ../wallpapers.nix ];
+  # Copy wallpapers
+  home.file.".wallpapers" = {
+    source = ../../../resources/wallpapers;
+    recursive = true;
+  };
 
   services.hyprpaper = {
     enable = true;
