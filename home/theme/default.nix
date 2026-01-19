@@ -9,6 +9,9 @@
     # QT
     ./qt.nix
 
+    # Catppuccin
+    ./catppuccin.nix
+
   ];
 
 }
