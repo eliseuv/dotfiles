@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
 
   imports = [
@@ -44,8 +44,6 @@
 
     # Desktop
     ./desktop/hyprland.nix
-    ./desktop/gtk.nix
-    ./desktop/qt.nix
 
     # Extra
     ./extra/ledger.nix
@@ -53,6 +51,9 @@
     ./extra/qbittorrent.nix
     ./extra/sniffnet.nix
     ./extra/wireshark.nix
+
+    # Theming
+    ./theme/default.nix
 
   ];
 
