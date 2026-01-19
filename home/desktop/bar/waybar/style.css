@@ -1,3 +1,11 @@
+@define-color bg #1E1D2F;
+@define-color main #bd93f9;
+@define-color critical #f38ba8;
+@define-color active #89b4fa;
+@define-color text #cdd6f4;
+@define-color launcher #007AC9;
+@define-color main_dim #5e497c;
+
 * {
     border: none;
     border-radius: 5px;
@@ -33,16 +41,16 @@ window#waybar {
     margin-bottom: 0px;
     border-radius: 10px;
     transition: none;
-    background: #1E1D2F;
-    color: #bd93f9;
-    border-bottom: 2px solid #bd93f9;
+    background: @bg;
+    color: @main;
+    border-bottom: 2px solid @main;
     transition: 0.3s;
 }
 
 #custom-flake {
     padding: 0 10px;
     background-color: transparent;
-    color: #cdd6f4;
+    color: @text;
 }
 
 #custom-flake.clean {
@@ -51,37 +59,37 @@ window#waybar {
 }
 
 #custom-flake.updates {
-    background-color: #bd93f9;
-    color: #1e1e2e;
+    background-color: @main;
+    color: @bg;
     border-radius: 10px;
 }
 
 #custom-flake.nixpkgs {
-    background-color: #89b4fa;
-    color: #1e1e2e;
+    background-color: @active;
+    color: @bg;
     border-radius: 10px;
     font-weight: bold;
 }
 
 #privacy {
-    color: #f38ba8;
-    border-color: #f38ba8;
+    color: @critical;
+    border-color: @critical;
 }
 
 #custom-power {
     font-size: 15px;
     margin-right: 17px;
     padding-right: 5px;
-    color: #f38ba8;
-    border-color: #f38ba8;
+    color: @critical;
+    border-color: @critical;
 }
 
 #custom-launcher {
     font-size: 20px;
     margin-left: 17px;
     padding-right: 5px;
-    color: #007AC9;
-    border-color: #007AC9;
+    color: @launcher;
+    border-color: @launcher;
 }
 
 #pulseaudio {
@@ -98,88 +106,88 @@ window#waybar {
 #pulseaudio:hover,
 #clock:hover,
 #idle_inhibitor.deactivated:hover {
-    color: #1E1D2F;
-    background: #bd93f9;
+    color: @bg;
+    background: @main;
 }
 
 #battery.charging {
-    color: #89b4fa;
+    color: @active;
 }
 
 #pulseaudio.muted {
-    color: #f38ba8;
-    border-color: #f38ba8;
+    color: @critical;
+    border-color: @critical;
 }
 
 #pulseaudio.muted:hover {
-    background: #f38ba8;
-    color: #1E1D2F;
+    background: @critical;
+    color: @bg;
 }
 
 #temperature.critical {
-    color: #f38ba8;
-    border-color: #f38ba8;
+    color: @critical;
+    border-color: @critical;
 }
 
 #custom-launcher:hover {
-    background: #007AC9;
-    color: #1E1D2F;
+    background: @launcher;
+    color: @bg;
 }
 
 #network.disconnected {
-    color: #f38ba8;
-    border-color: #f38ba8;
+    color: @critical;
+    border-color: @critical;
 }
 
 #network.disconnected:hover {
-    background: #f38ba8;
-    color: #1E1D2F;
+    background: @critical;
+    color: @bg;
 }
 
 #custom-power:hover {
-    background: #f38ba8;
-    color: #1E1D2F;
+    background: @critical;
+    color: @bg;
 }
 
 #idle_inhibitor.activated {
-    color: #89b4fa;
-    border-color: #89b4fa;
+    color: @active;
+    border-color: @active;
 }
 
 #idle_inhibitor.activated:hover {
-    background: #89b4fa;
-    color: #1E1D2F;
+    background: @active;
+    color: @bg;
 }
 
 #idle_inhibitor.deactivated {
-    color: #bd93f9;
+    color: @main;
 }
 
 #workspaces {
     margin-top: 5px;
     margin-left: 8px;
     padding-right: 4px;
-    background: #1E1D2F;
-    border-bottom: 2px solid #bd93f9;
-    color: #bd93f9;
+    background: @bg;
+    border-bottom: 2px solid @main;
+    color: @main;
     transition: 0.3s;
 }
 
 #workspaces button {
-    background: #1E1D2F;
-    color: #bd93f9;
+    background: @bg;
+    color: @main;
     transition: 0.3s;
 }
 
 #workspaces button.visible {
-    background: #5e497c;
-    color: #1E1D2F;
+    background: @main_dim;
+    color: @bg;
 }
 
 #workspaces button.active,
 #workspaces button:hover {
-    background: #bd93f9;
-    color: #1E1D2F;
+    background: @main;
+    color: @bg;
 }
 
 #tray menu {
@@ -190,9 +198,9 @@ window#waybar {
     margin-bottom: 0px;
     border-radius: 10px;
     transition: none;
-    background: #1E1D2F;
-    color: #bd93f9;
+    background: @bg;
+    color: @main;
     border-style: solid;
-    border-color: #bd93f9;
+    border-color: @main;
     transition: 0.3s;
 }
