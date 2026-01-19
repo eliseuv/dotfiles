@@ -5,4 +5,8 @@
     enable = true;
   };
 
+  catppuccin.hyprlock = {
+    enable = true;
+  };
+
 }
