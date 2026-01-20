@@ -129,6 +129,9 @@
 
           # Extra stuff
           ./home/extra/rclone/default.nix
+
+          # Waybar
+          ./home/desktop/bar/waybar/glados.nix
         ];
 
         "evf@tardis" = mkHome [

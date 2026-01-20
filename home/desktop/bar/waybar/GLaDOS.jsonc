@@ -1,0 +1,83 @@
+[
+    {
+        "output": "HDMI-A-1",
+        "layer": "top",
+        "include": [
+            "~/.config/waybar/modules.json",
+        ],
+        "modules-left": [
+            "custom/launcher",
+            "cpu",
+            "memory",
+            "disk",
+            "disk#home",
+            "temperature",
+        ],
+        "modules-center": [
+            "hyprland/workspaces",
+            "tray",
+            "custom/spotify",
+        ],
+        "modules-right": [
+            "privacy",
+            "hyprland/language",
+            "network",
+            "pulseaudio",
+            "backlight",
+            "battery",
+            "custom/weather",
+            "clock",
+            "custom/power"
+        ],
+    },
+    {
+        "output": "DP-3",
+        "layer": "top",
+        "include": [
+            "~/.config/waybar/modules.json",
+        ],
+        "modules-left": [
+            "cpu",
+            "memory",
+            "disk",
+            "disk#home",
+            "temperature",
+        ],
+        "modules-center": [
+            "hyprland/workspaces",
+            "tray",
+            "custom/spotify",
+        ],
+        "modules-right": [
+            "privacy",
+            "hyprland/language",
+            "network",
+            "pulseaudio",
+            "backlight",
+            "battery",
+            "custom/weather",
+            "clock",
+        ],
+    },
+    {
+        "output": "DP-1",
+        "layer": "top",
+        "include": [
+            "~/.config/waybar/modules.json",
+        ],
+        "modules-left": [
+            "cpu",
+            "memory",
+            "disk",
+            "disk#home",
+        ],
+        "modules-center": [
+            "hyprland/workspaces",
+        ],
+        "modules-right": [
+            "network",
+            "pulseaudio",
+            "clock",
+        ],
+    }
+]
