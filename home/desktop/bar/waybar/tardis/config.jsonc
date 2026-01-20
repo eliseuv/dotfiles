@@ -1,0 +1,29 @@
+{
+    "layer": "top",
+    "include": [
+        "~/.config/waybar/modules.json"
+    ],
+    "modules-left": [
+        "custom/launcher",
+        "cpu",
+        "memory",
+        "disk",
+        "temperature"
+    ],
+    "modules-center": [
+        "hyprland/workspaces",
+        "tray"
+    ],
+    "modules-right": [
+        "privacy",
+        // "custom/flake",
+        "hyprland/language",
+        "network",
+        "backlight",
+        "pulseaudio",
+        "battery",
+        "custom/weather",
+        "clock",
+        "custom/power"
+    ],
+}

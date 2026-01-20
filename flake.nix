@@ -141,6 +141,9 @@
           # Syncthing
           ./home/services/syncthing/folders/tardis.nix
 
+          # Waybar
+          ./home/desktop/bar/waybar/tardis/default.nix
+
         ];
 
       };
