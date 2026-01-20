@@ -3,6 +3,9 @@
 
   imports = [
 
+    # Pandoc
+    ./pandoc.nix
+
     # PDF viewer
     ./zathura.nix
     ./sioyek.nix
