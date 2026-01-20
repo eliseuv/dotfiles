@@ -118,6 +118,7 @@
       homeConfigurations = {
 
         "evf@GLaDOS" = mkHome [
+
           # Syncthing
           ./home/services/syncthing/folders/GLaDOS.nix
 
@@ -131,12 +132,15 @@
           ./home/extra/rclone/default.nix
 
           # Waybar
-          ./home/desktop/bar/waybar/glados.nix
+          ./home/desktop/bar/waybar/GLaDOS/default.nix
+
         ];
 
         "evf@tardis" = mkHome [
+
           # Syncthing
           ./home/services/syncthing/folders/tardis.nix
+
         ];
 
       };
