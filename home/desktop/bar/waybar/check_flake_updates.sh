@@ -39,7 +39,7 @@ else
     UPDATE_COUNT=$(echo "$UPDATED_NAMES" | wc -w)
 fi
 
-TOOLTIP=$(echo "$UPDATED_NAMES" | tr ' ' ',')
+TOOLTIP=$(echo "$UPDATED_NAMES" | tr '\n' '\r')
 
 # 5. Notifications (Same logic as before)
 CURRENT_SIG="$UPDATE_COUNT-$UPDATED_NAMES"
@@ -49,12 +49,12 @@ if [ "$CURRENT_SIG" != "$PREV_SIG" ] && [ "$UPDATE_COUNT" -gt 0 ]; then
     if echo "$UPDATED_NAMES" | grep -qw "nixpkgs"; then
         notify-send -u critical \
                     -i software-update-available \
-                    "System Update Available" \
-                    "<b>nixpkgs</b> has been updated.\nTotal updates: $UPDATE_COUNT"
+                    "Flake Update Available" \
+                    "Inputs: $TOOLTIP"
     else
         notify-send -u normal \
                     -i package-x-generic \
-                    "Flake Updates Available" \
+                    "Flake Update Available" \
                     "Inputs: $TOOLTIP"
     fi
     echo "$CURRENT_SIG" > "$STATE_FILE"
@@ -67,9 +67,9 @@ fi
 # 6. JSON Output for Waybar
 if [ "$UPDATE_COUNT" -gt 0 ]; then
     if echo "$UPDATED_NAMES" | grep -qw "nixpkgs"; then
-        echo "{\"text\": \"$UPDATE_COUNT \", \"tooltip\": \"System Update: $TOOLTIP\", \"class\": \"nixpkgs\"}"
+        echo "{\"text\": \"$UPDATE_COUNT\", \"tooltip\": \"$TOOLTIP\", \"class\": \"updates-nixpkgs\"}"
     else
-        echo "{\"text\": \"$UPDATE_COUNT 󰚰\", \"tooltip\": \"Flake Updates: $TOOLTIP\", \"class\": \"updates\"}"
+        echo "{\"text\": \"$UPDATE_COUNT\", \"tooltip\": \"$TOOLTIP\", \"class\": \"updates\"}"
     fi
 else
     echo "{\"text\": \"\", \"tooltip\": \"System up to date\", \"class\": \"clean\"}"

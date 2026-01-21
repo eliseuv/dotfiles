@@ -100,7 +100,7 @@
         "return-type": "json"
     },
     "custom/flake": {
-        "format": "{}",
+        "format": "{} 󰚰 ",
         "exec": "~/.config/waybar/scripts/check_flake_updates.sh",
         "interval": 3600,
         "return-type": "json",

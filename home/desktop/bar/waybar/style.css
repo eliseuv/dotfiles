@@ -64,7 +64,7 @@ window#waybar {
     border-radius: 10px;
 }
 
-#custom-flake.nixpkgs {
+#custom-flake.updates-nixpkgs {
     background-color: @active;
     color: @bg;
     border-radius: 10px;
