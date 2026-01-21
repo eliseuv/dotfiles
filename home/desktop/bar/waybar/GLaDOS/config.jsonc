@@ -20,6 +20,7 @@
         ],
         "modules-right": [
             "privacy",
+            // "custom/flake",
             "hyprland/language",
             "network",
             "pulseaudio",
@@ -50,6 +51,7 @@
         ],
         "modules-right": [
             "privacy",
+            // "custom/flake",
             "hyprland/language",
             "network",
             "pulseaudio",
