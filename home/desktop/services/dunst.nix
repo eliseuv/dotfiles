@@ -32,12 +32,23 @@ in
         width = "(0, 300)";
         frame_width = 2;
         corner_radius = 5;
+        separator_color = "frame";
+        background = "#1e1d2f";
+        frame_color = "#5e497c";
+      };
+      urgency_low = {
+        foreground = "#5e497c";
+        timeout = 4;
       };
       urgency_normal = {
-        background = "#1e1d2f";
         foreground = "#bd93f9";
-        frame_color = "#5e497c";
-        timeout = 10;
+        timeout = 8;
+      };
+      urgency_critical = {
+        frame_color = "#ff0066";
+        background = "#bd93f9";
+        foreground = "#1e1d2f";
+        timeout = 0;
       };
     };
   };
