@@ -14,9 +14,11 @@
         monitor=DP-3,2560x1080@74.99,440x0,1.0
         monitor=HDMI-A-1,1920x1080@239.76,1080x1080,1.0
       ''
-    else
+    else if config.networking.hostName == "tardis" then
       ''
         monitor = eDP-1, 1920x1080@60, 0x0, 1
-      '';
+      ''
+    else
+      "";
 
 }
