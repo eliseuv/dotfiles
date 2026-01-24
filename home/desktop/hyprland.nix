@@ -12,10 +12,11 @@
     ./menu/rofi/default.nix
 
     # Services
+    ./services/dunst.nix
     ./services/hyprpaper.nix
     ./services/hypridle.nix
     ./services/hyprlock.nix
-    ./services/dunst.nix
+    ./services/hyprpolkitagent.nix
   ];
 
 }
