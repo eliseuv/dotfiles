@@ -49,6 +49,7 @@
     ./extra/ledger.nix
     ./extra/inkscape.nix
     ./extra/qbittorrent.nix
+    ./extra/localsend.nix
     ./extra/sniffnet.nix
     ./extra/wireshark.nix
 
