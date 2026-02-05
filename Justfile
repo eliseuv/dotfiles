@@ -10,7 +10,7 @@ commit-gen:
         --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
     git push
 
-gc keep='8':
+gc keep='4':
     nh clean all --keep {{keep}}
 
 home-switch:

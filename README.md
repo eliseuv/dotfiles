@@ -82,7 +82,7 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
   just gc
   ```
 
-  *Cleans up old generations (keeps last 8 by default).*
+  *Cleans up old generations (keeps last 4 by default).*
 
 ## Installation
 
