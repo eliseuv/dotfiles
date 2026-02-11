@@ -15,6 +15,15 @@
     };
   };
 
+  # Periodic garbage collection
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 7d";
+    persistent = true;
+    randomizedDelaySec = "45min";
+  };
+
   # Automatic store optimisation
   nix.settings.auto-optimise-store = true;
   nix.optimise = {
