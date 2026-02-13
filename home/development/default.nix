@@ -15,7 +15,6 @@
     ./languages/julia.nix
     ./languages/haskell.nix
     ./languages/python.nix
-    ./languages/go.nix
     ./languages/web.nix
 
     # Development environments
