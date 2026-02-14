@@ -24,9 +24,6 @@
     # Notes
     ./obsidian.nix
 
-    # Office
-    ./office.nix
-
   ];
 
   home.sessionVariables.READER = "zathura";
