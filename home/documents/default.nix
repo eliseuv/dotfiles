@@ -11,7 +11,7 @@
     ./sioyek.nix
 
     # Ebooks
-    ./calibre.nix
+    # ./calibre.nix
 
     # Papers
     ./zotero.nix
