@@ -3,6 +3,7 @@
 
   programs.zed-editor = {
     enable = true;
+    package = pkgs.zed-editor-fhs;
     extensions = [
       "nix"
       "julia"
