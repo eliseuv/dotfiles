@@ -13,12 +13,9 @@
       font-family = "IosevkaTerm Nerd Font";
       font-size = 9;
       font-feature = "+calt, +liga, +dlig";
-      bold-is-bright = true;
       cursor-style = "block";
       mouse-hide-while-typing = true;
-      gtk-titlebar = false;
-      gtk-single-instance = true;
-      window-decoration = false;
+      window-decoration = "none";
       scrollback-limit = 100000000; # ~100mb per terminal
       keybind = [
         # Remove default fullscreen bind
