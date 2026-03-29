@@ -31,6 +31,8 @@
       repositories = [ "/home/evf/dotfiles" ];
     };
 
+    signing.format = "openpgp";
+
   };
 
   programs.delta = {
