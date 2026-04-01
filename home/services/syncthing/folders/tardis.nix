@@ -22,7 +22,7 @@
           devices = [
             "GLaDOS"
             "TARDIS"
-            "A53"
+            "A56"
           ];
         };
 

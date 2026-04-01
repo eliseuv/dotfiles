@@ -9,7 +9,7 @@
           path = "/run/media/evf/Storage/CompanionCube/music";
           devices = [
             "GLaDOS"
-            "A53"
+            "A56"
           ];
         };
 
@@ -30,7 +30,7 @@
           devices = [
             "GLaDOS"
             "TARDIS"
-            "A53"
+            "A56"
           ];
         };
 
