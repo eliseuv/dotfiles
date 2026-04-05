@@ -25,7 +25,7 @@
   # Screenshot
   programs.hyprshot = {
     enable = true;
-    saveLocation = "$HOME/Pictures/screenshots/";
+    saveLocation = "$HOME/Storage/Images/screenshots";
   };
 
 }
