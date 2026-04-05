@@ -3,9 +3,6 @@
 
   home.packages = with pkgs; [
 
-    # yarn
-    yarn
-
     # Typescript
     typescript
     typescript-language-server
@@ -17,23 +14,6 @@
     # Sass
     sass
 
-    # Tools
-    biome
-
   ];
-
-  programs = {
-
-    # NodeJS
-    npm = {
-      enable = true;
-    };
-
-    # Bun JS runtime
-    bun = {
-      enable = true;
-      enableGitIntegration = true;
-    };
-  };
 
 }

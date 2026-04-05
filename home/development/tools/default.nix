@@ -12,6 +12,10 @@
     # Visidata
     ./visidata.nix
 
+    # Web tools
+    ./npm.nix
+    ./bun.nix
+
   ];
 
   home.packages = with pkgs; [
