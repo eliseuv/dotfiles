@@ -56,6 +56,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Fenix
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Spicetify
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";

@@ -1,22 +1,14 @@
-{ pkgs, lib, ... }:
-let
-  # Rustup update script
-  rustup-update = pkgs.writeShellScriptBin "rustup-update" ''
-    ${pkgs.rustup}/bin/rustup update && ${pkgs.libnotify}/bin/notify-send "Rustup" "Update completed" || ${pkgs.libnotify}/bin/notify-send "Rustup" "Update failed" -u critical
-  '';
-in
+{ pkgs, inputs, ... }:
+
 {
 
   home.packages = with pkgs; [
 
-    rustup
-
-    # Rustup update script
-    rustup-update
+    # Full stable rust toolchain via fenix
+    inputs.fenix.packages.${pkgs.system}.stable.completeToolchain
 
     # Cargo
     cargo-watch
-    cargo-info
     cargo-generate
     cargo-cache
     cargo-binstall
@@ -56,39 +48,6 @@ in
     settings = {
       default_job = "clippy-all";
     };
-  };
-
-  # rustup update
-  systemd.user.services.rustup-update = {
-    Unit = {
-      Description = "Update rustup toolchains";
-      Wants = [
-        "network.target"
-        "nss-lookup.target"
-      ];
-      After = [
-        "network.target"
-        "nss-lookup.target"
-      ];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = lib.getExe rustup-update;
-    };
-    Install.WantedBy = [ "default.target" ];
-  };
-
-  # rustup update timer
-  systemd.user.timers.rustup-update = {
-    Unit.Description = "Scheduled rustup update";
-    Timer = {
-      OnCalendar = "*-*-* 01:00:00 UTC";
-      Persistent = true;
-      # Run after boot
-      OnBootSec = "1m";
-      RandomizedDelaySec = "1m";
-    };
-    Install.WantedBy = [ "timers.target" ];
   };
 
 }
