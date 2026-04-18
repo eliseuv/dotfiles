@@ -11,6 +11,8 @@
   programs.neovim = {
     enable = true;
     package = pkgs.neovim;
+    withRuby = false;
+    withPython3 = false;
   };
 
   home.shellAliases = {
