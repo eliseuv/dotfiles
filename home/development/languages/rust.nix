@@ -5,7 +5,7 @@
   home.packages = with pkgs; [
 
     # Full stable rust toolchain via fenix
-    inputs.fenix.packages.${pkgs.system}.stable.completeToolchain
+    inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.completeToolchain
 
     # Cargo
     cargo-watch
