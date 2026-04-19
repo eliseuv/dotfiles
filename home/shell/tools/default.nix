@@ -24,6 +24,8 @@
     ./viddy.nix
     # Systemctl TUI
     ./systemctl-tui.nix
+    # Reverse Engineering
+    ./rizin.nix
   ];
 
   home.packages = with pkgs; [

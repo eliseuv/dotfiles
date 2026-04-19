@@ -1,0 +1,8 @@
+{ ... }:
+{
+
+  programs.rizin = {
+    enable = true;
+  };
+
+}
