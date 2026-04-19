@@ -32,8 +32,6 @@
 
   home.packages = with pkgs; [
 
-    unzip
-
     czkawka
 
   ];
