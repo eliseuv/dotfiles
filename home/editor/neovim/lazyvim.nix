@@ -27,6 +27,9 @@ in
 
   ];
 
+  # Manage init.lua with LazyVim imperatively
+  programs.neovim.sideloadInitLua = true;
+
   # lazy.nvim sync
   systemd.user.services.lazynvim-sync = {
     Unit = {
