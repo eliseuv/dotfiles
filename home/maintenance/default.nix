@@ -40,6 +40,7 @@
       frequency = "daily";
       useFlake = true;
       flakeDir = "/home/evf/dotfiles";
+      preSwitchCommands = [ "nix flake update" ];
     };
     autoExpire = {
       enable = true;
