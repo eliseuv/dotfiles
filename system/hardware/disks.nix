@@ -1,8 +1,11 @@
 { ... }:
 {
 
-  services.udisks2.enable = true;
-  services.gvfs.enable = true;
-  services.devmon.enable = true;
+  services = {
+    udisks2.enable = true;
+    gvfs.enable = true;
+    devmon.enable = true;
+    samba.enable = true;
+  };
 
 }
