@@ -51,7 +51,6 @@
     ./extra/qbittorrent.nix
     ./extra/localsend.nix
     ./extra/sniffnet.nix
-    ./extra/wireshark.nix
 
     # Theming
     ./theme/default.nix
