@@ -20,7 +20,9 @@
           ;; defsrc is still necessary
           (defsrc)
           (deflayermap (base-layer)
-            caps esc)
+            esc grv
+            caps esc
+          )
         '';
       };
     };
