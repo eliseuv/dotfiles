@@ -4,7 +4,7 @@
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    matchBlocks = {
+    settings = {
       # Default settings for all hosts
       "*" = {
         compression = true;
