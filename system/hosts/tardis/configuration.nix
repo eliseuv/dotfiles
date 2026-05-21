@@ -29,6 +29,9 @@
     # Printing
     ../../hardware/printing.nix
 
+    # Bluetooth
+    ../../hardware/bluetooth.nix
+
     #Environment
     ../../environment/default.nix
 
