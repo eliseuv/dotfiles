@@ -349,11 +349,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780243338,
-        "narHash": "sha256-QQaS4SdxoLERfyByIRJZkGpd6bnlBsdLXafpDcR7sw4=",
+        "lastModified": 1780262908,
+        "narHash": "sha256-8JtcYRVI9BytSli9wZrH1kfV6uKeNzZRypinlaGpL/o=",
         "owner": "Benexl",
         "repo": "yt-x",
-        "rev": "436fa9f2d7df18f36cfc50fa8a6c3ac90241cb25",
+        "rev": "ddf9663f4d6cf8301ba65d65cc81a07a52630a25",
         "type": "github"
       },
       "original": {
