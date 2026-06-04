@@ -19,9 +19,9 @@
     # Scripts
     ./scripts/default.nix
 
-    # AI Assistants
-    ./assistant/gemini.nix
-    ./assistant/copilot.nix
+    # AI
+    ./ai/antigravity.nix
+    ./ai/copilot.nix
 
     # Extra
     ./extra/fastfetch/default.nix
