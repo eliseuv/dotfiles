@@ -9,6 +9,8 @@ let
       exit 1
     fi
 
+    cd "$dir"
+
     # Find potential tmuxinator configurations
     files=()
     if [ -f "$dir/.tmuxinator.yml" ]; then
@@ -74,7 +76,7 @@ let
         key="''${keys[$idx]:-}"
         
         # Command to run when selected
-        cmd="run-shell -b '${pkgs.tmuxinator}/bin/tmuxinator start -p \"$f\" --append'"
+        cmd="run-shell -b 'cd \"$dir\" && ${pkgs.tmuxinator}/bin/tmuxinator start -p \"$f\" --append'"
         
         menu_args+=("$rel_name" "$key" "$cmd")
         idx=$((idx + 1))
