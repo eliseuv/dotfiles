@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780855287,
-        "narHash": "sha256-SSi752fzYZLIighU8uwRCArFQB3vRB2P6KFxOVLn784=",
+        "lastModified": 1781032297,
+        "narHash": "sha256-dqWhmtNYEmeGsiZ2y1H9blwfMHI92ubzNTegasYnQU0=",
         "owner": "Hy4ri",
         "repo": "antigravity-flake",
-        "rev": "6c47cd1043ea012df295ca6a95d93849f6965d67",
+        "rev": "6353ea6a34e36c5c50c76f0fe62abbe4ffbeb970",
         "type": "github"
       },
       "original": {
@@ -67,11 +67,11 @@
         "rust-analyzer-src": "rust-analyzer-src"
       },
       "locked": {
-        "lastModified": 1780824777,
-        "narHash": "sha256-/D3gjEDezsoa//Kbd+rNQRERl4AS+HYOMChsdD1eus4=",
+        "lastModified": 1780999471,
+        "narHash": "sha256-rY4yNlSzDY3OoYBdgjwlpVKWY/oUeOb65709i/tJbns=",
         "owner": "nix-community",
         "repo": "fenix",
-        "rev": "3a556b6fbd42412b6f3f0ea8d35959b1826f86ff",
+        "rev": "db976d430cbb6b0d6b300b4e22cbb28462841af2",
         "type": "github"
       },
       "original": {
@@ -144,11 +144,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780943742,
-        "narHash": "sha256-01bTMR9ZPG+uxPaZBeOwagg5uxIaFYs2/3YIrOX+bCA=",
+        "lastModified": 1781043330,
+        "narHash": "sha256-eApJsGv0lSn8OKqcBQJDFZI6Jg8coS7M8urNo3cVl9U=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "df39142474950e42d5fc3bf2fef9d6c62abbe8d7",
+        "rev": "bd4277722d215970366a405d280301a796a364fc",
         "type": "github"
       },
       "original": {
@@ -262,11 +262,11 @@
     "rust-analyzer-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1780758424,
-        "narHash": "sha256-OcXGwiq5ibERT8S9rx5V1bgleguAfwzSQzMePpf8yIE=",
+        "lastModified": 1780924205,
+        "narHash": "sha256-5s6nPSNU1Mo/Qy90XxCTNj6/rB70zgX8VqleTdLoESA=",
         "owner": "rust-lang",
         "repo": "rust-analyzer",
-        "rev": "a9a66c4077fedd375c0f1e61dc39a8f3243ce0ef",
+        "rev": "4fde9dd9822df453dc6f20149b8e375efbbe66c0",
         "type": "github"
       },
       "original": {
@@ -370,11 +370,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780950989,
-        "narHash": "sha256-ZuEe1Hf9130HnuFK5RqfdCryIVKXPbt6OUeZ98wRw5k=",
+        "lastModified": 1781036883,
+        "narHash": "sha256-eC4bxwLJVVLEIl/V7XvTZ4ZoUOUPDX8gFkimMXbD2IA=",
         "owner": "Benexl",
         "repo": "yt-x",
-        "rev": "976b04777cf81e9e2a747f1425200d5aafac335b",
+        "rev": "88f5f9107bdc58b839913dc72d6da3f08b70784a",
         "type": "github"
       },
       "original": {
