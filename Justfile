@@ -27,6 +27,10 @@ system-boot: && commit-gen gc home-switch
     git diff -U0 '*.nix'
     nh os boot .
 
-update-system: (update "nixpkgs") system-switch
+update-system:
+    -{{just_executable()}} update nixpkgs && {{just_executable()}} system-switch
+    {{just_executable()}} update-home
 
-update-home: update home-switch
+update-home:
+    -{{just_executable()}} update
+    {{just_executable()}} home-switch
