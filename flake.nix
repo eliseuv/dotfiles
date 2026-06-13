@@ -81,6 +81,12 @@
     # Catppuccin
     catppuccin.url = "github:catppuccin/nix";
 
+    # Late.sh
+    late-sh = {
+      url = "github:mpiorowski/late-sh";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs =
