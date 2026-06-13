@@ -21,6 +21,7 @@ window#waybar {
 #custom-weather,
 #language,
 #network,
+#bluetooth,
 #battery,
 #backlight,
 #pulseaudio,
@@ -103,6 +104,7 @@ window#waybar {
 
 #language:hover,
 #network:hover,
+#bluetooth:hover,
 #pulseaudio:hover,
 #clock:hover,
 #idle_inhibitor.deactivated:hover {
@@ -140,6 +142,34 @@ window#waybar {
 }
 
 #network.disconnected:hover {
+    background: @critical;
+    color: @bg;
+}
+
+#bluetooth.discoverable,
+#bluetooth.discovering,
+#bluetooth.pairable,
+#bluetooth.paired,
+#bluetooth.connected {
+    color: @active;
+    border-color: @active;
+}
+
+#bluetooth.discoverable:hover,
+#bluetooth.discovering:hover,
+#bluetooth.pairable:hover,
+#bluetooth.paired:hover,
+#bluetooth.connected:hover {
+    background: @active;
+    color: @bg;
+}
+
+#bluetooth.disabled {
+    color: @critical;
+    border-color: @critical;
+}
+
+#bluetooth.disabled:hover {
     background: @critical;
     color: @bg;
 }
