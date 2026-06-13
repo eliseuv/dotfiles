@@ -19,6 +19,7 @@
         // "custom/flake",
         "hyprland/language",
         "network",
+        "bluetooth",
         "backlight",
         "pulseaudio",
         "battery",
