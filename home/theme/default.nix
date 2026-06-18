@@ -12,6 +12,9 @@
     # Catppuccin
     ./catppuccin.nix
 
+    # Xresources
+    ./xresources.nix
+
   ];
 
 }
