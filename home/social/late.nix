@@ -2,7 +2,7 @@
 {
 
   home.packages = [
-    inputs.late-sh.packages.${pkgs.system}.late
+    inputs.late-sh.packages.${pkgs.stdenv.hostPlatform.system}.late
   ];
 
 }
