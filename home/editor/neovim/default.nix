@@ -10,6 +10,7 @@
 
   programs.neovim = {
     enable = true;
+    defaultEditor = true;
     package = pkgs.neovim;
     withRuby = false;
     withPython3 = false;

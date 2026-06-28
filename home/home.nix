@@ -3,20 +3,8 @@
 
   imports = [
 
-    # Shell environment
-    ./shell/default.nix
-
-    # Authentication
-    ./auth/default.nix
-
-    # Maintenance
-    ./maintenance/default.nix
-
-    # Development
-    ./development/default.nix
-
-    # Containers
-    ./containers/default.nix
+    # Headless (Core) environment
+    ./headless.nix
 
     # User services
     ./services/default.nix
@@ -71,15 +59,8 @@
 
   ];
 
-  home = {
-    username = "evf";
-    homeDirectory = "/home/evf";
-  };
-
   fonts.fontconfig = {
     enable = true;
   };
 
-  programs.home-manager.enable = true;
-  home.stateVersion = "24.11";
 }

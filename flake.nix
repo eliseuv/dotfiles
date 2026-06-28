@@ -114,10 +114,7 @@
           extraSpecialArgs = {
             inherit inputs;
           };
-          modules = [
-            ./home/home.nix
-          ]
-          ++ modules;
+          modules = modules;
         };
     in
     {
@@ -149,6 +146,8 @@
 
         "evf@GLaDOS" = mkHome [
 
+          ./home/home.nix
+
           # Syncthing
           ./home/services/syncthing/folders/GLaDOS.nix
 
@@ -165,6 +164,8 @@
 
         "evf@tardis" = mkHome [
 
+          ./home/home.nix
+
           # Syncthing
           ./home/services/syncthing/folders/tardis.nix
 
@@ -174,6 +175,7 @@
         ];
 
         "evf@wheatley" = mkHome [
+          ./home/headless.nix
         ];
 
       };
