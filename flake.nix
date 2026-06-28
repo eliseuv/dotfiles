@@ -26,6 +26,10 @@
 
     nixpkgs.url = "nixpkgs/nixos-unstable";
 
+    # Stable Nixpkgs
+    nixpkgs-stable.url = "nixpkgs/nixos-26.05";
+
+
     # Home Manager
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -89,6 +93,7 @@
     {
       self,
       nixpkgs,
+      nixpkgs-stable,
       home-manager,
       ...
     }@inputs:
@@ -131,6 +136,13 @@
           modules = [ ./system/hosts/tardis/configuration.nix ];
         };
 
+        wheatley = nixpkgs-stable.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs; };
+          modules = [ ./system/hosts/wheatley/configuration.nix ];
+        };
+
+
       };
 
       homeConfigurations = {
@@ -159,6 +171,9 @@
           # Waybar
           ./home/desktop/bar/waybar/tardis/default.nix
 
+        ];
+
+        "evf@wheatley" = mkHome [
         ];
 
       };
