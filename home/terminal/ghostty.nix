@@ -23,6 +23,10 @@
         # Quake-style terminal
         "global:ctrl+backquote=toggle_quick_terminal"
       ];
+      shell-integration-features = [
+        "ssh-env"
+        "ssh-terminfo"
+      ];
     };
   };
 
