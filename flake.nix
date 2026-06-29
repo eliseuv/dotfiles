@@ -176,6 +176,7 @@
 
         "evf@wheatley" = mkHome [
           ./home/headless.nix
+          ./home/extra/wetty.nix
         ];
 
       };
