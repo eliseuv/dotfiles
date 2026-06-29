@@ -29,13 +29,14 @@
   # Allow user to install system-wide packages
   nix.settings.trusted-users = [ "evf" ];
 
+  # Remove bootloader timeout
+  boot.loader.timeout = 0;
+
   # Do not hibernate on lid close
   services.logind.settings.Login = {
     HandleLidSwitch = "ignore";
     HandleLidSwitchDocked = "ignore";
   };
-
-
 
   # State version
   system.stateVersion = "24.11";
