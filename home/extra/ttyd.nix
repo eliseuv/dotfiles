@@ -25,6 +25,10 @@ let
   };
 in
 {
+  imports = [
+    ../shell/multiplexer/herdr.nix
+  ];
+
   home.packages = with pkgs; [
     ttyd
     zsh
@@ -49,11 +53,12 @@ in
       Environment = "LD_LIBRARY_PATH=${pkgs.libwebsockets}/lib:${pkgs.libuv}/lib";
       ExecStart = pkgs.writeShellScript "ttyd-start.sh" ''
         CREDENTIAL=$(<${config.sops.secrets."ttyd/credential".path})
+        export SHELL=${pkgs.zsh}/bin/zsh
         exec ${pkgs.ttyd}/bin/ttyd \
           -c "$CREDENTIAL" \
           -t 'theme=${builtins.toJSON theme}' \
           -t 'fontFamily=IosevkaTerm Nerd Font' \
-          -p 3000 -W ${pkgs.zsh}/bin/zsh
+          -p 3000 -W ${pkgs.herdr}/bin/herdr
       '';
       Restart = "always";
     };
