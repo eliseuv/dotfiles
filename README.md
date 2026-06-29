@@ -12,7 +12,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 
 - **OS**: NixOS (Unstable for workstations, Stable for servers)
 - **Home Environment**: Home Manager (with split GUI and Headless setups)
-- **Web Terminal**: WeTTY (via `ttyd`) for browser-based terminal access on headless nodes
+- **Web Terminal**: `ttyd` for browser-based terminal access on headless nodes
 - **Secrets**: [sops-nix](https://github.com/Mic92/sops-nix)
 - **Editor**: Neovim (Nightly)
 - **Helper Tools**: `nh`, `just`
