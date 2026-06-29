@@ -25,6 +25,7 @@
 
   # Hostname
   networking.hostName = "wheatley";
+  networking.firewall.allowedTCPPorts = [ 3000 ]; # ttyd
 
   # Allow user to install system-wide packages
   nix.settings.trusted-users = [ "evf" ];
