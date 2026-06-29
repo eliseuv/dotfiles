@@ -23,6 +23,7 @@
       "api-key/spotify/client-id" = { };
       "api-key/spotify/client-secret" = { };
       "ntfy-topic" = { };
+      "ttyd/credential" = { };
     };
   };
 
