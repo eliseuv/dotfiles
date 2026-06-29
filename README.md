@@ -6,11 +6,13 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 
 - **GLaDOS**: Main Workstation
 - **tardis**: Laptop
+- **wheatley**: Headless Server
 
 ## Features
 
-- **OS**: NixOS (Unstable)
-- **Home Environment**: Home Manager
+- **OS**: NixOS (Unstable for workstations, Stable for servers)
+- **Home Environment**: Home Manager (with split GUI and Headless setups)
+- **Web Terminal**: WeTTY (via `ttyd`) for browser-based terminal access on headless nodes
 - **Secrets**: [sops-nix](https://github.com/Mic92/sops-nix)
 - **Editor**: Neovim (Nightly)
 - **Helper Tools**: `nh`, `just`
