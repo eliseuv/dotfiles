@@ -34,7 +34,10 @@ in
     openssl
     libwebsockets
     libuv
+    nerd-fonts.iosevka-term
   ];
+
+  fonts.fontconfig.enable = true;
 
   systemd.user.services.ttyd = {
     Unit = {
@@ -49,6 +52,7 @@ in
         exec ${pkgs.ttyd}/bin/ttyd \
           -c "$CREDENTIAL" \
           -t 'theme=${builtins.toJSON theme}' \
+          -t 'fontFamily=IosevkaTerm Nerd Font' \
           -p 3000 -W ${pkgs.zsh}/bin/zsh
       '';
       Restart = "always";
