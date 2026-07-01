@@ -1,6 +1,9 @@
-{ pkgs, ... }:
+{ ... }:
 {
 
-  home.packages = with pkgs; [ devenv ];
+  programs.devenv = {
+    enable = true;
+    enableZshIntegration = true;
+  };
 
 }
