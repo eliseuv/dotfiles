@@ -139,6 +139,11 @@
           modules = [ ./system/hosts/wheatley/configuration.nix ];
         };
 
+        rattmann = lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs; };
+          modules = [ ./system/hosts/rattmann/configuration.nix ];
+        };
 
       };
 
@@ -177,6 +182,10 @@
         "evf@wheatley" = mkHome [
           ./home/headless.nix
           ./home/extra/ttyd.nix
+        ];
+
+        "evf@rattmann" = mkHome [
+          ./home/home-rattmann.nix
         ];
 
       };
