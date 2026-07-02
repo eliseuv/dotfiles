@@ -29,7 +29,6 @@
     # Stable Nixpkgs
     nixpkgs-stable.url = "nixpkgs/nixos-26.05";
 
-
     # Home Manager
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -139,6 +138,12 @@
           modules = [ ./system/hosts/wheatley/configuration.nix ];
         };
 
+        chell = lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs; };
+          modules = [ ./system/hosts/chell/configuration.nix ];
+        };
+
         rattmann = lib.nixosSystem {
           inherit system;
           specialArgs = { inherit inputs; };
@@ -163,6 +168,26 @@
 
         "evf@rattmann" = mkHome [
           ./home/evf-rattmann.nix
+        ];
+
+        "evf@chell" = mkHome [
+          ./home/home-chell.nix
+          {
+            home = {
+              username = "evf";
+              homeDirectory = "/home/evf";
+            };
+          }
+        ];
+
+        "dani@chell" = mkHome [
+          ./home/home-chell.nix
+          {
+            home = {
+              username = "dani";
+              homeDirectory = "/home/dani";
+            };
+          }
         ];
 
       };

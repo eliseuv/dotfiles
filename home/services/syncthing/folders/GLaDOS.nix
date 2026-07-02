@@ -5,6 +5,13 @@
     settings = {
       folders = {
 
+        "home" = {
+          path = "~/Documents/home";
+          devices = [
+            # "chell"
+          ];
+        };
+
         "music" = {
           path = "/run/media/evf/Storage/CompanionCube/music";
           devices = [
