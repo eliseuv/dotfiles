@@ -1,0 +1,146 @@
+set $mod Mod4
+
+set $terminal ghostty
+set $menu ~/.config/rofi/bin/launcher
+set $powermenu ~/.config/rofi/bin/powermenu
+set $browser firefox
+set $emacs emacsclient -nc -a 'emacs'
+set $vim neovide
+set $fileManager nautilus
+
+# Exit
+bindsym $mod+Shift+BackSpace exec $powermenu
+bindsym $mod+Shift+r restart
+
+# Menu
+bindsym $mod+Shift+Return exec $menu
+
+# Terminal
+bindsym $mod+Return exec $terminal
+
+# Programs
+bindsym $mod+Shift+b exec $browser
+bindsym $mod+Shift+v exec $vim
+bindsym $mod+Shift+e exec $emacs
+bindsym $mod+Shift+f exec $fileManager
+
+# Process monitor / System / Sound mixer
+bindsym $mod+Mod1+h exec ghostty -e btm
+bindsym $mod+Mod1+m exec ghostty -e wiremix --tab configuration
+bindsym $mod+Mod1+s exec ghostty -e systemctl-tui
+
+# Kill window
+bindsym $mod+Shift+q kill
+
+# Cycle windows
+bindsym $mod+k focus up
+bindsym $mod+j focus down
+bindsym $mod+h focus left
+bindsym $mod+l focus right
+
+# Move windows
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# Layouts
+bindsym $mod+space fullscreen toggle
+bindsym $mod+t layout toggle split
+bindsym $mod+s layout stacking
+bindsym $mod+v floating toggle
+
+# Select workspace
+bindsym $mod+1 workspace 1
+bindsym $mod+2 workspace 2
+bindsym $mod+3 workspace 3
+bindsym $mod+4 workspace 4
+bindsym $mod+5 workspace 5
+bindsym $mod+6 workspace 6
+bindsym $mod+7 workspace 7
+bindsym $mod+8 workspace 8
+bindsym $mod+9 workspace 9
+bindsym $mod+0 workspace 10
+
+# Move to workspace
+bindsym $mod+Shift+1 move container to workspace 1
+bindsym $mod+Shift+2 move container to workspace 2
+bindsym $mod+Shift+3 move container to workspace 3
+bindsym $mod+Shift+4 move container to workspace 4
+bindsym $mod+Shift+5 move container to workspace 5
+bindsym $mod+Shift+6 move container to workspace 6
+bindsym $mod+Shift+7 move container to workspace 7
+bindsym $mod+Shift+8 move container to workspace 8
+bindsym $mod+Shift+9 move container to workspace 9
+bindsym $mod+Shift+0 move container to workspace 10
+
+# Media
+bindsym $mod+minus exec wpctl set-volume @DEFAULT_SINK@ 5%-
+bindsym $mod+equal exec wpctl set-volume -l 1.5 @DEFAULT_SINK@ 5%+
+bindsym $mod+backslash exec wpctl set-mute @DEFAULT_SINK@ toggle
+
+bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_SINK@ 5%-
+bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1.5 @DEFAULT_SINK@ 5%+
+bindsym XF86AudioMute exec wpctl set-mute @DEFAULT_SINK@ toggle
+
+bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
+bindsym XF86MonBrightnessUp exec brightnessctl set 5%+
+
+# Screenshot
+bindsym $mod+Print exec scrot -u
+bindsym Print exec scrot
+bindsym Shift+Print exec scrot -s
+
+# Look and feel (Gaps)
+gaps inner 2
+gaps outer 2
+for_window [class="^.*"] border pixel 2
+
+client.focused #8948aa #33ccff #ffffff #33ccff #33ccff
+client.unfocused #303030 #707070 #888888 #707070 #707070
+
+# Window rules
+for_window [class="com.mitchellh.ghostty"] mark term
+for_window [class="kitty"] mark term
+
+for_window [class="Emacs"] mark editor
+for_window [class="dev.zed.Zed"] mark editor
+for_window [class="code-oss"] mark editor
+for_window [class="antigravity"] mark editor
+assign [con_mark="editor"] 2
+
+for_window [class="firefox"] mark browser
+for_window [class="qutebrowser"] mark browser
+for_window [class="brave-browser"] mark browser
+for_window [class="chromium-browser"] mark browser
+assign [con_mark="browser"] 3
+assign [class="brave-browser"] 4
+assign [class="chromium-browser"] 5
+
+for_window [class="org.pwmt.zathura"] mark documents
+for_window [class="Zotero"] mark documents
+for_window [class="obsidian"] mark documents
+for_window [class="calibre-gui"] mark documents
+assign [con_mark="documents"] 6
+
+for_window [class="org.telegram.desktop"] mark chat
+for_window [class="discord"] mark chat
+for_window [class="legcord"] mark chat
+assign [con_mark="chat"] 7
+
+for_window [class="steam"] mark gamelauncher
+for_window [class="org.prismlauncher.PrismLauncher"] mark gamelauncher
+assign [con_mark="gamelauncher"] 8
+
+for_window [class="^(cs2)$"] mark game
+for_window [class="Minecraft.*"] mark game
+assign [con_mark="game"] 8
+
+for_window [class="mpv"] 4
+for_window [class="Spotify"] 4
+
+for_window [class=".virt-manager-wrapped"] mark vms
+assign [con_mark="vms"] 9
+
+# Autostart
+exec --no-startup-id picom -b

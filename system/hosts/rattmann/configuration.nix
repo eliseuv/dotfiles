@@ -39,7 +39,7 @@
     ../../desktop/display-manager/lightdm.nix
 
     # Window manager
-    ../../desktop/window-manager/xfce.nix
+    ../../desktop/window-manager/i3.nix
 
     # Boot graphics
     ../../extra/plymouth.nix
@@ -62,7 +62,7 @@
   nix.settings.trusted-users = [ "evf" ];
 
   # Select default session for Display Manager
-  services.displayManager.defaultSession = "xfce";
+  services.displayManager.defaultSession = "none+i3";
 
   # Enable touchpad support (enabled default in most desktopManager).
   services.libinput.enable = true;
