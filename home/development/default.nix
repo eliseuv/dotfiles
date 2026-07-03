@@ -19,7 +19,7 @@
     ./languages/web.nix
 
     # Development environments
-    ./environment/default.nix
+    ./environment/direnv.nix
 
   ];
 

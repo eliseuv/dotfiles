@@ -1,13 +1,18 @@
-{ pkgs, inputs, ... }:
+{ ... }:
 {
-
   imports = [
-
     # Shell environment
     ./shell/default.nix
 
     # Authentication
-    ./auth/default.nix
+    # GnuPG
+    ./auth/gpg.nix
+    # SSH
+    ./auth/ssh.nix
+    # Standard Unix Password Manager
+    ./auth/password-store.nix
+    # SOPS
+    ./auth/sops.nix
 
     # Maintenance
     ./maintenance/default.nix
@@ -26,6 +31,7 @@
     ./services/pueue.nix
     ./services/syncthing/default.nix
 
+    ./extra/ttyd.nix
   ];
 
   home = {

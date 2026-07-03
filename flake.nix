@@ -150,42 +150,19 @@
       homeConfigurations = {
 
         "evf@GLaDOS" = mkHome [
-
-          ./home/home.nix
-
-          # Syncthing
-          ./home/services/syncthing/folders/GLaDOS.nix
-
-          # Games
-          ./home/games/default.nix
-
-          # Extra stuff
-          ./home/extra/rclone/default.nix
-
-          # Waybar
-          ./home/desktop/bar/waybar/GLaDOS/default.nix
-
+          ./home/evf-GLaDOS.nix
         ];
 
         "evf@tardis" = mkHome [
-
-          ./home/home.nix
-
-          # Syncthing
-          ./home/services/syncthing/folders/tardis.nix
-
-          # Waybar
-          ./home/desktop/bar/waybar/tardis/default.nix
-
+          ./home/evf-tardis.nix
         ];
 
         "evf@wheatley" = mkHome [
-          ./home/headless.nix
-          ./home/extra/ttyd.nix
+          ./home/evf-wheatley.nix
         ];
 
         "evf@rattmann" = mkHome [
-          ./home/home-rattmann.nix
+          ./home/evf-rattmann.nix
         ];
 
       };

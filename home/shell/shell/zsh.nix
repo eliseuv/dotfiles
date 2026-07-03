@@ -34,6 +34,7 @@
       bindkey  "^[[F"   end-of-line
       bindkey  "^[[3~"  delete-char
       ${lib.getExe pkgs.fastfetch}
+    '' + lib.optionalString (config ? sops) ''
 
       export ALPHAVANTAGE_API_KEY=$(<${config.sops.secrets."api-key/alphavantage".path})
       export DEEPSEEK_API_KEY=$(<${config.sops.secrets."api-key/deepseek".path})
