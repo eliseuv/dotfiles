@@ -1,10 +1,33 @@
 <monitors version="2">
   <configuration>
-    <layoutmode>physical</layoutmode>
+    <layoutmode>logical</layoutmode>
     <logicalmonitor>
-      <x>440</x>
+      <x>0</x>
+      <y>755</y>
+      <scale>1</scale>
+      <primary>yes</primary>
+      <monitor>
+        <monitorspec>
+          <connector>HDMI-1</connector>
+          <vendor>SAM</vendor>
+          <product>Odyssey G40B</product>
+          <serial>HNMT700195</serial>
+        </monitorspec>
+        <mode>
+          <width>1920</width>
+          <height>1080</height>
+          <rate>60.000</rate>
+        </mode>
+      </monitor>
+    </logicalmonitor>
+    <logicalmonitor>
+      <x>1920</x>
       <y>0</y>
       <scale>1</scale>
+      <transform>
+        <rotation>right</rotation>
+        <flipped>no</flipped>
+      </transform>
       <monitor>
         <monitorspec>
           <connector>DP-3</connector>
@@ -15,110 +38,7 @@
         <mode>
           <width>2560</width>
           <height>1080</height>
-          <rate>74.991</rate>
-        </mode>
-      </monitor>
-    </logicalmonitor>
-    <logicalmonitor>
-      <x>0</x>
-      <y>1080</y>
-      <scale>1</scale>
-      <transform>
-        <rotation>left</rotation>
-        <flipped>no</flipped>
-      </transform>
-      <monitor>
-        <monitorspec>
-          <connector>DP-1</connector>
-          <vendor>HPN</vendor>
-          <product>HP V22b</product>
-          <serial>BRL9273QSN</serial>
-        </monitorspec>
-        <mode>
-          <width>1920</width>
-          <height>1080</height>
-          <rate>60.000</rate>
-        </mode>
-      </monitor>
-    </logicalmonitor>
-    <logicalmonitor>
-      <x>1080</x>
-      <y>1080</y>
-      <scale>1</scale>
-      <primary>yes</primary>
-      <monitor>
-        <monitorspec>
-          <connector>HDMI-1</connector>
-          <vendor>SAM</vendor>
-          <product>Odyssey G40B</product>
-          <serial>HNMT700165</serial>
-        </monitorspec>
-        <mode>
-          <width>1920</width>
-          <height>1080</height>
-          <rate>239.760</rate>
-        </mode>
-      </monitor>
-    </logicalmonitor>
-  </configuration>
-  <configuration>
-    <layoutmode>physical</layoutmode>
-    <logicalmonitor>
-      <x>0</x>
-      <y>1080</y>
-      <scale>1</scale>
-      <transform>
-        <rotation>left</rotation>
-        <flipped>no</flipped>
-      </transform>
-      <monitor>
-        <monitorspec>
-          <connector>DP-3</connector>
-          <vendor>HPN</vendor>
-          <product>HP V22b</product>
-          <serial>BRL9273QSN</serial>
-        </monitorspec>
-        <mode>
-          <width>1920</width>
-          <height>1080</height>
-          <rate>60.000</rate>
-        </mode>
-      </monitor>
-    </logicalmonitor>
-    <logicalmonitor>
-      <x>440</x>
-      <y>0</y>
-      <scale>1</scale>
-      <monitor>
-        <monitorspec>
-          <connector>DP-2</connector>
-          <vendor>GSM</vendor>
-          <product>LG ULTRAWIDE</product>
-          <serial>0x01010101</serial>
-        </monitorspec>
-        <mode>
-          <width>2560</width>
-          <height>1080</height>
-          <rate>74.991</rate>
-        </mode>
-      </monitor>
-    </logicalmonitor>
-    <logicalmonitor>
-      <x>1080</x>
-      <y>1080</y>
-      <scale>1</scale>
-      <primary>yes</primary>
-      <monitor>
-        <monitorspec>
-          <connector>HDMI-1</connector>
-          <vendor>SAM</vendor>
-          <product>Odyssey G40B</product>
-          <serial>HNMT700165</serial>
-        </monitorspec>
-        <mode>
-          <width>1920</width>
-          <height>1080</height>
-          <rate>60.000</rate>
+          <rate>59.978</rate>
         </mode>
       </monitor>
     </logicalmonitor>

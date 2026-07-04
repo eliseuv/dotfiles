@@ -79,11 +79,11 @@
   # Select default session for Display Manager
   services.displayManager.defaultSession = "gnome";
 
-  # # Configure GDM monitors
-  # environment.etc."xdg/monitors.xml" = {
-  #   source = ../../desktop/display-manager/gdm/monitors/chell.xml;
-  #   mode = "0644";
-  # };
+  # Configure GDM monitors
+  environment.etc."xdg/monitors.xml" = {
+    source = ../../desktop/display-manager/gdm/monitors/chell.xml;
+    mode = "0644";
+  };
 
   system.stateVersion = "24.11";
 
