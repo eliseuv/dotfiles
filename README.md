@@ -5,8 +5,10 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 ## Hosts
 
 - **GLaDOS**: Main Workstation
-- **tardis**: Laptop
 - **wheatley**: Headless Server
+- **tardis**: Laptop
+- **chell**: Wife's Workstation
+- **rattmann**: Old Laptop
 
 ## Features
 
@@ -23,7 +25,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 - `flake.nix`: Entry point and inputs.
 - `Justfile`: Command runner for common tasks.
 - `system/`: System-level configurations (hosts, hardware, etc.).
-- `home/`: User-level configurations (programs, services, etc.).
+- `home/`: User-level configurations (programs, services, etc.). Organized with a dedicated `<user>-<host>.nix` file for each deployment.
 - `secrets.yaml`: Encrypted secrets.
 
 ## Usage
