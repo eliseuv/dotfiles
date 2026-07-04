@@ -21,6 +21,7 @@
     ./scripts/default.nix
 
     # AI
+    ./ai/claude.nix
     ./ai/antigravity.nix
     ./ai/copilot.nix
 
