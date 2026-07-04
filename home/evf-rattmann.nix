@@ -44,6 +44,7 @@
 
     # Web browsers
     ./browser/default.nix
+    ./browser/firefox/default.nix
 
     # Desktop
     ./desktop/i3.nix

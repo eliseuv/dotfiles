@@ -2,7 +2,6 @@
 {
 
   imports = [
-    ./firefox/default.nix
     ./brave.nix
     ./chromium.nix
   ];

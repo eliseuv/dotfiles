@@ -45,6 +45,7 @@
 
     # Web browsers
     ./browser/default.nix
+    ./browser/firefox/vanilla.nix
 
     # Documents
     ./documents/default.nix
