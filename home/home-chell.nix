@@ -108,6 +108,10 @@
     enable = true;
   };
 
+  # Enable terminal decorations for chell
+  programs.ghostty.settings.window-decoration = pkgs.lib.mkForce "auto";
+  programs.kitty.settings.hide_window_decorations = pkgs.lib.mkForce "no";
+
   programs.home-manager.enable = true;
   home.stateVersion = "24.11";
 
