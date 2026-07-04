@@ -34,7 +34,7 @@
 
   home.packages = with pkgs; [
 
-    czkawka
+    #czkawka
 
   ];
 
