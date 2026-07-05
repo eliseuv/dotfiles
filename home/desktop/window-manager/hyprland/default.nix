@@ -9,7 +9,7 @@
   ];
 
   # Hyprland config
-  home.file.".config/hypr/hyprland.conf".source = ./hyprland.conf;
+  home.file.".config/hypr/hyprland.lua".source = ./hyprland.lua;
 
   # Catppuccin theme
   catppuccin.hyprland = {
