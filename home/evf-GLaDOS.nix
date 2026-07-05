@@ -95,6 +95,7 @@
     ./games/retroarch.nix
     ./extra/rclone/default.nix
     ./desktop/bar/waybar/GLaDOS/default.nix
+    ./desktop/window-manager/hyprland/monitors-GLaDOS.nix
 
   ];
 

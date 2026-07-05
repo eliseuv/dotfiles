@@ -90,6 +90,7 @@
     # tardis specific
     ./services/syncthing/folders/tardis.nix
     ./desktop/bar/waybar/tardis/default.nix
+    ./desktop/window-manager/hyprland/monitors-tardis.nix
 
   ];
 
