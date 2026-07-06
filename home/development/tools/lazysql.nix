@@ -1,0 +1,8 @@
+{ ... }:
+{
+
+  programs.lazysql = {
+    enable = true;
+  };
+
+}

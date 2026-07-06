@@ -12,6 +12,9 @@
     # Visidata
     ./visidata.nix
 
+    # LazySQL
+    ./lazysql.nix
+
     # Web tools
     ./npm.nix
     ./bun.nix
