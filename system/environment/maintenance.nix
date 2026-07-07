@@ -1,13 +1,10 @@
-{ inputs, ... }:
+{ config, ... }:
 {
-
-  # FIXME: Find a way to get rid of this redundant expression
-  nixpkgs.config.allowUnfree = true;
 
   # Nix Helper
   programs.nh = {
     enable = true;
-    flake = "/home/evf/dotfiles";
+    flake = config.dotfiles.path;
     clean = {
       enable = true;
       dates = "weekly";
@@ -32,19 +29,6 @@
     dates = [ "weekly" ];
     randomizedDelaySec = "45min";
 
-  };
-
-  # FIXME: Configure automatic upgrade to work properly with flakes
-  system.autoUpgrade = {
-    enable = false;
-    flake = inputs.self.outPath;
-    flags = [
-      "--update-input"
-      "nixpkgs"
-      "-L"
-    ];
-    dates = "daily";
-    randomizedDelaySec = "45min";
   };
 
 }

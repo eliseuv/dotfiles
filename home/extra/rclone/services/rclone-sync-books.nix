@@ -33,38 +33,38 @@ in
     rclone-sync-zotero
   ];
 
-  # TODO: Find a way to avoid starting all services on home-manager switch
-  # systemd.user.services.rclone-sync-books = {
-  #   Unit = {
-  #     Description = "Rclone Sync Books Service";
-  #     Wants = [
-  #       "network.target"
-  #       "nss-lookup.target"
-  #     ];
-  #     After = [
-  #       "network.target"
-  #       "nss-lookup.target"
-  #     ];
-  #   };
-  #   Service = {
-  #     Type = "oneshot";
-  #     ExecStart = lib.getExe rclone-sync-books;
-  #     Restart = "on-failure";
-  #     RestartSec = "10s";
-  #   };
-  #   Install.WantedBy = [ "default.target" ];
-  # };
-  #
-  # systemd.user.timers.rclone-sync-books = {
-  #   Unit = {
-  #     Description = "Sync Books to Google Drive every day";
-  #   };
-  #   Timer = {
-  #     OnCalendar = "daily";
-  #     Persistent = true;
-  #     RandomizedDelaySec = "1h";
-  #   };
-  #   Install.WantedBy = [ "timers.target" ];
-  # };
+  # No Install section: the service is only ever started by its timer (or
+  # manually), so home-manager switches don't trigger a sync.
+  systemd.user.services.rclone-sync-books = {
+    Unit = {
+      Description = "Rclone Sync Books Service";
+      # Skip silently on hosts without the Storage disk
+      ConditionPathIsDirectory = "/run/media/evf/Storage/Books";
+      Wants = [
+        "network.target"
+        "nss-lookup.target"
+      ];
+      After = [
+        "network.target"
+        "nss-lookup.target"
+      ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = lib.getExe rclone-sync-books;
+    };
+  };
+
+  systemd.user.timers.rclone-sync-books = {
+    Unit = {
+      Description = "Sync Books to Google Drive every day";
+    };
+    Timer = {
+      OnCalendar = "daily";
+      Persistent = true;
+      RandomizedDelaySec = "1h";
+    };
+    Install.WantedBy = [ "timers.target" ];
+  };
 
 }

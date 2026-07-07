@@ -1,4 +1,4 @@
-{ ... }:
+{ hostName, ... }:
 {
 
   services.pueue = {
@@ -7,9 +7,8 @@
       client = {
         dark_mode = true;
       };
-      # TODO: Make it dependent on host
       daemon = {
-        default_parallel_tasks = 2;
+        default_parallel_tasks = { GLaDOS = 4; }.${hostName} or 2;
       };
     };
   };

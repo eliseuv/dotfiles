@@ -34,6 +34,9 @@
   # Hostname
   networking.hostName = "chell";
 
+  # The dotfiles repository is shared between users on this machine
+  dotfiles.path = "/etc/dotfiles";
+
   # Users
   users.users.dani = {
     isNormalUser = true;

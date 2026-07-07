@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
 
   programs.kitty = {
@@ -6,11 +6,20 @@
     enable = true;
 
     font = {
-      # TODO: Enable all ligatures
       name = "IosevkaTerm Nerd Font";
       package = pkgs.nerd-fonts.iosevka-term;
       size = 9.5;
     };
+
+    # Enable all ligatures: calt (default) + dlig (discretionary).
+    # font_features is keyed by PostScript name, one line per style, so it
+    # cannot live in `settings` (attrset keys must be unique).
+    extraConfig = ''
+      font_features IosevkaTermNF +calt +dlig
+      font_features IosevkaTermNF-Bold +calt +dlig
+      font_features IosevkaTermNF-Italic +calt +dlig
+      font_features IosevkaTermNF-BoldItalic +calt +dlig
+    '';
 
     settings = {
       scrollback_lines = 10000;
@@ -38,7 +47,7 @@
     actionAliases = {
       # kitty-scrollback.nvim Kitten alias
       "kitty_scrollback_nvim" =
-        "kitten /home/evf/.local/share/nvim/lazy/kitty-scrollback.nvim/python/kitty_scrollback_nvim.py";
+        "kitten ${config.home.homeDirectory}/.local/share/nvim/lazy/kitty-scrollback.nvim/python/kitty_scrollback_nvim.py";
 
     };
 
