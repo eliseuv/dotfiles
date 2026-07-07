@@ -40,6 +40,7 @@
       frequency = "daily";
       useFlake = true;
       flakeDir = config.dotfiles.path;
+      preSwitchCommands = [ ];
     };
     autoExpire = {
       enable = true;

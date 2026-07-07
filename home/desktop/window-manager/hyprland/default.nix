@@ -16,6 +16,10 @@ in
     enable = true;
   };
 
+  # The Hyprland module enables xdg-desktop-portal; since portal 1.17 the
+  # backend must be picked explicitly ("*" keeps the old lexicographical pick)
+  xdg.portal.config.common.default = "*";
+
   # Hyprland config
   # Monitors are set per-host in monitors-<host>.nix, imported from each host's
   # top-level home file.
