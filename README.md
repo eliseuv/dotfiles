@@ -22,11 +22,26 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 
 ## Structure
 
-- `flake.nix`: Entry point and inputs.
+- `flake.nix`: Entry point and inputs. A single `hosts` matrix declares each
+  host's users and nixpkgs branch; `nixosConfigurations` and
+  `homeConfigurations` are generated from it.
 - `Justfile`: Command runner for common tasks.
-- `system/`: System-level configurations (hosts, hardware, etc.).
-- `home/`: User-level configurations (programs, services, etc.). Organized with a dedicated `<user>-<host>.nix` file for each deployment.
-- `secrets.yaml`: Encrypted secrets.
+- `system/`: System-level configuration.
+  - `profiles/`: Composable system profiles (`base.nix` for every machine,
+    `desktop.nix` for graphical ones).
+  - `hosts/<host>/`: Per-host `configuration.nix` + `hardware.nix`; imports
+    profiles and keeps only host-specific settings.
+  - `hardware/`, `desktop/`, `environment/`, `extra/`: Individual modules.
+- `home/`: User-level configuration (standalone Home Manager).
+  - `profiles/`: Composable home profiles (`core.nix` CLI environment,
+    `gui.nix` graphical basics, `apps.nix` full workstation apps,
+    `hyprland.nix`/`i3.nix` desktops, `gaming.nix`).
+  - `hosts/<host>.nix`: What runs on each host; imports profiles plus
+    host-specific modules (monitors, syncthing folders, overrides).
+  - `users/<user>.nix`: Per-user identity (git name/email).
+  - Remaining directories are individual program modules, imported by
+    profiles or host files.
+- `secrets.yaml`: Encrypted secrets (sops-nix, age).
 
 ## Usage
 

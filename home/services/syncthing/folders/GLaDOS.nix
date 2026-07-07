@@ -7,15 +7,12 @@
 
         "home" = {
           path = "~/Documents/home";
-          devices = [
-            # "chell"
-          ];
+          devices = [ ];
         };
 
         "music" = {
           path = "/run/media/evf/Storage/CompanionCube/music";
           devices = [
-            "GLaDOS"
             "A56"
           ];
         };
@@ -23,7 +20,6 @@
         "org" = {
           path = "~/Documents/org";
           devices = [
-            "GLaDOS"
             "TARDIS"
           ];
           versioning = {
@@ -35,7 +31,6 @@
         "obsidian" = {
           path = "~/Documents/obsidian";
           devices = [
-            "GLaDOS"
             "TARDIS"
             "A56"
           ];

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
 
   imports = [
@@ -40,7 +40,7 @@
 
   home.sessionVariables = {
     # Config files path
-    DOTFILES = "$HOME/dotfiles";
+    DOTFILES = config.dotfiles.path;
   };
 
   # Aliases

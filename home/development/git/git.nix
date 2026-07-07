@@ -1,16 +1,13 @@
-{ ... }:
+{ config, ... }:
 {
 
   programs.git = {
 
     enable = true;
 
-    settings = {
+    # User identity is set per user in home/users/<user>.nix
 
-      user = {
-        name = "evf";
-        email = "eliseuv@pm.me";
-      };
+    settings = {
 
       core = {
         editor = "nvim";
@@ -28,7 +25,7 @@
 
     maintenance = {
       enable = true;
-      repositories = [ "/home/evf/dotfiles" ];
+      repositories = [ config.dotfiles.path ];
     };
 
     signing.format = "openpgp";

@@ -1,2 +1,0 @@
-#!/bin/sh
-feh --no-fehbg --bg-fill '/home/evf/.wallpapers/geometric-pattern-spiral-neon-gradient.png' '/home/evf/.wallpapers/grid-black-background-neon-squares.png'

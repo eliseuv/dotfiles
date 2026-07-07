@@ -6,29 +6,14 @@
     # Hardware
     ./hardware.nix
 
-    # Bootloader
-    ../../hardware/bootloader.nix
+    # Profiles
+    ../../profiles/base.nix
 
-    # Network
-    ../../hardware/network.nix
-
-    # Environment
-    ../../environment/default.nix
-
-  ];
-
-  # Flakes support
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
   ];
 
   # Hostname
   networking.hostName = "wheatley";
   networking.firewall.allowedTCPPorts = [ 3000 ]; # ttyd
-
-  # Allow user to install system-wide packages
-  nix.settings.trusted-users = [ "evf" ];
 
   # Remove bootloader timeout
   boot.loader.timeout = 0;

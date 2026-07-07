@@ -23,10 +23,6 @@
       defaultEditor = true;
     };
 
-    firefox.enable = true;
-
   };
-
-  environment.systemPackages = with pkgs; [ xterm ];
 
 }

@@ -7,9 +7,9 @@
   ];
 
   # Default terminal environment variables
+  # (TERM is deliberately not set globally: each terminal sets its own)
   home.sessionVariables = {
     TERMINAL = "ghostty";
-    TERM = "xterm-ghostty";
   };
 
   # Set default terminal emulator

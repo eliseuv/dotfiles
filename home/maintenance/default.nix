@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
 
   imports = [
@@ -39,8 +39,7 @@
       enable = true;
       frequency = "daily";
       useFlake = true;
-      flakeDir = "/home/evf/dotfiles";
-      preSwitchCommands = [ "nix flake update" ];
+      flakeDir = config.dotfiles.path;
     };
     autoExpire = {
       enable = true;

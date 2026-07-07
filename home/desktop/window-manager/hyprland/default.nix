@@ -1086,9 +1086,6 @@ in
     };
   };
 
-  # Default terminal
-  programs.kitty.enable = true;
-
   # Clipboard manager
   services.copyq.enable = true;
 

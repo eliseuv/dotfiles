@@ -6,26 +6,9 @@
     # Hardware
     ./hardware.nix
 
-    # Bootloader
-    ../../hardware/bootloader.nix
-
-    # Disks
-    ../../hardware/disks.nix
-
-    # Audio
-    ../../hardware/audio.nix
-
-    # Network
-    ../../hardware/network.nix
-
-    # Keyboard
-    ../../hardware/keyboard.nix
-
-    # Printing
-    ../../hardware/printing.nix
-
-    # Environment
-    ../../environment/default.nix
+    # Profiles
+    ../../profiles/base.nix
+    ../../profiles/desktop.nix
 
     # Display manager
     ../../desktop/display-manager/gdm/default.nix
@@ -48,20 +31,8 @@
 
   ];
 
-  # Flakes support
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
   # Hostname
   networking.hostName = "chell";
-
-  # Allow user to install system-wide packages
-  nix.settings.trusted-users = [
-    "evf"
-    "dani"
-  ];
 
   # Users
   users.users.dani = {

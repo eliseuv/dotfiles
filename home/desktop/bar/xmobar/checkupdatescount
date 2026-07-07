@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-NUM_UPDATES=$(checkupdates | wc -l)
-
-if [[ $NUM_UPDATES != 0 ]]; then
-	echo "<fc=#46d9ff> <fn=1>󰚰 </fn> $NUM_UPDATES </fc>"
-fi

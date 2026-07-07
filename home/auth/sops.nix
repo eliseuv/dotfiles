@@ -1,4 +1,9 @@
-{ pkgs, inputs, ... }:
+{
+  pkgs,
+  config,
+  inputs,
+  ...
+}:
 {
 
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
@@ -9,7 +14,7 @@
   ];
 
   sops = {
-    age.keyFile = "/home/evf/.config/sops/age/keys.txt";
+    age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
     defaultSopsFile = ../../secrets.yaml;
     defaultSopsFormat = "yaml";

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, hostName, ... }:
 {
 
   programs.waybar = {
@@ -14,6 +14,9 @@
     nerd-fonts.ubuntu
 
   ];
+
+  # Per-host bar layout
+  home.file.".config/waybar/config.jsonc".source = ./config/${hostName}.jsonc;
 
   # Modules
   home.file.".config/waybar/modules.json".source = ./modules.json;

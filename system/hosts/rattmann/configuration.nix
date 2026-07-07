@@ -1,9 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
+{ config, pkgs, ... }:
 {
 
   imports = [
@@ -11,29 +6,12 @@
     # Hardware
     ./hardware.nix
 
-    # Bootloader
-    ../../hardware/bootloader.nix
-
-    # Disks
-    ../../hardware/disks.nix
-
-    # Audio
-    ../../hardware/audio.nix
-
-    # Network
-    ../../hardware/network.nix
-
-    # Keyboard
-    ../../hardware/keyboard.nix
-
-    # Printing
-    ../../hardware/printing.nix
+    # Profiles
+    ../../profiles/base.nix
+    ../../profiles/desktop.nix
 
     # Bluetooth
     ../../hardware/bluetooth.nix
-
-    #Environment
-    ../../environment/default.nix
 
     # Display manager
     ../../desktop/display-manager/lightdm.nix
@@ -49,17 +27,8 @@
 
   ];
 
-  # Flakes support
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
   # Hostname
   networking.hostName = "rattmann";
-
-  # Allow user to install system-wide packages
-  nix.settings.trusted-users = [ "evf" ];
 
   # Select default session for Display Manager
   services.displayManager.defaultSession = "none+i3";

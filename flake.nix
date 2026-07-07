@@ -12,7 +12,6 @@
     trusted-substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
-      "https://hyprland.cachix.org"
     ];
 
     trusted-public-keys = [
@@ -106,91 +105,73 @@
           inputs.neovim-nightly-overlay.overlays.default
         ];
       };
+
+      # Host matrix: which users run Home Manager on each host and which
+      # nixpkgs branch the system follows (unstable unless stated otherwise).
+      hosts = {
+        GLaDOS = {
+          users = [ "evf" ];
+        };
+        tardis = {
+          users = [ "evf" ];
+        };
+        wheatley = {
+          users = [ "evf" ];
+          nixpkgs = nixpkgs-stable;
+        };
+        rattmann = {
+          users = [ "evf" ];
+        };
+        chell = {
+          users = [
+            "evf"
+            "dani"
+          ];
+        };
+      };
+
+      mkSystem =
+        hostName: host:
+        (host.nixpkgs or nixpkgs).lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs; };
+          modules = [ ./system/hosts/${hostName}/configuration.nix ];
+        };
+
       mkHome =
-        modules:
+        user: hostName:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           extraSpecialArgs = {
-            inherit inputs;
+            inherit inputs hostName;
           };
-          modules = modules;
+          modules = [
+            ./home/hosts/${hostName}.nix
+            ./home/users/${user}.nix
+            {
+              home = {
+                username = user;
+                homeDirectory = "/home/${user}";
+              };
+            }
+          ];
         };
     in
     {
 
-      nixosConfigurations = {
+      nixosConfigurations = builtins.mapAttrs mkSystem hosts;
 
-        GLaDOS = lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [ ./system/hosts/GLaDOS/configuration.nix ];
-        };
-
-        tardis = lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [ ./system/hosts/tardis/configuration.nix ];
-        };
-
-        wheatley = nixpkgs-stable.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [ ./system/hosts/wheatley/configuration.nix ];
-        };
-
-        chell = lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [ ./system/hosts/chell/configuration.nix ];
-        };
-
-        rattmann = lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [ ./system/hosts/rattmann/configuration.nix ];
-        };
-
-      };
-
-      homeConfigurations = {
-
-        "evf@GLaDOS" = mkHome [
-          ./home/evf-GLaDOS.nix
-        ];
-
-        "evf@tardis" = mkHome [
-          ./home/evf-tardis.nix
-        ];
-
-        "evf@wheatley" = mkHome [
-          ./home/evf-wheatley.nix
-        ];
-
-        "evf@rattmann" = mkHome [
-          ./home/evf-rattmann.nix
-        ];
-
-        "evf@chell" = mkHome [
-          ./home/home-chell.nix
-          {
-            home = {
-              username = "evf";
-              homeDirectory = "/home/evf";
-            };
-          }
-        ];
-
-        "dani@chell" = mkHome [
-          ./home/home-chell.nix
-          {
-            home = {
-              username = "dani";
-              homeDirectory = "/home/dani";
-            };
-          }
-        ];
-
-      };
+      homeConfigurations = lib.listToAttrs (
+        lib.concatLists (
+          lib.mapAttrsToList (
+            hostName: host:
+            map (user: {
+              name = "${user}@${hostName}";
+              value = mkHome user hostName;
+            }) host.users
+          ) hosts
+        )
+      );
 
     };
 
