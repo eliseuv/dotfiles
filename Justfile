@@ -19,11 +19,11 @@ home-switch:
 system-test: && home-switch
     nh os test .
 
-system-switch: && commit-gen gc home-switch
+system-switch: && commit-gen home-switch gc
     git diff -U0 '*.nix'
     nh os switch .
 
-system-boot: && commit-gen gc home-switch
+system-boot: && commit-gen home-switch gc
     git diff -U0 '*.nix'
     nh os boot .
 
