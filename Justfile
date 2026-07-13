@@ -11,7 +11,14 @@ commit-gen:
     git push
 
 gc keep='4':
-    nh clean all --keep {{keep}}
+    # --no-gcroots: nh's gcroots-directory scan doesn't cross-reference the
+    # "keep N generations" logic, so it can mark the *current* home-manager
+    # generation link and current-home as unprotected and prune their
+    # indirect gcroots, letting the subsequent store gc collect
+    # still-in-use paths. Generation pruning and the actual store gc are
+    # unaffected by this flag; only the extra gcroots-directory sweep is
+    # skipped. https://github.com/nix-community/nh/issues/201
+    nh clean all --keep {{keep}} --no-gcroots
 
 home-switch:
     nh home switch .

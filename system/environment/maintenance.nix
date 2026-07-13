@@ -11,7 +11,8 @@
     clean = {
       enable = false;
       dates = "weekly";
-      extraArgs = "--keep 4";
+      # --no-gcroots: see the Justfile's `gc` recipe for why.
+      extraArgs = "--keep 4 --no-gcroots";
     };
   };
 
