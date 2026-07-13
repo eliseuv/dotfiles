@@ -5,8 +5,11 @@
   programs.nh = {
     enable = true;
     flake = config.dotfiles.path;
+    # Disabled: `just update-system` already runs `nh clean` (via the
+    # Justfile's `gc` recipe) after every manual switch, so an independent
+    # weekly timer only races that flow.
     clean = {
-      enable = true;
+      enable = false;
       dates = "weekly";
       extraArgs = "--keep 4";
     };

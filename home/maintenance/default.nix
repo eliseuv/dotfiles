@@ -24,26 +24,28 @@
 
   ];
 
-  # Periodic garbage collection
+  # Disabled: `just update-home`/`update-system` already update, switch and
+  # gc on a regular manual cadence, so the automatic switch/expire/gc timers
+  # only add uncoordinated races against that flow (see the Justfile's
+  # `gc`, `home-switch`, `update-home`, `update-system` recipes).
   nix.gc = {
-    automatic = true;
+    automatic = false;
     options = "--delete-older-than 7d";
     dates = "weekly";
     persistent = true;
     randomizedDelaySec = "45min";
   };
 
-  # Automatically expire old generations
   services.home-manager = {
     autoUpgrade = {
-      enable = true;
+      enable = false;
       frequency = "daily";
       useFlake = true;
       flakeDir = config.dotfiles.path;
       preSwitchCommands = [ ];
     };
     autoExpire = {
-      enable = true;
+      enable = false;
       frequency = "monthly";
       timestamp = "-30 days";
       store = {
