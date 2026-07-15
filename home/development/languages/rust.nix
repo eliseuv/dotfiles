@@ -39,7 +39,7 @@
   home.sessionVariables = {
     RUSTC_WRAPPER = "sccache";
     RUST_BACKTRACE = 1;
-    RUST_LOG = "warn";
+    RUST_LOG = "info";
   };
 
   # Background program analyzer
