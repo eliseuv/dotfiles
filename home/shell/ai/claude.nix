@@ -5,4 +5,6 @@
     enable = true;
   };
 
+  home.shellAliases.a = "claude";
+
 }
