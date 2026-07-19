@@ -9,6 +9,9 @@
     # GitHub
     ./github.nix
 
+    # GitLab
+    ./gitlab.nix
+
     # TUI
     ./gitui.nix
     ./lazygit.nix
