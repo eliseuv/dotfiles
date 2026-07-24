@@ -17,6 +17,7 @@
     "modules-right": [
         "privacy",
         // "custom/flake",
+        "custom/claude-usage",
         "hyprland/language",
         "network",
         "bluetooth",

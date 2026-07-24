@@ -21,6 +21,7 @@
         "modules-right": [
             "privacy",
             // "custom/flake",
+            "custom/claude-usage",
             "hyprland/language",
             "network",
             "pulseaudio",
@@ -52,6 +53,7 @@
         "modules-right": [
             "privacy",
             // "custom/flake",
+            "custom/claude-usage",
             "hyprland/language",
             "network",
             "pulseaudio",

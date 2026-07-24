@@ -19,6 +19,7 @@ window#waybar {
 }
 
 #custom-weather,
+#custom-claude-usage,
 #language,
 #network,
 #bluetooth,
@@ -127,6 +128,16 @@ window#waybar {
 }
 
 #temperature.critical {
+    color: @critical;
+    border-color: @critical;
+}
+
+#custom-claude-usage.warning {
+    color: #e5c07b;
+    border-color: #e5c07b;
+}
+
+#custom-claude-usage.critical {
     color: @critical;
     border-color: @critical;
 }

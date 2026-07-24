@@ -10,6 +10,10 @@
     # Weather info
     wttrbar
 
+    # Claude usage widget deps
+    curl
+    jq
+
     # Font
     nerd-fonts.ubuntu
 
@@ -26,5 +30,6 @@
 
   # Copy scripts
   home.file.".config/waybar/scripts/check_flake_updates.sh".source = ./check_flake_updates.sh;
+  home.file.".config/waybar/scripts/claude_usage.sh".source = ./claude_usage.sh;
 
 }
