@@ -143,7 +143,7 @@ max_pct=$session_pct
 [ "$weekly_pct" -gt "$max_pct" ] && max_pct=$weekly_pct
 
 class="normal"
-[ "$max_pct" -ge 75 ] && class="warning"
+[ "$max_pct" -ge 70 ] && class="warning"
 [ "$max_pct" -ge 90 ] && class="critical"
 
 session_span=$(span_pct "$session_pct")
