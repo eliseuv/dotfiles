@@ -119,19 +119,20 @@ color_for_pct() {
     local pct=$1
     if [ "$pct" -ge 90 ]; then
         echo "#f38ba8"
-    elif [ "$pct" -ge 75 ]; then
+    elif [ "$pct" -ge 70 ]; then
         echo "#e5c07b"
     fi
 }
 
-span_pct() {
+span_section() {
     local pct=$1
+    local section=$2
     local color
     color=$(color_for_pct "$pct")
     if [ -n "$color" ]; then
-        echo "<span color='${color}'>${pct}%</span>"
+        echo "<span color='${color}'>${section}</span>"
     else
-        echo "${pct}%"
+        echo "${section}"
     fi
 }
 
@@ -146,11 +147,13 @@ class="normal"
 [ "$max_pct" -ge 70 ] && class="warning"
 [ "$max_pct" -ge 90 ] && class="critical"
 
-session_span=$(span_pct "$session_pct")
-weekly_span=$(span_pct "$weekly_pct")
+session_section="󰚩    ${session_pct}%$( [ -n "$session_reset_short" ] && echo " (${session_reset_short})")"
+weekly_section="󰃭 ${weekly_pct}%$( [ -n "$weekly_reset_fmt" ] && echo " (${weekly_reset_fmt})")"
+session_span=$(span_section "$session_pct" "$session_section")
+weekly_span=$(span_section "$weekly_pct" "$weekly_section")
 updated_at=$(date "+%a %H:%M")
 
-text="󰚩    ${session_span}$( [ -n "$session_reset_short" ] && echo " (${session_reset_short})")   󰃭 ${weekly_span}$( [ -n "$weekly_reset_fmt" ] && echo " (${weekly_reset_fmt})")"
+text="${session_span}   ${weekly_span}"
 tooltip="Last updated: ${updated_at}"
 
 output=$(jq -nc --arg text "$text" --arg tooltip "$tooltip" --arg class "$class" \
