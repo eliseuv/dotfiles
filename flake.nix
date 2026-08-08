@@ -52,11 +52,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Antigravity
-    antigravity = {
-      url = "github:Hy4ri/antigravity-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     # Fenix
     fenix = {

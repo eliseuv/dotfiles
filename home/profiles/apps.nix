@@ -7,7 +7,6 @@
     ../editor/emacs/default.nix
     ../editor/vscode.nix
     ../editor/zed.nix
-    ../editor/antigravity.nix
 
     # Documents
     ../documents/default.nix

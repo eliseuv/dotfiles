@@ -106,7 +106,6 @@ for_window [class="kitty"] mark term
 for_window [class="Emacs"] mark editor
 for_window [class="dev.zed.Zed"] mark editor
 for_window [class="code-oss"] mark editor
-for_window [class="antigravity"] mark editor
 assign [con_mark="editor"] 2
 
 for_window [class="firefox"] mark browser

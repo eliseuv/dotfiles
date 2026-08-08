@@ -1,25 +1,5 @@
 {
   "nodes": {
-    "antigravity": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1786090101,
-        "narHash": "sha256-aA+YMox6GcjA2CylliuQXeIbHs7d7hisSOvTpkqx17w=",
-        "owner": "Hy4ri",
-        "repo": "antigravity-flake",
-        "rev": "5e388db8adac7f357efb307d46fc9d47b6a81b4b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Hy4ri",
-        "repo": "antigravity-flake",
-        "type": "github"
-      }
-    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -220,7 +200,6 @@
     },
     "root": {
       "inputs": {
-        "antigravity": "antigravity",
         "catppuccin": "catppuccin",
         "fenix": "fenix",
         "home-manager": "home-manager",

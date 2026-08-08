@@ -873,13 +873,7 @@ in
           };
           tag = "+editor";
         }
-        {
-          name = "tag-editor-antigravity";
-          match = {
-            class = "antigravity";
-          };
-          tag = "+editor";
-        }
+
         {
           name = "editor-workspace";
           match = {
