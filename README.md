@@ -57,6 +57,14 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
 
   *Applies the NixOS configuration, then commits a generation log, garbage collects, and updates home-manager.*
 
+- **Run Post-Switch Steps Only**:
+
+  ```bash
+  just after-switch
+  ```
+
+  *Commits a generation log, garbage collects, and updates home-manager, without running `nh os switch`. Useful after running `nh os switch .` manually (e.g. `sudo` needs an interactive terminal, which isn't always available when `just system-switch` is invoked through tooling).*
+
 - **Test System Configuration**:
 
   ```bash

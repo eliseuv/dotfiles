@@ -16,14 +16,16 @@ gc keep='4':
 home-switch:
     nh home switch .
 
+after-switch: commit-gen home-switch gc
+
 system-test: && home-switch
     nh os test .
 
-system-switch: && commit-gen home-switch gc
+system-switch: && after-switch
     git diff -U0 '*.nix'
     nh os switch .
 
-system-boot: && commit-gen home-switch gc
+system-boot: && after-switch
     git diff -U0 '*.nix'
     nh os boot .
 
