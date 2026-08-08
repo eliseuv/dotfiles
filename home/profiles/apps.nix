@@ -21,7 +21,6 @@
     # Social
     ../social/telegram.nix
     ../social/discord.nix
-    ../social/late.nix
 
     # Extra
     ../extra/ledger.nix
