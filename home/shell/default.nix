@@ -24,6 +24,7 @@
     ./ai/claude.nix
     ./ai/antigravity.nix
     ./ai/copilot.nix
+    ./ai/learning.nix
 
     # Extra
     ./extra/fastfetch/default.nix
