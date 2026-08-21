@@ -36,6 +36,14 @@
           ];
         };
 
+        "notes" = {
+          path = "~/Documents/notes";
+          devices = [
+            "TARDIS"
+            "A56"
+          ];
+        };
+
       };
     };
   };

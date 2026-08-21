@@ -24,6 +24,14 @@
           ];
         };
 
+        "notes" = {
+          path = "~/Documents/notes";
+          devices = [
+            "GLaDOS"
+            "A56"
+          ];
+        };
+
       };
     };
   };
