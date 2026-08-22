@@ -20,6 +20,7 @@
     ./languages/go.nix
     ./languages/zig.nix
     ./languages/uiua.nix
+    ./languages/fortran.nix
 
     # Development environments
     ./environment/direnv.nix
