@@ -14,6 +14,9 @@
     # Sass
     sass
 
+    # Vue
+    vue-language-server
+
   ];
 
 }
