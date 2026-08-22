@@ -10,9 +10,6 @@
     # Render
     glow
 
-    # Live preview (Doom's markdown +grip flag)
-    python3Packages.grip
-
   ];
 
 }

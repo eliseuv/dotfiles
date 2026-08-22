@@ -16,6 +16,11 @@
     # Serif font
     ibm-plex
 
+    # :lang yaml LSP
+    yaml-language-server
+    # :lang markdown +grip live preview
+    python3Packages.grip
+
   ];
 
   home.shellAliases.doom-sync = "doom sync -u && doom sync && doom gc -! -v";
