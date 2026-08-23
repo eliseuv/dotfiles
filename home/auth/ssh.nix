@@ -57,6 +57,17 @@
         user = "eliseuvf";
         proxyJump = "alpine-vm";
       };
+      # Wheatley (tailscale jump host)
+      "wheatley" = {
+        hostname = "wheatley";
+        user = "evf";
+      };
+      # GLaDOS, reached via wheatley since it is not on the tailnet
+      "glados" = {
+        hostname = "GLaDOS.local";
+        user = "evf";
+        proxyJump = "wheatley";
+      };
     };
   };
 
