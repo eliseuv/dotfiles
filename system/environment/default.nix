@@ -8,6 +8,7 @@
     ./locale.nix
     ./time.nix
     ./gnupg.nix
+    ./services.nix
   ];
 
   programs.zsh.enable = true;
