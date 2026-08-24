@@ -18,6 +18,11 @@
       inherit pkgs;
       inherit lib;
     })
+    # schedule-claude
+    (import ./schedule-claude.nix {
+      inherit pkgs;
+      inherit lib;
+    })
   ];
 
   home.shellAliases = {
