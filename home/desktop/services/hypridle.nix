@@ -7,7 +7,7 @@
 
       general = {
         lock_cmd = "pidof hyprlock || hyprlock";
-        after_sleep_cmd = "hyprctl dispatch dpms on";
+        after_sleep_cmd = ''hyprctl dispatch 'hl.dsp.dpms, "on"' '';
         ignore_dbus_inhibit = false;
       };
 
@@ -22,8 +22,8 @@
         # Turn off screen
         {
           timeout = 600; # 10 minutes
-          on-timeout = "hyprctl dispatch dpms off";
-          on-resume = "hyprctl dispatch dpms on";
+          on-timeout = ''hyprctl dispatch 'hl.dsp.dpms, "off"' '';
+          on-resume = ''hyprctl dispatch 'hl.dsp.dpms, "on"' '';
         }
 
         # Lock screen
