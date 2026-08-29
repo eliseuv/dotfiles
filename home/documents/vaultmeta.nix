@@ -11,8 +11,8 @@
     LEARNING_DIR = "Learning";
     PROJECT_DIR = "Project";
     TEMPLATES_DIR = "Templates";
-    FLAKES_DIR = "flakes";
-    GITIGNORE_DIR = "gitignore";
+    FLAKES_DIR = "Templates/flakes";
+    GITIGNORE_DIR = "Templates/gitignore";
     EXTERNAL_INDEX_FILE = "external-projects.md";
   };
 
