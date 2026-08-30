@@ -32,27 +32,22 @@ eval "$(python3 "$VM" env | sed 's/^/export /')"
 ## 0. The gate
 
 This only runs against a graduated learning repo — not a vault seed (that's
-`/learning-iterate`) and not a project repo (`ROADMAP.md` is a Learning-path
-concept; projects track their roadmap inside `.claude/PROJECT.md` instead).
+`/learning-iterate`) and not a project repo.
 
 ```sh
-python3 "$VM" projects | grep "^<name>\b"
-```
-
-- No match at all: stop, tell the user the repo doesn't exist under any tracked
-  path.
-- Match is `<name> learning seed`: this hasn't graduated yet — point at
-  `/learning-iterate` instead.
-- Match is `<name> project repo`: wrong skill — there's no `ROADMAP.md` here.
-- Match is `<name> learning repo`: proceed.
-
-```sh
+python3 "$VM" gate review learning <name>
 REPO="$LEARNING_REPOS_DIR/<name>"
-test -f "$REPO/ROADMAP.md" || echo "missing ROADMAP.md — repo predates the roadmap convention?"
 ```
 
-If `ROADMAP.md` is missing on an otherwise-valid learning repo, stop and ask the
-user how they want to handle it rather than scaffolding one unasked.
+Every `error:` line is a hard stop — report it plainly and do not proceed
+(not tracked under this name, tracked under the wrong bucket, still a seed,
+no `.claude/PROJECT.md`, no `vault_ref:`, or missing `ROADMAP.md` — ask the
+user how to handle a missing `ROADMAP.md` rather than scaffolding one
+unasked).
+
+**A `warn:` about `.claude/PROJECT.md`'s body** means fix just that heading
+to `## Log` in place before continuing — leave the content beneath it
+untouched, this is a heading fix, not a content migration.
 
 ## 1. Read Direction first — it sets this pass's agenda
 
