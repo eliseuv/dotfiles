@@ -10,7 +10,7 @@ A point-in-time audit of a graduated project repo, not a diff-based review —
 repo as it stands today, and turns what it finds into roadmap items rather than
 a merge gate. Project repos have no separate roadmap file, so this writes into
 `.claude/PROJECT.md`'s `## Roadmap` — the project-repo counterpart to
-`/roadmap-iterate`, which does the same job for learning repos' `ROADMAP.md`.
+`/learning-review`, which does the same job for learning repos' `ROADMAP.md`.
 
 **This pass is guided by `## Direction`, not just informed by it.** Whatever
 the user wrote there — a module to look hard at, a decision they're
@@ -34,7 +34,7 @@ eval "$(python3 "$VM" env | sed 's/^/export /')"
 ## 0. The gate
 
 This only runs against a graduated **project** repo — not a vault seed
-(`/project-iterate` instead) and not a learning repo (`/roadmap-iterate`
+(`/project-iterate` instead) and not a learning repo (`/learning-review`
 instead; those track `ROADMAP.md`, not `.claude/PROJECT.md`'s `## Roadmap`).
 
 ```sh
@@ -44,7 +44,7 @@ python3 "$VM" projects | grep "^$NAME\b"
 ```
 
 - No match: stop, the repo isn't tracked by the vault under this name.
-- Match is `... learning ...`: wrong skill — point at `/roadmap-iterate`.
+- Match is `... learning ...`: wrong skill — point at `/learning-review`.
 - Match is `... project seed`: something is inconsistent — a repo shouldn't
   exist for a seed. Say so and stop rather than guessing.
 - Match is `... project repo`: continue.
@@ -81,6 +81,10 @@ by removing it directly from the file:
 ```sh
 python3 "$VM" backlog remove "<title>"
 ```
+
+Do this before proposing anything of your own — same rule as every other
+`*-iterate`/`*-review` skill: the user's captured thoughts outrank your
+suggestions.
 
 ## 2. Read the repo, then audit it — Direction leads, the checklist fills in
 
