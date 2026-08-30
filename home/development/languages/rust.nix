@@ -35,6 +35,9 @@
   # Cargo will look for OpenSSL with pkg-config
   home.sessionVariables.PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
 
+  # Cargo-installed binaries
+  home.sessionPath = [ "$HOME/.cargo/bin" ];
+
   # Environment variables for Rust
   home.sessionVariables = {
     RUSTC_WRAPPER = "sccache";
