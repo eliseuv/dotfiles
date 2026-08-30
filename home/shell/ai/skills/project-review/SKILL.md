@@ -8,9 +8,9 @@ description: Critically review a graduated project repo, guided by its own ## Di
 A point-in-time audit of a graduated project repo, not a diff-based review —
 `/security-review` covers pending branch changes before merge; this covers the
 repo as it stands today, and turns what it finds into roadmap items rather than
-a merge gate. Project repos have no separate roadmap file, so this writes into
-`.claude/PROJECT.md`'s `## Roadmap` — the project-repo counterpart to
-`/learning-review`, which does the same job for learning repos' `ROADMAP.md`.
+a merge gate. This writes into `ROADMAP.md`'s `## Roadmap` — the project-repo
+counterpart to `/learning-review`, which does the same job for learning repos'
+`ROADMAP.md`.
 
 **This pass is guided by `## Direction`, not just informed by it.** Whatever
 the user wrote there — a module to look hard at, a decision they're
@@ -21,10 +21,10 @@ before this section existed.
 
 **This is a read, critique and propose skill. It never edits source code,
 config, dependencies, or anything under version control except
-`.claude/PROJECT.md`, `README.md`'s mirrored sections, and vault-side
-`Backlog.md`.** A vulnerability found here becomes a roadmap item for the user
-to schedule — not a patch applied on the spot, however tempting a one-line fix
-looks mid-audit.
+`ROADMAP.md`, `.claude/PROJECT.md`'s frontmatter and `## Log`, `README.md`'s
+mirrored sections, and vault-side `Backlog.md`.** A vulnerability found here
+becomes a roadmap item for the user to schedule — not a patch applied on the
+spot, however tempting a one-line fix looks mid-audit.
 
 ```sh
 VM="$NOTES_VAULT/vaultmeta/vaultmeta.py"
@@ -35,7 +35,8 @@ eval "$(python3 "$VM" env | sed 's/^/export /')"
 
 This only runs against a graduated **project** repo — not a vault seed
 (`/project-iterate` instead) and not a learning repo (`/learning-review`
-instead; those track `ROADMAP.md`, not `.claude/PROJECT.md`'s `## Roadmap`).
+instead; that repo's `ROADMAP.md` follows the curriculum-unit template, not
+this path's `## About` / `## Roadmap` / `## Direction` shape).
 
 ```sh
 git rev-parse --show-toplevel >/dev/null 2>&1 || echo "not a git repo — stop"
@@ -57,9 +58,19 @@ grep -q '^vault_ref:' .claude/PROJECT.md || echo "no vault_ref: — not graduate
 If any check fails, explain plainly which one and stop — do not proceed against
 an arbitrary repo just because it has a README.
 
+**If `ROADMAP.md` is missing**, this repo predates the `ROADMAP.md` split —
+migrate it on the spot before continuing: scaffold `ROADMAP.md` from
+`$TEMPLATES_DIR/project-roadmap.md`, move `.claude/PROJECT.md`'s `## About`,
+any custom sections, `## Roadmap`, and `## Direction` into it verbatim (About
+first, then custom sections, then Roadmap, then Direction last), and strip
+those sections from `.claude/PROJECT.md`, leaving only its frontmatter and
+`## Log`. Content only — don't rewrite or summarize while moving it, and don't
+add a `## Log` entry for the move itself (that's a tooling action, not a fact
+about the project). Then proceed with the review as normal.
+
 ## 1. Read Direction first — it sets this pass's agenda
 
-Read `.claude/PROJECT.md`'s `## Direction` section before anything else,
+Read `ROADMAP.md`'s `## Direction` section before anything else,
 including before the gate-check output has settled in. This is not backlog
 material to hold for later — it's the brief for step 2. A named module gets
 read closely; a decision the user is second-guessing gets weighed against what
@@ -88,10 +99,11 @@ suggestions.
 
 ## 2. Read the repo, then audit it — Direction leads, the checklist fills in
 
-Read `.claude/PROJECT.md` and `README.md` in full first — what the project
-claims to be, its stated scope (`## Scope`'s out-of-scope/deferred lines), and
-its `## Log` history — so the audit measures against what the project
-committed to, not against your own idea of what it should be.
+Read `ROADMAP.md`, `.claude/PROJECT.md`, and `README.md` in full first — what
+the project claims to be, its stated scope (`## Scope`'s out-of-scope/deferred
+lines, wherever that custom section landed in `ROADMAP.md`), and
+`.claude/PROJECT.md`'s `## Log` history — so the audit measures against what
+the project committed to, not against your own idea of what it should be.
 
 Then work the repo itself. **Read-only** — no edits, no formatter runs, no
 `cargo fix`, nothing that touches source.
@@ -130,7 +142,7 @@ guided pass doesn't quietly skip the rest of the repo:
 - Dead code, duplicated logic that has already drifted between copies
 
 **Architecture and scope drift**
-- Does the code match what `README.md`/`PROJECT.md` claim — features described
+- Does the code match what `README.md`/`ROADMAP.md` claim — features described
   as built that aren't, or built features never documented
 - Scope creep: functionality present that `## Scope`'s out-of-scope list
   explicitly excludes
@@ -170,26 +182,26 @@ recommended, not a neutral menu. Be critical of your own proposals too:
 **Every accepted item is written immediately** — no batching behind a final
 "shall I write these?" Both files, same edit:
 
-- `.claude/PROJECT.md`: if `## Roadmap` doesn't exist, create it as the last
-  content section, immediately before `## Log` (`## Log` always stays last).
-  Items are plain bullets — no dates, no checkboxes — same convention
+- `ROADMAP.md`: `## Roadmap` always exists already (the template guarantees
+  it); append plain bullets — no dates, no checkboxes — same convention
   `project-develop` establishes.
 - `README.md`: mirror the same bullets into its own `## Roadmap`. **Match only
   the exact top-level `## Roadmap` heading — never a `###`-level "Roadmap"
   subsection nested inside a feature section** (a feature can keep its own
   done/pending checklist; that is a different, narrower list and must be left
   untouched). If README has no top-level `## Roadmap` yet, add one at the end
-  of the document, after the sections that mirror `PROJECT.md`'s other
+  of the document, after the sections that mirror `ROADMAP.md`'s other
   headings — README carries no `## Log` to stay ahead of.
 
 ```sh
 python3 "$VM" touch .claude/PROJECT.md
 ```
 
-Add one `## Log` entry recording the review's outcome: what `## Direction`
-asked and how it resolved, what got added to the roadmap and why, any
-vulnerability that was flagged, anything explicitly ruled out and why. A fact
-about the project — not "ran project-review" or "audited the code."
+Add one `## Log` entry to `.claude/PROJECT.md` recording the review's outcome:
+what `## Direction` asked and how it resolved, what got added to the roadmap
+and why, any vulnerability that was flagged, anything explicitly ruled out and
+why. A fact about the project — not "ran project-review" or "audited the
+code."
 
 Drain every backlog entry that got folded in:
 
@@ -203,5 +215,5 @@ State up front whether this was a guided pass (`## Direction` had content) or
 an unguided one (it was empty), and if guided, how each item resolved before
 anything else. Then summarize: how many roadmap items were added and their
 headline, any vulnerability flagged and its disposition (scheduled / accepted
-as documented risk / dismissed and why), and confirm `PROJECT.md` and
+as documented risk / dismissed and why), and confirm `ROADMAP.md` and
 `README.md` stayed consistent.
