@@ -1,6 +1,6 @@
 ---
 name: project-review
-description: Critically review a graduated project repo, guided by its own ## Direction notes, for shortcomings, vulnerabilities and scope drift, fold in tagged backlog entries, and propose additions to its roadmap. Use when the user wants to audit, review or find issues in a project that has already graduated out of the vault, so the findings feed its roadmap.
+description: Critically review a graduated project repo, guided by its own ## Direction notes, for shortcomings, vulnerabilities and scope drift, fold in tagged backlog entries, and propose additions to its milestones. Use when the user wants to audit, review or find issues in a project that has already graduated out of the vault, so the findings feed its roadmap.
 ---
 
 # project-review
@@ -8,9 +8,9 @@ description: Critically review a graduated project repo, guided by its own ## Di
 A point-in-time audit of a graduated project repo, not a diff-based review —
 `/security-review` covers pending branch changes before merge; this covers the
 repo as it stands today, and turns what it finds into roadmap items rather than
-a merge gate. This writes into `ROADMAP.md`'s `## Roadmap` — the project-repo
-counterpart to `/learning-review`, which does the same job for learning repos'
-`ROADMAP.md`.
+a merge gate. This writes into `SPECIFICATION.md`'s `## Milestones` — the
+project-repo counterpart to `/learning-review`, which does the same job for
+learning repos' `ROADMAP.md`.
 
 **This pass is guided by `## Direction`, not just informed by it.** Whatever
 the user wrote there — a module to look hard at, a decision they're
@@ -21,8 +21,9 @@ before this section existed.
 
 **This is a read, critique and propose skill. It never edits source code,
 config, dependencies, or anything under version control except
-`ROADMAP.md`, `.claude/PROJECT.md`'s frontmatter and `## Log`, `README.md`'s
-mirrored sections, and vault-side `Backlog.md`.** A vulnerability found here
+`SPECIFICATION.md`, `.claude/PROJECT.md`'s frontmatter and `## Log`,
+`README.md` (regenerated in full from `SPECIFICATION.md` every pass, never
+hand-edited), and vault-side `Backlog.md`.** A vulnerability found here
 becomes a roadmap item for the user to schedule — not a patch applied on the
 spot, however tempting a one-line fix looks mid-audit.
 
@@ -35,42 +36,40 @@ eval "$(python3 "$VM" env | sed 's/^/export /')"
 
 This only runs against a graduated **project** repo — not a vault seed
 (`/project-iterate` instead) and not a learning repo (`/learning-review`
-instead; that repo's `ROADMAP.md` follows the curriculum-unit template, not
-this path's `## About` / `## Roadmap` / `## Direction` shape).
+instead).
 
 ```sh
-git rev-parse --show-toplevel >/dev/null 2>&1 || echo "not a git repo — stop"
 NAME="$(basename "$(git rev-parse --show-toplevel)")"
-python3 "$VM" projects | grep "^$NAME\b"
+python3 "$VM" gate review project "$NAME"
 ```
 
-- No match: stop, the repo isn't tracked by the vault under this name.
-- Match is `... learning ...`: wrong skill — point at `/learning-review`.
-- Match is `... project seed`: something is inconsistent — a repo shouldn't
-  exist for a seed. Say so and stop rather than guessing.
-- Match is `... project repo`: continue.
+Every `error:` line is a hard stop — report it plainly and do not proceed
+(not tracked under this name, tracked under the wrong bucket, still a seed,
+no `.claude/PROJECT.md`, or no `vault_ref:`).
 
-```sh
-test -f .claude/PROJECT.md || echo "no .claude/PROJECT.md — stop"
-grep -q '^vault_ref:' .claude/PROJECT.md || echo "no vault_ref: — not graduated via project-develop, stop"
-```
+**A `warn:` about `.claude/PROJECT.md`'s body** means fix just that heading
+to `## Log` in place before continuing — leave the content beneath it
+untouched, this is a heading fix, not a content migration.
 
-If any check fails, explain plainly which one and stop — do not proceed against
-an arbitrary repo just because it has a README.
+**A `warn:` about a missing `SPECIFICATION.md`** means this repo predates
+the current file split — migrate it on the spot before continuing:
+- If `ROADMAP.md` is present (rename case): `git mv ROADMAP.md
+  SPECIFICATION.md`, and rename its `## Roadmap` section to `## Milestones`.
+- If neither file is present (pre-split case): scaffold `SPECIFICATION.md`
+  from `$TEMPLATES_DIR/project-specification.md`, move `.claude/PROJECT.md`'s
+  `## About`, `## Scope` (or add an empty one if absent), any custom
+  sections, `## Roadmap`/`## Milestones`, and `## Direction` into it verbatim
+  (About first, then Scope, then custom sections, then Milestones, then
+  Direction last), and strip those sections from `.claude/PROJECT.md`,
+  leaving only its frontmatter and `## Log`.
 
-**If `ROADMAP.md` is missing**, this repo predates the `ROADMAP.md` split —
-migrate it on the spot before continuing: scaffold `ROADMAP.md` from
-`$TEMPLATES_DIR/project-roadmap.md`, move `.claude/PROJECT.md`'s `## About`,
-any custom sections, `## Roadmap`, and `## Direction` into it verbatim (About
-first, then custom sections, then Roadmap, then Direction last), and strip
-those sections from `.claude/PROJECT.md`, leaving only its frontmatter and
-`## Log`. Content only — don't rewrite or summarize while moving it, and don't
-add a `## Log` entry for the move itself (that's a tooling action, not a fact
-about the project). Then proceed with the review as normal.
+Content only in either case — don't rewrite or summarize while moving it, and
+don't add a `## Log` entry for the move itself (that's a tooling action, not
+a fact about the project). Then proceed with the review as normal.
 
 ## 1. Read Direction first — it sets this pass's agenda
 
-Read `ROADMAP.md`'s `## Direction` section before anything else,
+Read `SPECIFICATION.md`'s `## Direction` section before anything else,
 including before the gate-check output has settled in. This is not backlog
 material to hold for later — it's the brief for step 2. A named module gets
 read closely; a decision the user is second-guessing gets weighed against what
@@ -99,11 +98,12 @@ suggestions.
 
 ## 2. Read the repo, then audit it — Direction leads, the checklist fills in
 
-Read `ROADMAP.md`, `.claude/PROJECT.md`, and `README.md` in full first — what
+Read `SPECIFICATION.md` and `.claude/PROJECT.md` in full first — what
 the project claims to be, its stated scope (`## Scope`'s out-of-scope/deferred
-lines, wherever that custom section landed in `ROADMAP.md`), and
-`.claude/PROJECT.md`'s `## Log` history — so the audit measures against what
-the project committed to, not against your own idea of what it should be.
+lines), and `.claude/PROJECT.md`'s `## Log` history — so the audit measures
+against what the project committed to, not against your own idea of what it
+should be. `README.md` is generated from `SPECIFICATION.md`, so there's
+nothing in it to read that isn't already there.
 
 Then work the repo itself. **Read-only** — no edits, no formatter runs, no
 `cargo fix`, nothing that touches source.
@@ -142,8 +142,9 @@ guided pass doesn't quietly skip the rest of the repo:
 - Dead code, duplicated logic that has already drifted between copies
 
 **Architecture and scope drift**
-- Does the code match what `README.md`/`ROADMAP.md` claim — features described
-  as built that aren't, or built features never documented
+- Does the code match what `SPECIFICATION.md` claims — features described as
+  built that aren't, or built features never documented (`README.md` is
+  generated from `SPECIFICATION.md`, so checking one checks both)
 - Scope creep: functionality present that `## Scope`'s out-of-scope list
   explicitly excludes
 - Dependency risk: read `flake.nix` — a channel pin aging badly, a package with
@@ -180,18 +181,23 @@ recommended, not a neutral menu. Be critical of your own proposals too:
 ## 4. Write the roadmap
 
 **Every accepted item is written immediately** — no batching behind a final
-"shall I write these?" Both files, same edit:
+"shall I write these?"
 
-- `ROADMAP.md`: `## Roadmap` always exists already (the template guarantees
-  it); append plain bullets — no dates, no checkboxes — same convention
-  `project-develop` establishes.
-- `README.md`: mirror the same bullets into its own `## Roadmap`. **Match only
-  the exact top-level `## Roadmap` heading — never a `###`-level "Roadmap"
-  subsection nested inside a feature section** (a feature can keep its own
-  done/pending checklist; that is a different, narrower list and must be left
-  untouched). If README has no top-level `## Roadmap` yet, add one at the end
-  of the document, after the sections that mirror `ROADMAP.md`'s other
-  headings — README carries no `## Log` to stay ahead of.
+- `SPECIFICATION.md`: `## Milestones` always exists already (the template
+  guarantees it); append plain bullets — no dates, no checkboxes. Route
+  anything that belongs elsewhere instead (a scope change into `## Scope`, a
+  new dependency into a custom section) — `## Milestones` is the default
+  landing place, not the only one.
+- `README.md`: **fully regenerate it from `SPECIFICATION.md`** — do not
+  hand-patch it, not even to add just the new bullets. Copy
+  `SPECIFICATION.md`'s `# <Project Title>` line, then every `##` section in
+  file order except `## Direction`, into `README.md` under the
+  generated-file marker comment
+  (`<!-- GENERATED from SPECIFICATION.md — do not edit by hand. -->`),
+  overwriting whatever was there before. Do this on every pass, whether or
+  not this pass changed `## Milestones` — it is what self-heals any README/
+  SPECIFICATION drift a repo accumulated before this convention existed,
+  with no separate migration step needed.
 
 ```sh
 python3 "$VM" touch .claude/PROJECT.md
@@ -215,5 +221,5 @@ State up front whether this was a guided pass (`## Direction` had content) or
 an unguided one (it was empty), and if guided, how each item resolved before
 anything else. Then summarize: how many roadmap items were added and their
 headline, any vulnerability flagged and its disposition (scheduled / accepted
-as documented risk / dismissed and why), and confirm `ROADMAP.md` and
-`README.md` stayed consistent.
+as documented risk / dismissed and why), and confirm `README.md` was
+regenerated from the current `SPECIFICATION.md`.
