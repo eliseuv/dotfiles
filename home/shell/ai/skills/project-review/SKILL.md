@@ -66,6 +66,11 @@ Hold these for step 3. Drain each once its fate is decided:
 python3 "$VM" backlog remove "<title>"
 ```
 
+Also read `.claude/PROJECT.md`'s own `## Direction` section — notes the user
+wrote directly between reviews. Hold these for step 3 too, on equal footing
+with the tagged backlog entries, and remove each line from `## Direction` once
+its fate is decided.
+
 ## 2. Read the repo, then audit it
 
 Read `.claude/PROJECT.md` and `README.md` in full first — what the project
