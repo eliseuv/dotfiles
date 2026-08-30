@@ -1,6 +1,6 @@
 ---
 name: project-review
-description: Critically review a graduated project repo for shortcomings, vulnerabilities and scope drift, fold in tagged backlog entries, and propose additions to its roadmap. Use when the user wants to audit, review or find issues in a project that has already graduated out of the vault, so the findings feed its roadmap.
+description: Critically review a graduated project repo, guided by its own ## Direction notes, for shortcomings, vulnerabilities and scope drift, fold in tagged backlog entries, and propose additions to its roadmap. Use when the user wants to audit, review or find issues in a project that has already graduated out of the vault, so the findings feed its roadmap.
 ---
 
 # project-review
@@ -11,6 +11,13 @@ repo as it stands today, and turns what it finds into roadmap items rather than
 a merge gate. Project repos have no separate roadmap file, so this writes into
 `.claude/PROJECT.md`'s `## Roadmap` — the project-repo counterpart to
 `/roadmap-iterate`, which does the same job for learning repos' `ROADMAP.md`.
+
+**This pass is guided by `## Direction`, not just informed by it.** Whatever
+the user wrote there — a module to look hard at, a decision they're
+second-guessing, a worry to chase down — is the actual agenda for this audit,
+not one more item competing with the checklist below. An empty `## Direction`
+means an unguided pass: fall back to the general sweep in step 2, same as
+before this section existed.
 
 **This is a read, critique and propose skill. It never edits source code,
 config, dependencies, or anything under version control except
@@ -50,28 +57,32 @@ grep -q '^vault_ref:' .claude/PROJECT.md || echo "no vault_ref: — not graduate
 If any check fails, explain plainly which one and stop — do not proceed against
 an arbitrary repo just because it has a README.
 
-## 1. Pull in what has accumulated
+## 1. Read Direction first — it sets this pass's agenda
 
-Same rule as every other `*-iterate`/`*-review` skill: the user's captured
-thoughts outrank your own findings, and get folded into the discussion first,
-not appended after.
+Read `.claude/PROJECT.md`'s `## Direction` section before anything else,
+including before the gate-check output has settled in. This is not backlog
+material to hold for later — it's the brief for step 2. A named module gets
+read closely; a decision the user is second-guessing gets weighed against what
+the code actually does; a vague worry gets chased down until it resolves one
+way or the other. If it's empty, note that and proceed to an unguided general
+sweep.
+
+Then pull tagged backlog entries — these supplement Direction, they don't
+replace it:
 
 ```sh
 python3 "$VM" backlog list --tag "$NAME"
 ```
 
-Hold these for step 3. Drain each once its fate is decided:
+Hold both Direction's items and the backlog entries for step 3. Drain each
+once its fate is decided — a backlog entry via the tool, a `## Direction` line
+by removing it directly from the file:
 
 ```sh
 python3 "$VM" backlog remove "<title>"
 ```
 
-Also read `.claude/PROJECT.md`'s own `## Direction` section — notes the user
-wrote directly between reviews. Hold these for step 3 too, on equal footing
-with the tagged backlog entries, and remove each line from `## Direction` once
-its fate is decided.
-
-## 2. Read the repo, then audit it
+## 2. Read the repo, then audit it — Direction leads, the checklist fills in
 
 Read `.claude/PROJECT.md` and `README.md` in full first — what the project
 claims to be, its stated scope (`## Scope`'s out-of-scope/deferred lines), and
@@ -79,7 +90,17 @@ its `## Log` history — so the audit measures against what the project
 committed to, not against your own idea of what it should be.
 
 Then work the repo itself. **Read-only** — no edits, no formatter runs, no
-`cargo fix`, nothing that touches source. Check:
+`cargo fix`, nothing that touches source.
+
+**If step 1 found anything in `## Direction`, start there.** Go as deep as the
+note calls for — a named module gets read end to end, not sampled; a
+second-guessed decision gets an actual answer, not a restatement of the
+tension. This is the part of the audit the user actually asked for, and it
+takes priority over the checklist below in both order and depth.
+
+**Then run the general sweep** — the default audit, and the whole audit when
+`## Direction` was empty. Use it too for anything Direction didn't cover, so a
+guided pass doesn't quietly skip the rest of the repo:
 
 **Security-sensitive code paths**
 - Auth/authorization: does behavior match what `## Scope` claims (e.g. "no
@@ -117,14 +138,20 @@ Take notes as you go. Do not stop at the first finding.
 
 ## 3. Present findings critically
 
-Group findings — vulnerabilities, shortcomings, scope drift — separately from
-extension proposals and from the folded-in backlog entries, but bring all
-three into one discussion; they compete for the same roadmap.
+Lead with the answers to `## Direction` — that's what this pass was for, and
+the user should see it resolved before anything else. Then group the rest:
+vulnerabilities, shortcomings and scope drift from the general sweep,
+separately from extension proposals and from the folded-in backlog entries —
+but bring everything into one discussion; it all competes for the same
+roadmap.
 
 Work through it with `AskUserQuestion` in rounds — real alternatives (fix now,
 defer, or accept the risk and record it in `## Scope`) with trade-offs, one
 recommended, not a neutral menu. Be critical of your own proposals too:
 
+- A `## Direction` question that resolves to "no issue, code already does
+  this" is still an answer — report it as one, don't manufacture a roadmap
+  item to justify the pass.
 - A finding that only matters at a scale the project doesn't operate at is
   noise — say so, don't roadmap it to look thorough.
 - An extension idea with no user behind it is speculative scope — flag it
@@ -155,10 +182,10 @@ recommended, not a neutral menu. Be critical of your own proposals too:
 python3 "$VM" touch .claude/PROJECT.md
 ```
 
-Add one `## Log` entry recording the review's outcome: what got added to the
-roadmap and why, any vulnerability that was flagged, anything explicitly ruled
-out and why. A fact about the project — not "ran project-review" or "audited
-the code."
+Add one `## Log` entry recording the review's outcome: what `## Direction`
+asked and how it resolved, what got added to the roadmap and why, any
+vulnerability that was flagged, anything explicitly ruled out and why. A fact
+about the project — not "ran project-review" or "audited the code."
 
 Drain every backlog entry that got folded in:
 
@@ -168,7 +195,9 @@ python3 "$VM" backlog remove "<title>"
 
 ## 5. Report
 
-Summarize: how many roadmap items were added and their headline, any
-vulnerability flagged and its disposition (scheduled / accepted as documented
-risk / dismissed and why), and confirm `PROJECT.md` and `README.md` stayed
-consistent.
+State up front whether this was a guided pass (`## Direction` had content) or
+an unguided one (it was empty), and if guided, how each item resolved before
+anything else. Then summarize: how many roadmap items were added and their
+headline, any vulnerability flagged and its disposition (scheduled / accepted
+as documented risk / dismissed and why), and confirm `PROJECT.md` and
+`README.md` stayed consistent.
