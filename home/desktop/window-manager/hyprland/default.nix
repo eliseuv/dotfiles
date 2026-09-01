@@ -19,6 +19,16 @@ in
   # The Hyprland module enables xdg-desktop-portal; since portal 1.17 the
   # backend must be picked explicitly ("*" keeps the old lexicographical pick)
   xdg.portal.config.common.default = "*";
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+
+  # Run Firefox/Chromium-based apps as native Wayland clients instead of
+  # XWayland, so screen share (getDisplayMedia) goes through the portal +
+  # PipeWire picker instead of the X11 capture path, which returns black
+  # frames for other windows under Hyprland.
+  home.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    MOZ_ENABLE_WAYLAND = "1";
+  };
 
   # Hyprland config
   # Monitors are set per-host in monitors-<host>.nix, imported from each host's
