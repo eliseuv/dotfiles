@@ -1,6 +1,6 @@
 ---
 name: project-review
-description: Critically review a graduated project repo, guided by its own DIRECTIONS.md, for shortcomings, vulnerabilities and scope drift, fold in tagged backlog entries, and propose additions to its to-do list. Use when the user wants to audit, review or find issues in a project that has already graduated out of the vault, so the findings feed its to-do list.
+description: Critically review a graduated project repo, guided by DIRECTIONS.md — critique it for gaps, contradictions and vague items, suggest decompositions and extensions, audit the repo for shortcomings and vulnerabilities, fold in tagged backlog entries, and write accepted findings into its to-do list. Use when the user wants to audit, review or find issues in a project that has already graduated out of the vault, so the findings feed its to-do list.
 ---
 
 # project-review
@@ -9,24 +9,23 @@ A point-in-time audit of a graduated project repo, not a diff-based review —
 `/security-review` covers pending branch changes before merge; this covers the
 repo as it stands today, and turns what it finds into to-do items rather than
 a merge gate. This writes into `DIRECTIONS.md`'s `## To do` — the
-project-repo counterpart to `/learning-review`, which does the same job for
-learning repos' `ROADMAP.md`.
+project-repo counterpart to `/learning-review`.
 
-**This pass is guided by `DIRECTIONS.md`, not just informed by it.** Whatever
-the user wrote there — a feature to build, a module to look hard at, a
-worry to chase down — is the actual agenda for this audit, not one more item
-competing with the checklist below. An empty `## To do` means an unguided
-pass: fall back to the general sweep in step 2, same as before this
-distinction existed.
+`DIRECTIONS.md`'s `## To do` is an asynchronous conversation, not a flat
+backlog — `/project-implement` treats it as user → agent input to build; this
+skill is where the agent reads closely and talks back. **This pass is guided
+by it, not just informed by it** — whatever's written, from a one-line task
+to a phased roadmap, is the actual agenda for step 2, not one more item
+competing with the checklist. An empty `## To do` means an unguided pass:
+fall back to the general sweep in step 2.
 
 **This is a read, critique and propose skill. It never edits source code,
 config, dependencies, or anything under version control except
 `DIRECTIONS.md`, `.claude/PROJECT.md`'s frontmatter and `## Log`, `README.md`
 (narrowly — only the description of a `## To do` item this pass is removing
-because it's confirmed shipped, never a rewrite of unrelated content), and
-vault-side `Backlog.md`.** A vulnerability found here becomes a to-do item
-for the user to schedule — not a patch applied on the spot, however tempting
-a one-line fix looks mid-audit.
+because it's confirmed shipped), and vault-side `Backlog.md`.** A
+vulnerability found here becomes a to-do item to schedule, not a patch
+applied on the spot, however tempting a one-line fix looks mid-audit.
 
 ```sh
 VM="$NOTES_VAULT/vaultmeta/vaultmeta.py"
@@ -70,14 +69,20 @@ Content only in either case — don't rewrite or summarize while moving it, and
 don't add a `## Log` entry for the move itself (that's a tooling action, not
 a fact about the project). Then proceed with the review as normal.
 
-## 1. Read DIRECTIONS.md first — it sets this pass's agenda
+## 1. Read DIRECTIONS.md as a conversation, then talk back
 
 Read `DIRECTIONS.md`'s `## To do` and `## Not doing` before anything else,
-including before the gate-check output has settled in. This is not backlog
-material to hold for later — it's the brief for step 2. A line that reads
-like an audit instruction ("look hard at the auth module") gets read
-closely, same as a line that's just outstanding feature work. If `## To do`
-is empty, note that and proceed to an unguided general sweep.
+including before the gate-check output has settled in — this is the brief
+for steps 2 and 3, not backlog material to hold for later. If `## To do` is
+empty, note that and proceed to an unguided general sweep.
+
+Read each item as the user's half of an ongoing conversation, not just an
+agenda: note gaps or contradictions; items vague or big enough to warrant a
+decomposition sketch (the phased, sub-headed style already used in mature
+`DIRECTIONS.md` files is the model — sketch it here, don't write it yet,
+that's step 4's job once accepted); and extensions an item implies but
+doesn't state. Hold these for steps 2 and 3 — this step reads and thinks, it
+doesn't act.
 
 Then pull tagged backlog entries — these supplement `## To do`, they don't
 replace it:
@@ -98,23 +103,21 @@ Do this before proposing anything of your own — same rule as every other
 `*-iterate`/`*-review` skill: the user's captured thoughts outrank your
 suggestions.
 
-## 2. Read the repo, then audit it — DIRECTIONS.md leads, the checklist fills in
+## 2. Audit the repo — DIRECTIONS.md leads, the checklist fills in
 
 Read `DIRECTIONS.md`, `.claude/PROJECT.md`, and `README.md` in full first —
-what's still outstanding, what's explicitly excluded, what the project
-currently claims to be, and `.claude/PROJECT.md`'s `## Log` history — so the
-audit measures against what the project committed to, not against your own
-idea of what it should be.
+what's outstanding, what's excluded, what the project claims to be, and
+`.claude/PROJECT.md`'s `## Log` history — so the audit measures against what
+the project committed to, not your own idea of what it should be.
 
 Then work the repo itself. **Read-only** — no edits, no formatter runs, no
 `cargo fix`, nothing that touches source.
 
 **If step 1 found anything in `## To do`, start there.** Go as deep as each
 item calls for — a named module gets read end to end, not sampled; a
-second-guessed decision gets an actual answer, not a restatement of the
-tension; a plain feature request gets checked against the code to see if
-it's already done. This is the part of the audit the user actually asked
-for, and it takes priority over the checklist below in both order and
+second-guessed decision gets an actual answer; a plain feature request gets
+checked against the code to see if it's already done. This is what the user
+asked for, and it takes priority over the checklist below in both order and
 depth.
 
 **Then run the general sweep** — the default audit, and the whole audit when
@@ -122,72 +125,69 @@ depth.
 a guided pass doesn't quietly skip the rest of the repo:
 
 **Security-sensitive code paths**
-- Auth/authorization: does behavior match what `README.md` documents (e.g.
-  "no auth" stated but a header check exists anyway, or vice versa), and is
-  anything present that `## Not doing` explicitly excludes
-- Input parsing/deserialization: untrusted input reaching a parser,
-  deserializer, or format-detector without validation
-- Secrets handling: credentials, tokens, connection strings in source,
-  committed config, or `.envrc`, rather than an untracked `.env`/flake
-- Injection surfaces: SQL built by string concatenation instead of parameter
-  binding; shell commands built from unsanitized input
-- Unsafe/unchecked casts: `unwrap()`/`expect()` reachable from external input
-  rather than a real invariant; `unsafe` blocks without a safety comment
-- SQL construction: raw DDL/DML fragments — confirm they're fixed constants,
-  not built from runtime values
+- Auth/authz behavior matches `README.md`, and nothing crosses `## Not doing`
+- Untrusted input reaching a parser, deserializer, or format-detector
+  unvalidated
+- Secrets — credentials, tokens, connection strings — in source, committed
+  config, or `.envrc`, rather than an untracked `.env`/flake
+- SQL/shell built by concatenation instead of parameter binding or
+  sanitization
+- `unwrap()`/`expect()`/`unsafe` reachable from external input without a
+  real invariant or safety comment
 
 **Code quality and correctness**
-- Error handling gaps: results discarded, errors swallowed silently, panics on
-  paths that should degrade instead
-- Test coverage gaps: core business logic untested versus thin coverage on
-  trivial code
-- `grep -rn "TODO\|FIXME\|XXX"` across source — triage each as a real to-do
-  item or noise to remove
-- Dead code, duplicated logic that has already drifted between copies
+- Errors discarded or swallowed instead of handled; panics where the code
+  should degrade instead
+- Core business logic untested versus thin coverage on trivial code
+- `grep -rn "TODO\|FIXME\|XXX"` across source, triaged as real work or noise
+- Dead code, and duplicated logic that's already drifted between copies
 
 **Architecture and scope drift**
-- Milestone completion drift: a `## To do` item whose functionality is
-  already fully present in the code, and not yet described in `README.md`
-- Scope creep: functionality present that `## Not doing` explicitly excludes
-- Dependency risk: read `flake.nix` — a channel pin aging badly, a package with
-  a known abandonment, anything pulled in for one narrow use a stdlib call
-  would cover
+- A `## To do` item already fully implemented but not yet in `README.md`
+- Functionality present that `## Not doing` explicitly excludes
+- `flake.nix` dependency risk — an aging pin, an abandoned package, or one
+  narrow use a stdlib call would cover
 
 Take notes as you go. Do not stop at the first finding.
 
 ## 3. Present findings critically
 
-Lead with the answers to `## To do` — that's what this pass was for, and the
-user should see it resolved before anything else, including any item you
-found is already fully implemented (propose confirming it done: remove from
-`## To do`, describe it in `README.md`). Then group the rest: vulnerabilities,
-shortcomings and scope drift from the general sweep, separately from
-extension proposals and from the folded-in backlog entries — but bring
+Lead with `## To do`'s answers — that's what this pass was for, including
+any item found already fully implemented (propose confirming it done: remove
+from `## To do`, describe it in `README.md`). Then step 1's conversation
+critique — each gap, decomposition candidate, and extension, against the
+item it came from. Then the rest: vulnerabilities, shortcomings and scope
+drift from the general sweep, and the folded-in backlog entries — but bring
 everything into one discussion; it all competes for the same to-do list.
 
-Work through it with `AskUserQuestion` in rounds — real alternatives (fix now,
-defer, or accept the risk and record it in `## Not doing`) with trade-offs,
-one recommended, not a neutral menu. Be critical of your own proposals too:
+Work through it with `AskUserQuestion` in rounds — real alternatives (fix
+now, defer, or accept the risk and record it in `## Not doing`) with
+trade-offs, one recommended, not a neutral menu. Be critical of your own
+proposals too:
 
 - A `## To do` item that resolves to "already done, code already handles
   this" is still an answer — confirm it and move on, don't manufacture a
   finding to justify the pass.
+- A gap, decomposition, or extension from step 1: resolve a gap on the spot
+  if the audit found the answer, otherwise ask; offer a decomposition
+  sketch for acceptance rather than assuming it's wanted; fold an extension
+  into its source item, add it as new, or flag it as speculative scope.
 - A finding that only matters at a scale the project doesn't operate at is
   noise — say so, don't add it to look thorough.
-- An extension idea with no user behind it is speculative scope — flag it
-  plainly rather than folding it in quietly.
 - A genuine vulnerability is **security debt to schedule**, not something to
   leave implicit — silence here is worse than an over-long to-do list.
-- Keep going until the user has made a call on everything raised, not just the
-  first pass' worth.
+- Keep going until the user has made a call on everything raised, not just
+  the first round's worth.
 
 ## 4. Write it back
 
 **Every accepted item is written immediately** — no batching behind a final
 "shall I write these?"
 
-- `DIRECTIONS.md`: append accepted new work to `## To do`; accepted
-  exclusions to `## Not doing`.
+- `DIRECTIONS.md`: append accepted new work and extensions to `## To do`;
+  accepted exclusions to `## Not doing`. An accepted decomposition replaces
+  its line with the breakdown, phased and sub-headed like mature
+  `DIRECTIONS.md` files; a resolved gap gets its wording fixed in place.
 - For each `## To do` item confirmed shipped: remove it from `DIRECTIONS.md`,
   and write or update its description in `README.md` (a new section if none
   fits, otherwise the existing one). This is the one case `README.md` gets
@@ -198,9 +198,10 @@ python3 "$VM" touch .claude/PROJECT.md
 ```
 
 Add one `## Log` entry to `.claude/PROJECT.md` recording the review's outcome:
-what `## To do` asked and how it resolved, what got added and why, any
-vulnerability that was flagged, anything explicitly ruled out and why. A fact
-about the project — not "ran project-review" or "audited the code."
+what `## To do` asked and how it resolved, what got added, decomposed, or
+extended and why, any vulnerability that was flagged, anything explicitly
+ruled out and why. A fact about the project — not "ran project-review" or
+"audited the code."
 
 Drain every backlog entry that got folded in:
 
@@ -213,6 +214,6 @@ python3 "$VM" backlog remove "<title>"
 State up front whether this was a guided pass (`## To do` had content) or an
 unguided one (it was empty), and if guided, how each item resolved before
 anything else. Then summarize: how many items were added to `## To do`/`##
-Not doing` and their headline, any items promoted from `## To do` into
+Not doing`, how many were decomposed, any promoted from `## To do` into
 `README.md`'s description, and any vulnerability flagged and its disposition
 (scheduled / accepted as documented risk / dismissed and why).
