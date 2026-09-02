@@ -21,7 +21,7 @@
     ../extra/rclone/default.nix
 
     # Notes vault
-    ../documents/vaultmeta.nix
+    ../documents/notes.nix
 
     # Host specific
     ../services/syncthing/folders/GLaDOS.nix
@@ -29,10 +29,15 @@
 
   ];
 
-  home.sessionVariables = {
-    VAULT_DIR = "/home/evf/Documents/notes";
-    PROJECT_REPOS_DIR = "/home/evf/Projects/project";
-    LEARNING_REPOS_DIR = "/home/evf/Projects/learning";
-  };
+  home.sessionVariables =
+    let
+      notesVault = "/home/evf/Documents/notes";
+    in
+    {
+      NOTES_VAULT = notesVault;
+      VAULT_DIR = notesVault;
+      PROJECT_REPOS_DIR = "/home/evf/Projects/project";
+      LEARNING_REPOS_DIR = "/home/evf/Projects/learning";
+    };
 
 }

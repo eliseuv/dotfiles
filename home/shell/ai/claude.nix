@@ -10,11 +10,6 @@
     force = true;
   };
 
-  home.file.".claude/skills" = {
-    source = ./skills;
-    recursive = true;
-  };
-
   home.shellAliases.a = "claude";
 
 }

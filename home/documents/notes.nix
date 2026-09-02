@@ -16,4 +16,11 @@
     EXTERNAL_INDEX_FILE = "external-projects.md";
   };
 
+  # Claude Code skills that operate on the vault (backlog, idea/learning/project
+  # workflows). Only relevant on hosts that import this file.
+  home.file.".claude/skills" = {
+    source = ./notes-skills;
+    recursive = true;
+  };
+
 }
