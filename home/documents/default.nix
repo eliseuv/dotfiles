@@ -27,7 +27,6 @@
   ];
 
   home.sessionVariables.READER = "zathura";
-  home.sessionVariables.NOTES_VAULT_PATH = "/home/evf/Documents/notes";
 
   xdg.mimeApps = {
     enable = true;
