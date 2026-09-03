@@ -99,6 +99,22 @@
         "type": "github"
       }
     },
+    "lazydiff-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783041600,
+        "narHash": "sha256-DjbUCPMqiVw+sRiOKiH7h1+Qs5RoBdm9Pjn6otrcoOg=",
+        "owner": "Ataraxy-Labs",
+        "repo": "lazydiff",
+        "rev": "bf8d6e672dd70537488e0d912c2b998707231637",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Ataraxy-Labs",
+        "repo": "lazydiff",
+        "type": "github"
+      }
+    },
     "neovim-nightly-overlay": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -203,10 +219,12 @@
         "catppuccin": "catppuccin",
         "fenix": "fenix",
         "home-manager": "home-manager",
+        "lazydiff-src": "lazydiff-src",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-stable": "nixpkgs-stable",
+        "shoin-src": "shoin-src",
         "sops-nix": "sops-nix",
         "spicetify-nix": "spicetify-nix",
         "yt-x": "yt-x"
@@ -226,6 +244,22 @@
         "owner": "rust-lang",
         "ref": "nightly",
         "repo": "rust-analyzer",
+        "type": "github"
+      }
+    },
+    "shoin-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788352852,
+        "narHash": "sha256-OJdtFLFJbP6w8cVpVtSNUfcGuAv/y16JLkI/8mkQXLY=",
+        "owner": "nol00p",
+        "repo": "Shoin",
+        "rev": "2eba9c08929751be4f96a3e5eff9b6c39b5c44e2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nol00p",
+        "repo": "Shoin",
         "type": "github"
       }
     },

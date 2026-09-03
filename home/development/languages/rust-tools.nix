@@ -1,92 +1,53 @@
-{ pkgs, lib, ... }:
+{ pkgs, inputs, ... }:
 
 let
-  # Third-party Rust repos to keep cloned locally and cargo-install from source.
-  # `path` is optional, for workspace repos where the installable binary crate
-  # isn't at the workspace root.
-  thirdPartyRustTools = [
-    {
-      url = "https://github.com/mpiorowski/late-sh.git";
-      path = "late-cli";
-    }
-    { url = "https://github.com/Ataraxy-Labs/lazydiff.git"; }
-    { url = "https://github.com/nol00p/Shoin.git"; }
-    {
-      url = "https://github.com/sudipghimire533/ytui-music.git";
-      path = "front-end";
-    }
-  ];
+  # Each source comes from a flake input (flake = false) pinned in flake.lock;
+  # bump with `nix flake lock --update-input <name>-src`.
 
-  thirdPartyRustSrcDir = "$HOME/Projects/third-party/rust";
+  lazydiff = pkgs.rustPlatform.buildRustPackage {
+    pname = "lazydiff";
+    version = "0.1.0-alpha.18";
+    src = inputs.lazydiff-src;
+    cargoLock = {
+      lockFile = "${inputs.lazydiff-src}/Cargo.lock";
+      outputHashes."sem-core-0.5.3" = "sha256-+h4WvT98CW72141yJeSHw8SRJ3TBS64dSCJwdusI+E0=";
+    };
+    nativeBuildInputs = [ pkgs.pkg-config ];
+    buildInputs = [
+      pkgs.dbus
+      pkgs.openssl
+    ];
+    # Use the system OpenSSL via pkg-config instead of building it from source
+    OPENSSL_NO_VENDOR = 1;
+    # Test suite expects a writable $HOME and a `git` binary, neither
+    # available in the build sandbox
+    doCheck = false;
+  };
 
-  # Encode each repo as "url|path" (path may be empty) for a flat bash array.
-  toolEntries = lib.concatMapStringsSep " " (r: ''"${r.url}|${r.path or ""}"'') thirdPartyRustTools;
+  shoin = pkgs.rustPlatform.buildRustPackage {
+    pname = "shoin";
+    version = "0.1.2";
+    src = inputs.shoin-src;
+    cargoLock.lockFile = "${inputs.shoin-src}/Cargo.lock";
+  };
 
-  rust-tools-install = pkgs.writeShellScriptBin "rust-tools-install" ''
-    set -uo pipefail
-
-    mkdir -p "${thirdPartyRustSrcDir}"
-
-    entries=( ${toolEntries} )
-    failed=()
-
-    for entry in "''${entries[@]}"; do
-      repo="''${entry%%|*}"
-      subpath="''${entry#*|}"
-      name=$(basename "$repo")
-      name=''${name%.git}
-      dest="${thirdPartyRustSrcDir}/$name"
-      installPath="$dest"
-      [ -n "$subpath" ] && installPath="$dest/$subpath"
-
-      if (
-        set -e
-        if [ -d "$dest/.git" ]; then
-          echo "Updating $name..."
-          git -C "$dest" pull --ff-only
-        else
-          echo "Cloning $name..."
-          git clone "$repo" "$dest"
-        fi
-        echo "Installing $name..."
-        cargo install --path "$installPath" --force --locked
-      ); then
-        :
-      else
-        echo "FAILED: $name" >&2
-        failed+=("$name")
-      fi
-    done
-
-    if [ ''${#failed[@]} -gt 0 ]; then
-      echo
-      echo "Failed: ''${failed[*]}" >&2
-      exit 1
-    fi
-  '';
+  # Excluded:
+  # - late-cli (github:mpiorowski/late-sh, late-cli member): transitively
+  #   depends on webrtc-sys, whose build.rs downloads a prebuilt WebRTC
+  #   binary from the network, incompatible with the Nix sandbox. Fixable
+  #   via LK_CUSTOM_WEBRTC + a pinned fetchurl of the release zip, but not
+  #   done here.
+  # - ytui-music (github:sudipghimire533/ytui-music, front-end member):
+  #   fails to compile against current rustc
+  #   (deny(dangerous_implicit_autorefs) in front-end/src/ui/mod.rs), an
+  #   upstream issue unrelated to packaging. Re-add once fixed upstream.
 in
 
 {
 
   home.packages = [
-    rust-tools-install
+    lazydiff
+    shoin
   ];
-
-  home.shellAliases = {
-    # Fetch and cargo-install the third-party Rust tools
-    rti = "rust-tools-install";
-  };
-
-  # Kick off rust-tools-install as a detached unit on every switch, so
-  # activation doesn't block on network/cargo-build time. A timestamped
-  # unit name avoids clashing with a still-running previous invocation.
-  # Check progress with `journalctl --user -u 'rust-tools-install-*'`.
-  home.activation.rustToolsInstall = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.systemd}/bin/systemd-run --user \
-      --unit="rust-tools-install-$(date +%s)" \
-      --description="Fetch and cargo-install third-party Rust tools" \
-      --collect \
-      -- ${lib.getExe rust-tools-install}
-  '';
 
 }

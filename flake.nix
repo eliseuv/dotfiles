@@ -74,6 +74,16 @@
     # Catppuccin
     catppuccin.url = "github:catppuccin/nix";
 
+    # Third-party Rust tool sources (plain source, not a flake), built
+    # via rustPlatform.buildRustPackage in home/development/languages/rust-tools.nix
+    lazydiff-src = {
+      url = "github:Ataraxy-Labs/lazydiff";
+      flake = false;
+    };
+    shoin-src = {
+      url = "github:nol00p/Shoin";
+      flake = false;
+    };
 
   };
 
