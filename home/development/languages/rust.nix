@@ -2,6 +2,10 @@
 
 {
 
+  imports = [
+    ./rust-tools.nix
+  ];
+
   home.packages = with pkgs; [
 
     # Full stable rust toolchain via fenix
