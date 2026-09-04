@@ -17,11 +17,11 @@ a chat transcript does not exist. Write after every exchange, not at the end.
 ## Session start
 
 ```bash
-python scripts/spec.py handoff        # what was happening
-python scripts/spec.py status         # counts, what's waiting
-python scripts/spec.py directions     # what the human wrote unprompted
-python scripts/spec.py inbox          # answers the human left for you
-python scripts/spec.py blocked        # what you must not start
+python3 "$VM" spec handoff        # what was happening
+python3 "$VM" spec status         # counts, what's waiting
+python3 "$VM" spec directions     # what the human wrote unprompted
+python3 "$VM" spec inbox          # answers the human left for you
+python3 "$VM" spec blocked        # what you must not start
 ```
 
 Five commands, a few hundred tokens, and you know the state of a project you
@@ -46,9 +46,9 @@ planning to propose — same rule the vault's review skills already follow.
 Then drain it. Each line becomes a typed item, and comes out of the section:
 
 ```bash
-python scripts/spec.py directions                       # read it
-python scripts/spec.py add R "..." --set acceptance=... # fold one line in
-python scripts/spec.py directions --set "<what's left>" # or --clear if nothing is
+python3 "$VM" spec directions                       # read it
+python3 "$VM" spec add R "..." --set acceptance=... # fold one line in
+python3 "$VM" spec directions --set "<what's left>" # or --clear if nothing is
 ```
 
 It accumulates between sessions and empties during them. A non-empty Directions
@@ -59,6 +59,26 @@ warns for exactly that reason.
 channel costs them nothing — a protocol that demands discipline from the human
 end gets abandoned in a fortnight, and then you have no channel at all.
 
+**Never write into Directions yourself.** It is the human's side of the table.
+Putting your own proposals there makes it impossible for them to tell their
+thoughts from yours, and the channel stops being worth reading first.
+
+### The channel follows the project
+
+Same channel, two homes, depending on where the project has got to:
+
+| Stage | Where Directions lives |
+|---|---|
+| a vault seed — the spec is the only file there is | `## 1. Directions` inside it |
+| graduated into a repo | `DIRECTIONS.md` beside `PROJECT_SPEC.md` |
+
+`spec directions` resolves this for you, so never branch on the lifecycle
+yourself and never read either by hand. Graduation moves the content out and
+deletes the section; **read the section out before creating the file**, because
+once both exist the command refuses to read either — it cannot tell which holds
+the real input, and guessing would strand the other. `validate` reports having
+both as an error for the same reason.
+
 Process the inbox second. Each answered question either:
 
 - **settles a choice** → create a `D-` item with `from: [Q-n]`, recording the
@@ -66,7 +86,7 @@ Process the inbox second. Each answered question either:
 - **adds behaviour** → create or amend an `R-` item;
 - **changes scope** → amend `G-`, `NG-`, or `C-`.
 
-Then `spec.py resolve Q-n --into D-m`. Resolving without folding the answer into
+Then `spec resolve Q-n --into D-m`. Resolving without folding the answer into
 a durable item is the one failure mode that quietly destroys the whole scheme:
 the answer scrolls out of context and the next session asks again.
 
@@ -75,7 +95,7 @@ the answer scrolls out of context and the next session asks again.
 Rewrite the handoff. Three lines, present tense, concrete:
 
 ```bash
-python scripts/spec.py handoff --set "- **Last session:** specified R-8..R-11 (rules engine), added D-4 (YAML rule format).
+python3 "$VM" spec handoff --set "- **Last session:** specified R-8..R-11 (rules engine), added D-4 (YAML rule format).
 - **Now blocked on:** Q-7 (CFG availability) — R-12 and all of M-2 wait on it.
 - **Next action:** if Q-7 comes back 'must-build', spike a CFG builder against SonarDelphi's AST before committing M-2 dates."
 ```
@@ -90,7 +110,7 @@ Spend one only when the answer changes what you would build, and say so in the
 `blocks` field. If nothing is blocked, it is not a question; it is an assumption.
 
 ```bash
-python scripts/spec.py add Q "Should rule severity be configurable per-project?" \
+python3 "$VM" spec add Q "Should rule severity be configurable per-project?" \
   --set blocks=[R-8] \
   --body "Per-project config means the rules engine needs a merge layer over
 defaults (~200 LOC). Fixed severities keep it flat. Cheaper to decide now than
@@ -107,13 +127,13 @@ Do not stall on an unanswered question when you can proceed under a stated
 assumption. Convert it and keep moving:
 
 ```bash
-python scripts/spec.py add A "Rule severities are fixed, not per-project" \
+python3 "$VM" spec add A "Rule severities are fixed, not per-project" \
   --set confidence=medium --set impact_if_wrong="retrofit merge layer, ~2d" \
   --set from=[Q-8]
 ```
 
 The assumption is addressable, so it is cheap to overturn later — the human can
-scan `spec.py ls A --status unconfirmed` and refute one line. This is the whole
+scan `spec ls A --status unconfirmed` and refute one line. This is the whole
 reason assumptions are first-class items rather than hedging in prose: an
 unstated assumption fails silently at integration time, a stated one fails at
 review time.
@@ -136,7 +156,7 @@ six weeks, because it is the thing a fresh agent will otherwise propose again.
 | New `Q-` items | rarely | yes |
 | New `R-`/`D-`/`A-` items | may | yes |
 | Handoff | may | yes, every session |
-| Changelog | — | automatic via `spec.py` |
+| Changelog | — | automatic via `spec` |
 
 The human has no obligations at all: Directions may sit empty, questions may go
 unanswered (silence becomes an `A-` item and work continues). Everything is
@@ -150,7 +170,7 @@ being worth reading first.
 
 ## Validation gate
 
-`spec.py validate` before ending any session, and before flipping
+`spec validate` before ending any session, and before flipping
 `status: drafting` to `ready`. Exit code 1 means the spec has holes that will
 turn into questions later, when they cost more. See RUBRIC.md for what it checks
 and why each check earns its place.

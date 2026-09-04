@@ -1,6 +1,6 @@
 # Completeness rubric
 
-`spec.py validate` implements this. It exists so that "iterate until the spec is
+`spec validate` implements this. It exists so that "iterate until the spec is
 detailed enough" terminates on a checkable condition rather than on the model
 deciding it has asked enough questions.
 

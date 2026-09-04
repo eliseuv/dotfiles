@@ -2,7 +2,7 @@
 
 Deliberately a strict subset of Markdown: renders on any Markdown viewer, parses
 with a few regexes, and survives hand-editing by someone who has never read this
-file. `spec.py` never reserializes the document — it edits individual lines — so
+file. `spec` never reserializes the document — it edits individual lines — so
 prose, comments and formatting outside the fields are preserved exactly.
 
 ## Frontmatter
@@ -32,7 +32,7 @@ naming the ID prefix it accepts:
 <!-- items: Q -->
 ```
 
-`spec.py add` inserts before the next `## ` heading. Sections without a marker
+`spec add` inserts before the next `## ` heading. Sections without a marker
 (Directions, Problem, Glossary, Interfaces, Handoff, Changelog) are prose — read
 by humans and quoted by agents, never queried structurally.
 
@@ -40,7 +40,7 @@ by humans and quoted by agents, never queried structurally.
 
 Handoff and Directions are checked for emptiness, so "has anyone written here
 yet" has to be decidable. Their instructional text is an HTML comment, which
-`spec.py` strips before deciding. Do not replace it with italic placeholder
+`spec` strips before deciding. Do not replace it with italic placeholder
 prose: an earlier template seeded `- **Last session:** —`, which is non-empty
 text, and the empty-handoff check could never fire on a real spec.
 
@@ -96,6 +96,12 @@ and empties during them, so a non-empty Directions block means work is waiting.
 This is deliberately a second channel alongside `> ANSWER:`, not a replacement:
 answers reply to what the agent asked, Directions carries what the user brought
 unprompted. See PROTOCOL.md.
+
+Once a project graduates out of the vault the section is deleted and the channel
+becomes a standalone `DIRECTIONS.md` beside the spec — same free prose, same
+draining, somewhere the user can open without navigating a 200-line file. The
+`directions` subcommand resolves whichever is in play; having both at once is an
+error, not a fallback.
 
 ## The ANSWER marker
 

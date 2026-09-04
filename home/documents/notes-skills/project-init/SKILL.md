@@ -15,7 +15,7 @@ Two things make this different from writing a design doc:
   append-only decision trail. A session can die mid-sentence and the next one
   loses nothing. Read `references/PROTOCOL.md` — it governs everything after
   this skill hands off.
-- **Completion is checkable.** `scripts/spec.py validate` implements
+- **Completion is checkable.** `python3 "$VM" spec validate` implements
   `references/RUBRIC.md`. The interrogation loop ends when the rubric passes,
   not when you feel you have asked enough.
 
@@ -23,20 +23,24 @@ Two things make this different from writing a design doc:
 
 | Path | Read it when |
 |---|---|
-| `scripts/spec.py` | Always. Every read and write goes through it. `--help` on any subcommand. |
 | `references/GRAMMAR.md` | Before hand-editing the spec, or if a parse looks wrong. |
 | `references/PROTOCOL.md` | Session start and end; give it to implementation agents. |
 | `references/RUBRIC.md` | When deciding whether to keep interrogating. |
 | `references/EXAMPLE_PROJECT_SPEC.md` | When you want to see a finished, passing spec. |
-| `assets/TEMPLATE.md` | Only via `spec.py init`. |
-| `scripts/selftest.sh` | Before and after changing `spec.py`. |
+| `assets/TEMPLATE.md` | The out-of-vault default. Inside the vault, `spec init` uses `$TEMPLATES_DIR/Project/specification.md`. |
 
-Set `SPEC_FILE` once and drop the `-f` flag everywhere:
+The engine lives in the vault, like every other tool these skills use. Set it
+up once and drop the `-f` flag everywhere:
 
-```bash
+```sh
+VM="$NOTES_VAULT/vaultmeta/vaultmeta.py"
+eval "$(python3 "$VM" env | sed 's/^/export /')"
 export SPEC_FILE=./PROJECT_SPEC.md
-alias spec='python /path/to/project-init/scripts/spec.py'
+spec() { python3 "$VM" spec "$@"; }
 ```
+
+`python3 "$VM" spec --help` lists every subcommand. The engine's own tests are
+`vaultmeta/spec-selftest.sh` — run them before and after changing `spec.py`.
 
 ## First: is this a new spec or a resume?
 
@@ -71,7 +75,7 @@ project here, which invalidates every question you were about to ask.
 ## Phase 2 — Skeleton immediately
 
 ```bash
-python scripts/spec.py init "project-name"
+python3 "$VM" spec init "project-name"
 ```
 
 Write the Problem section and whatever goals and constraints the user already
@@ -182,9 +186,10 @@ spec ls R --where status=specified   # ready to implement
 spec ls --unresolved                 # anything with an empty field
 spec ls --mentions G-2               # what depends on this goal
 spec get D-4                         # one item, verbatim
-spec ls R --json --columns id,status,acceptance
+spec --json ls R --columns id,status,acceptance
 ```
 
 Reading the whole file to answer "what's blocked" is the wrong instinct — it
 costs a hundred times the tokens and goes stale the moment you write to it.
-`--json` on any query if you're piping into something.
+`--json` goes *before* the subcommand — `spec --json ls R`, not
+`spec ls R --json`.
