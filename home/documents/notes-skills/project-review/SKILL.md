@@ -35,7 +35,7 @@ eval "$(python3 "$VM" env | sed 's/^/export /')"
 ## 0. The gate
 
 This only runs against a graduated **project** repo — not a vault seed
-(`/project-iterate` instead) and not a learning repo (`/learning-review`
+(`/project-init` instead) and not a learning repo (`/learning-review`
 instead).
 
 ```sh
@@ -51,23 +51,34 @@ no `.claude/PROJECT.md`, or no `vault_ref:`).
 to `## Log` in place before continuing — leave the content beneath it
 untouched, this is a heading fix, not a content migration.
 
-**A `warn:` about a missing `DIRECTIONS.md`** means this repo predates the
-current file split — migrate it on the spot before continuing:
-- If `ROADMAP.md` or `SPECIFICATION.md`/`PLAN.md` is present (an older
-  split): scaffold `DIRECTIONS.md` from
-  `$TEMPLATES_DIR/project-directions.md`, and merge its sections down —
-  `## In scope`/`## Milestones`/`## Direction` (whatever subset the old
-  file has) into `## To do`; `## Out of scope`/`## Deferred` into
-  `## Not doing`. Move `## About` and any custom sections into `README.md`
-  if they aren't already reflected there (merge with existing hand-written
-  prose, don't overwrite it), then delete the old file.
-- If nothing is present (pre-split case): scaffold `DIRECTIONS.md` empty,
-  and move whatever's in `.claude/PROJECT.md` beyond frontmatter/`## Log`
-  into `DIRECTIONS.md`/`README.md` following the same split.
+The gate's file warnings distinguish two different situations — read which
+one you got before acting:
 
-Content only in either case — don't rewrite or summarize while moving it, and
+- **`DIRECTIONS.md` but no `PROJECT_SPEC.md`** — the repo predates the spec
+  format. Migrate on the spot: `vaultmeta spec -f PROJECT_SPEC.md init <name>`,
+  then fold `## To do` into `R-`/`M-` items and `## Not doing` into `NG-`
+  items, leaving `DIRECTIONS.md` holding only free prose the user has not
+  had folded in yet.
+- **`PROJECT_SPEC.md` but no `DIRECTIONS.md`** — the spec is migrated but the
+  user has nowhere to write. Scaffold the file from
+  `$TEMPLATES_DIR/project-directions.md` and continue. If the spec still has
+  a `## 1. Directions` section, read it out *before* creating the file and
+  write its content across — with both present `spec directions` refuses,
+  because it cannot tell which holds the real input.
+- **Neither, or only `ROADMAP.md`/`SPECIFICATION.md`/`PLAN.md`** — the repo
+  predates the split entirely. Scaffold both: `init` a spec, fold whatever
+  the old file or `.claude/PROJECT.md` holds beyond frontmatter/`## Log` into
+  items, move `## About` and custom sections into `README.md` (merging with
+  existing prose, not overwriting), then delete the old file.
+
+Content only in every case — don't rewrite or summarize while moving it, and
 don't add a `## Log` entry for the move itself (that's a tooling action, not
 a fact about the project). Then proceed with the review as normal.
+
+Once a repo carries a spec, this pass's findings become typed items in it and
+`DIRECTIONS.md` is drained to empty; the `## To do` / `## Not doing` language
+below still describes repos that have not been migrated yet. See
+`$TEMPLATES_DIR/Project/directions-vs-readme.md` for which file takes what.
 
 ## 1. Read DIRECTIONS.md as a conversation, then talk back
 

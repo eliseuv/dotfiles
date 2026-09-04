@@ -8,7 +8,7 @@ description: Work through a graduated project repo's DIRECTIONS.md To-do list an
 `DIRECTIONS.md`'s `## To do` is user → agent, editable "at any time, in any
 session" — this skill is the session where it actually gets acted on. It
 reads whatever is currently there; it doesn't require a `/project-review` or
-`/project-iterate` pass to have just run, and it isn't the place those
+`/project-init` pass to have just run, and it isn't the place those
 skills' own review/critique work happens — this only implements, on a
 dedicated branch, items the user explicitly picks.
 
@@ -39,7 +39,7 @@ seed, no `.claude/PROJECT.md`, or no `vault_ref:`).
 A `warn:` about a missing `DIRECTIONS.md` means this repo predates the
 current file split. Unlike `/project-review`, this skill does **not**
 migrate it on the spot — tell the user to run `/project-review` or
-`/project-iterate` first to get `DIRECTIONS.md` scaffolded, then stop.
+`/project-review` first to get `DIRECTIONS.md` scaffolded, then stop.
 
 A `warn:` about `.claude/PROJECT.md`'s body heading is not this skill's
 concern — proceed.

@@ -30,7 +30,7 @@ python3 "$VM" projects --json
 a new seed. Confirm that reading with the user before writing anything, then:
 
 - the project is still a **vault seed** (`state: seed`) → invoke
-  `learning-iterate` or `project-iterate` for that slug, handing it this entry as
+  `learning-iterate` or `project-init` for that slug, handing it this entry as
   the material to fold in.
 - the project has **graduated** (`state: repo`) → append the entry to that repo's
   `.claude/PROJECT.md` under `## Roadmap`, as a single bullet in the section's
