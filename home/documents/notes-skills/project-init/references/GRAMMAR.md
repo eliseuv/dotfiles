@@ -151,7 +151,7 @@ Reference fields are checked for dangling IDs: `blocks`, `refs`, `covers`,
 G   proposed | accepted | dropped
 NG  accepted | dropped
 C   proposed | accepted | dropped
-R   draft | specified | accepted | implemented | dropped
+R   draft | specified | accepted | implemented | superseded | dropped
 D   proposed | accepted | superseded | dropped
 A   unconfirmed | confirmed | refuted
 Q   open | answered | dropped
@@ -161,3 +161,9 @@ M   planned | active | done | dropped
 
 `validate` rejects anything outside these sets, so a typo'd status surfaces
 immediately rather than silently dropping an item out of every future query.
+
+`R  superseded` is for a requirement that turned out to be several: set the
+original to `superseded` and give each slice `supersedes: [R-n]`. Like a
+superseded decision it drops out of the rubric — no `acceptance` demanded of it
+any more — while the original wording stays readable. Use `dropped` only for
+work genuinely cut, so the two stay distinguishable six weeks later.
