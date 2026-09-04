@@ -76,12 +76,22 @@ python3 "$VM" spec -f PROJECT_SPEC.md init "$NAME" --title "<Project Title>"
 python3 "$VM" spec meta --set category=<from .claude/PROJECT.md> language=<from flake.nix>
 ```
 
+**Then delete the spec's `## 1. Directions` section immediately.** `init` seeds
+it from the template, but this repo is graduated and already has a
+`DIRECTIONS.md` — leaving both is the interrupted-graduation state, and every
+later `spec directions` call in this procedure will refuse until you fix it.
+Also carry `created:` over from `.claude/PROJECT.md`'s `started:` rather than
+letting it read today.
+
 Then, in this order:
 
 1. **Goals from `README.md`, not from the to-do list.** The to-do list says what
-   is left; the README says what the thing is. Most metrics will be `unknown` —
-   that is what `spec ls --unresolved` is for, and inventing a measurable
-   criterion the user never agreed to is worse than leaving the hole visible.
+   is left; the README says what the thing is. **Every goal needs a real
+   `metric`** — this is the one hole `unknown` will not fill, because the rubric
+   errors on it rather than warning, and deliberately so: a goal that cannot be
+   failed cannot steer anything. A README that defines "done" against a corpus
+   or a round-trip gives you one directly. Where it does not, ask — this is
+   worth a round trip with the user, unlike most migration gaps.
 2. **`## Not doing` → `NG-` items, bodies preserved verbatim.** This is where
    the real reasoning lives — why a path was rejected, what was tried and
    reverted. Paraphrasing it loses the migration's whole value.
@@ -105,9 +115,10 @@ Then, in this order:
    full pass, nothing. `.claude/PROJECT.md` and `README.md` are untouched by
    migration.
 
-Finish with `spec validate`. A freshly migrated spec will have holes; that is
-expected and visible. It must not have *errors* — if it does, the mapping is
-wrong, not the rubric.
+Finish by draining `DIRECTIONS.md` — everything in it has just become an item,
+so scaffold it back to the bare template — and then `spec validate`. A freshly
+migrated spec will have holes, and those are expected and visible. It must not
+have *errors*: if it does, the mapping is wrong, not the rubric.
 
 ## 1. Read DIRECTIONS.md as a conversation, then talk back
 
