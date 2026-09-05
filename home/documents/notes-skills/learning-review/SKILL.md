@@ -81,10 +81,18 @@ suggestions.
 
 ## 2. Read state, then propose — Direction leads, the principles fill in
 
-Read `ROADMAP.md` in full, including every unit's `### Progress notes` and the
-`## Progress at a glance` table. A unit already marked `Done` or `In progress`
-is not free to cut or reorder out from under the learner without saying so
-explicitly — surface that tension rather than silently proposing it away.
+Read `ROADMAP.md` in full, including every unit's `### Progress notes`, the
+`## Progress at a glance` table, and `## Not covered`. A unit already marked
+`Done` or `In progress` is not free to cut or reorder out from under the
+learner without saying so explicitly — surface that tension rather than
+silently proposing it away.
+
+`## Not covered` holds the exclusions the track argued for, carried across from
+the seed's `### Out of scope` at graduation and kept because the seed is gone.
+It is the boundary a proposed addition gets measured against. A repo graduated
+before that section existed has none: its exclusions were lost, so judge on the
+goal and the units alone, and let this pass's own decisions start the section
+rather than inventing what the user once excluded.
 
 **If step 1 found anything in `## Direction`, address it first.** Is a named
 unit really scope creep or a legitimate addition; does splitting a unit the
@@ -124,6 +132,9 @@ say so when:
 - The learner is asking to skip ahead past a prerequisite the roadmap itself
   established.
 - Cutting a unit would strand a later one that depends on it.
+- The revision crosses something `## Not covered` names. That is a decision the
+  user is entitled to reverse, but it is a reversal — put it as one, with what
+  the exclusion was for, rather than quietly adding a unit past it.
 - The revision is really scope creep dressed as curriculum — check
   `python3 "$VM" projects` for whether it's actually a separate project.
 
@@ -138,6 +149,11 @@ add/remove/reorder, so the table and the sections underneath never drift apart.
 Use the unit template shape from `Templates/Learning/roadmap-template.md` for
 anything new: `### Theory` / `### Build` / `### Milestone` / `### Checkpoint` /
 `### Progress notes` (new units start `_No progress logged yet._`).
+
+**Keep `## Not covered` current in the same edit.** A unit cut for being out of
+scope gets a line there saying so — otherwise the next pass re-proposes it, and
+the pass after that re-argues it. An exclusion the user agreed to cross loses
+its line, since it is no longer the boundary.
 
 ```sh
 python3 "$VM" touch "$REPO/.claude/PROJECT.md"
