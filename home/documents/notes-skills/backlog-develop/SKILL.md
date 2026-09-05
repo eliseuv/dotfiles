@@ -32,10 +32,13 @@ a new seed. Confirm that reading with the user before writing anything, then:
 - the project is still a **vault seed** (`state: seed`) → invoke
   `learning-iterate` or `project-init` for that slug, handing it this entry as
   the material to fold in.
-- the project has **graduated** (`state: repo`) → append the entry to that repo's
-  `.claude/PROJECT.md` under `## Roadmap`, as a single bullet in the section's
-  existing style. Do not add a `## Log` entry for it: the Log records what
-  happened to the project, not what was filed about it.
+- the project has **graduated** (`state: repo`) → append the entry to that
+  repo's `DIRECTIONS.md`, as a single bullet. That is the user's channel into
+  the project, and `/project-review` folds it into the spec on its next pass.
+  Do not write it into `PROJECT_SPEC.md` yourself — turning prose into typed
+  items is a review pass's job, done with the user present. Do not add a
+  `## Log` entry either: the Log records what happened to the project, not what
+  was filed about it.
 
 **Untagged, or tagged at something that does not exist** — continue to step 3.
 

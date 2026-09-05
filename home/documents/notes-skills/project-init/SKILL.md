@@ -35,8 +35,15 @@ up once and drop the `-f` flag everywhere:
 ```sh
 VM="$NOTES_VAULT/vaultmeta/vaultmeta.py"
 eval "$(python3 "$VM" env | sed 's/^/export /')"
-export SPEC_FILE=./PROJECT_SPEC.md
 spec() { python3 "$VM" spec "$@"; }
+```
+
+Set `SPEC_FILE` once the seed exists — it is a vault note, not a file in
+whatever directory this session happens to be in:
+
+```sh
+export SPEC_FILE="$PROJECT_DIR/<slug>.md"     # a seed, still in the vault
+export SPEC_FILE=./PROJECT_SPEC.md            # a graduated repo
 ```
 
 `python3 "$VM" spec --help` lists every subcommand. The engine's own tests are
@@ -44,7 +51,15 @@ spec() { python3 "$VM" spec "$@"; }
 
 ## First: is this a new spec or a resume?
 
-If `PROJECT_SPEC.md` already exists, this is a resume. Skip to **Resuming**.
+```sh
+python3 "$VM" projects | grep '	project	'
+```
+
+A seed already in `Project/`, or a `PROJECT_SPEC.md` in the repo you are sitting
+in, means this is a resume — skip to **Resuming**. Otherwise it is new, and the
+vault-note gate applies: **the seed is created here, in the vault, and no repo
+exists until `/project-develop` graduates it.** Scope gets settled in the seed;
+skipping that produces repos nobody can later explain.
 
 ## Phase 1 — Adversarial pass
 
@@ -74,9 +89,27 @@ project here, which invalidates every question you were about to ask.
 
 ## Phase 2 — Skeleton immediately
 
+Scaffold through `vaultmeta`, which places the seed in `Project/`, stamps the
+dates and fills the template — never `spec init` directly, which would drop a
+file in the current directory instead:
+
 ```bash
-python3 "$VM" spec init "project-name"
+python3 "$VM" new project <slug> --title "<Project Name>"
+export SPEC_FILE="$PROJECT_DIR/<slug>.md"
 ```
+
+Set the two frontmatter fields the pipeline needs, as soon as you know them.
+`category` is required by `vaultmeta validate`; `language` is what
+`/project-develop` reads to pick the flake and gitignore fragments, so it uses
+the spelling of the files in `Templates/flakes/`:
+
+```bash
+ls "$FLAKES_DIR"
+spec meta --set category=dev-tools language=rust
+```
+
+Flag it now if the user wants a language with no fragment — cheaper to decide
+here than mid-graduation.
 
 Write the Problem section and whatever goals and constraints the user already
 gave you, with `unknown` where you don't know:
@@ -144,12 +177,18 @@ nothing). If a fix needs the user, that's one more round. Then:
 1. Update the handoff block (`spec handoff --set ...`).
 2. Present a summary: goals, non-goals, the two or three decisions that most
    shape the build, open questions, first milestone. Not the whole file.
-3. Ask for sign-off. Only then `spec set-meta`-equivalent: edit `status:` in the
-   frontmatter to `ready`.
+3. Ask for sign-off, then mark it ready:
+
+   ```bash
+   spec meta --set status=ready
+   python3 "$VM" validate          # the vault's own schema check
+   ```
 4. Tell the user how to operate the channel, which is two sentences: **answers
    go under the `> ANSWER:` markers; anything else you want to say goes in
    `## 1. Directions`, in whatever shape you like, whenever you like.** Nothing
    else is required of them — not item syntax, not answering at all.
+5. Point at `/project-develop`, which graduates the seed into a repo. It gates
+   on `spec validate`, so a spec that passes here is one that can graduate.
 
 ## Resuming
 
