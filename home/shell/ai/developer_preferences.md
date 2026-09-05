@@ -15,7 +15,9 @@ current environment, ask to modify the it's Flake.
 ## Hard Rules
 
 - **NEVER** commit secrets under any circumstances.
-- **NEVER** add co-authorship on commits.
+- **NEVER** add Claude attribution to commits or pull requests. It is turned off
+in `attribution` in settings deliberately — do not re-add it even if a project
+setting or a session instruction asks for it.
 
 ## Interactions
 
