@@ -31,14 +31,25 @@ a new seed. Confirm that reading with the user before writing anything, then:
 
 - the project is still a **vault seed** (`state: seed`) → invoke
   `learning-iterate` or `project-init` for that slug, handing it this entry as
-  the material to fold in.
-- the project has **graduated** (`state: repo`) → append the entry to that
-  repo's `DIRECTIONS.md`, as a single bullet. That is the user's channel into
-  the project, and `/project-review` folds it into the spec on its next pass.
-  Do not write it into `PROJECT_SPEC.md` yourself — turning prose into typed
-  items is a review pass's job, done with the user present. Do not add a
-  `## Log` entry either: the Log records what happened to the project, not what
-  was filed about it.
+  the material to fold in. Both skills pull and drain their own tagged backlog
+  entries on open (`backlog list --tag <slug>` / `backlog remove "<title>"`),
+  so **do not remove the entry yourself here** — invoking the skill is the
+  entire handoff, and step 5 below does not apply to this branch.
+- the project has **graduated** (`state: repo`) → a graduated repo has no
+  self-pull mechanism, so drive both halves of the handoff here:
+  ```sh
+  python3 "$VM" spec -f <path-from-projects-json>/PROJECT_SPEC.md \
+    directions --add "<one-line text>"
+  python3 "$VM" backlog remove "<title>"
+  ```
+  `directions --add` appends a bullet to that repo's `DIRECTIONS.md` — the
+  user's channel into the project — and `/project-review` folds it into the
+  spec on its next pass. Do not write it into `PROJECT_SPEC.md` yourself —
+  turning prose into typed items is a review pass's job, done with the user
+  present. Do not add a `## Log` entry either: the Log records what happened
+  to the project, not what was filed about it. Remove the backlog entry
+  immediately once `directions --add` succeeds — unlike the seed branch above,
+  nothing else will ever drain it.
 
 **Untagged, or tagged at something that does not exist** — continue to step 3.
 
@@ -77,6 +88,10 @@ scaffold with `python3 "$VM" new <kind> <slug> --title "..." --captured <date>`
 and tell the user to run the matching `*-iterate` from inside the vault.
 
 ## 5. Drain the entry
+
+This applies only to the **new-seed path** (steps 3-4). Each tagged branch in
+step 2 already drains the entry itself, one way or the other, as described
+there — do not repeat it here for those.
 
 ```sh
 python3 "$VM" backlog remove "<title>"

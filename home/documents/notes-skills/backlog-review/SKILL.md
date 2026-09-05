@@ -58,13 +58,26 @@ Put the proposed changes to the user with `AskUserQuestion` — grouped, not one
 question per entry. Multi-select where the choices are independent (which entries
 to drop, which tags to add).
 
-Apply each accepted change immediately, as it is accepted:
+Apply each accepted change immediately, as it is accepted, through `vaultmeta` —
+never by hand-editing `Backlog.md`:
 
 - **drop** → `python3 "$VM" backlog remove "<title>"`
-- **retag, retitle, rewrite, merge** → edit `Backlog.md` directly (get its path
-  from `python3 "$VM" path BACKLOG_FILE`), preserving each entry's original
-  capture date. A merged entry keeps the **oldest** date of its inputs, then
-  remove the others with `backlog remove`.
+- **retag** → `python3 "$VM" backlog update "<title>" --tag <name>` (or
+  `--clear-tag` to untag).
+- **retitle** → `python3 "$VM" backlog update "<title>" --title "<new title>"`.
+- **rewrite** → `python3 "$VM" backlog update "<title>" --description "<new text>"`.
+- **merge** → pick the entry that survives, update it once with the merged
+  content and the **oldest** capture date of its inputs, then remove the rest:
+  ```sh
+  python3 "$VM" backlog update "<survivor title>" \
+    --description "<merged text>" --captured <oldest-date>
+  python3 "$VM" backlog remove "<absorbed title>"   # once per absorbed entry
+  ```
+  Update the survivor before removing the others — if a remove fails partway,
+  the survivor already carries everything and nothing has been lost.
+
+`update` reports each change as `field: old -> new`; read that back to the user
+as confirmation rather than re-describing what you just asked them to approve.
 
 Close with a two-line summary: what the backlog looks like now, and which entries
 are worth developing next.

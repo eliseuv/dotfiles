@@ -192,6 +192,28 @@ nothing). If a fix needs the user, that's one more round. Then:
 
 ## Resuming
 
+Backlog entries tagged at this project's slug are material for exactly this
+pass — pull and fold them in first, the same way `learning-iterate` treats its
+own tagged entries, so the user's own captured thoughts outrank anything this
+pass was about to propose on its own:
+
+```bash
+python3 "$VM" backlog list --tag <slug>
+```
+
+(`<slug>` is the one identified above, in "First: is this a new spec or a
+resume?".) A project seed has no single "goals or outline" field the way a
+learning goals file does, so fold each pulled entry in exactly as if the user
+had written it straight into `## 1. Directions`: turn it into a typed item —
+`Q-`, `D-`, `R-`, or `NG-`, whichever the content actually is — then drain it:
+
+```bash
+python3 "$VM" backlog remove "<title>"
+```
+
+Do this before reading Directions itself below, so both inputs are already
+folded in before any interrogation begins.
+
 ```bash
 spec handoff && spec status && spec directions && spec inbox && spec blocked
 ```
