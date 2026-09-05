@@ -5,10 +5,13 @@ update *inputs:
     git commit --message "[flake] update {{inputs}}"
 
 commit-gen:
-    git commit --all --allow-empty \
-        --message "$(hostname) @ $(nixos-rebuild list-generations | rg "True$" | sd '^(\d+)\W+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\W+([\w\.]+)\W+([\w\.]+).+True$' '$1 NixOS $2 Linux $3')" \
+    git diff --quiet && git diff --cached --quiet || \
+        (echo "commit-gen: uncommitted changes present, commit before switching" >&2 && exit 1)
+    gen="$(nixos-rebuild list-generations | rg "True$" | sd '^(\d+)\W+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\W+([\w\.]+)\W+([\w\.]+).+True$' '$1 NixOS $2 Linux $3')"
+    git tag --annotate "$(hostname)-${gen%% *}" \
+        --message "$(hostname) @ ${gen}" \
         --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
-    git push
+    git push --follow-tags
 
 gc keep='4':
     nh clean all --keep {{keep}} --no-gcroots
