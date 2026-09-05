@@ -5,7 +5,7 @@ description: Critically review a graduated learning repo's ROADMAP.md, guided by
 
 # learning-review
 
-The post-graduation counterpart to `/learning-iterate`. That skill shapes the
+The post-graduation counterpart to `/learning-init`. That skill shapes the
 curriculum outline while the seed is still in `Learning/`; this one revises the
 curriculum after graduation, when it lives as `ROADMAP.md` in a repo under
 `$LEARNING_REPOS_DIR` and there is no vault seed left to edit.
@@ -32,7 +32,7 @@ eval "$(python3 "$VM" env | sed 's/^/export /')"
 ## 0. The gate
 
 This only runs against a graduated learning repo — not a vault seed (that's
-`/learning-iterate`) and not a project repo.
+`/learning-init`) and not a project repo.
 
 ```sh
 python3 "$VM" gate review learning <name>
@@ -76,7 +76,7 @@ python3 "$VM" backlog remove "<title>"
 ```
 
 Do this before proposing anything of your own — same rule as every other
-`*-iterate`/`*-review` skill: the user's captured thoughts outrank your
+`*-init`/`*-review` skill: the user's captured thoughts outrank your
 suggestions.
 
 ## 2. Read state, then propose — Direction leads, the principles fill in
@@ -94,7 +94,7 @@ over any revision the agent would otherwise propose on its own.
 
 **Then formulate whatever else the state of the roadmap calls for** — the
 default pass, and the whole pass when `## Direction` was empty: units to add,
-split, merge, reorder, or cut. The same principles `/learning-iterate` uses
+split, merge, reorder, or cut. The same principles `/learning-init` uses
 for new units apply to revised ones, whether the revision came from
 `## Direction` or from this step's own read of the roadmap:
 

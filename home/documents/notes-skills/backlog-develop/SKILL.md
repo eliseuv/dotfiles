@@ -30,7 +30,7 @@ python3 "$VM" projects --json
 a new seed. Confirm that reading with the user before writing anything, then:
 
 - the project is still a **vault seed** (`state: seed`) → invoke
-  `learning-iterate` or `project-init` for that slug, handing it this entry as
+  `learning-init` or `project-init` for that slug, handing it this entry as
   the material to fold in. Both skills pull and drain their own tagged backlog
   entries on open (`backlog list --tag <slug>` / `backlog remove "<title>"`),
   so **do not remove the entry yourself here** — invoking the skill is the
@@ -85,7 +85,8 @@ than today's date.
 
 If the vault-level skills are unavailable (you are running outside the vault),
 scaffold with `python3 "$VM" new <kind> <slug> --title "..." --captured <date>`
-and tell the user to run the matching `*-iterate` from inside the vault.
+and tell the user to run the matching `*-init` from inside the vault — it will
+pick the seed up as a resume and fold in anything tagged at it.
 
 ## 5. Drain the entry
 

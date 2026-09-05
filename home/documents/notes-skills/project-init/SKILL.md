@@ -193,7 +193,7 @@ nothing). If a fix needs the user, that's one more round. Then:
 ## Resuming
 
 Backlog entries tagged at this project's slug are material for exactly this
-pass — pull and fold them in first, the same way `learning-iterate` treats its
+pass — pull and fold them in first, the same way `learning-init` treats its
 own tagged entries, so the user's own captured thoughts outrank anything this
 pass was about to propose on its own:
 
