@@ -3,14 +3,11 @@
 
   programs.claude-code = {
     enable = true;
-  };
 
-  home.file.".claude/CLAUDE.md" = {
-    source = ./developer_preferences.md;
-    force = true;
+    # Writes developer_preferences.md to <configDir>/CLAUDE.md
+    context = ./developer_preferences.md;
   };
 
   home.shellAliases.a = "claude";
 
 }
-
