@@ -34,7 +34,8 @@ back on flawed logic or problematic approaches.
 ## Workflow
 
 - **Make minimal changes**: Do not refactor unrelated code.
-- **Work branch**: Always work on a separate branch and commit along the way.
+- **Work on the default branch**: Do not create work branches; commit directly
+to `main` as you go.
 - **Keep commits granular**: Create separate commits per logical change.
 
 ## Coding Standards
