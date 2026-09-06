@@ -16,8 +16,10 @@
     EXTERNAL_INDEX_FILE = "Projects.md";
   };
 
-  # Claude Code skills that operate on the vault (backlog, idea/learning/project
-  # workflows). Only relevant on hosts that import this file.
+  # Claude Code skills that operate on graduated learning/project repos (outside
+  # the vault). Vault-specific skills live in the vault's own .claude/skills
+  # instead, since they're only useful there. Only relevant on hosts that
+  # import this file.
   home.file.".claude/skills" = {
     source = ./notes-skills;
     recursive = true;
