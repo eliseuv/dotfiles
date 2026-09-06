@@ -13,7 +13,7 @@
     TEMPLATES_DIR = "Templates";
     FLAKES_DIR = "Templates/flakes";
     GITIGNORE_DIR = "Templates/gitignore";
-    EXTERNAL_INDEX_FILE = "external-projects.md";
+    EXTERNAL_INDEX_FILE = "Projects.md";
   };
 
   # Claude Code skills that operate on the vault (backlog, idea/learning/project
