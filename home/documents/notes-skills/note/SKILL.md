@@ -28,20 +28,21 @@ to check for overlap. File it and stop.
    - **ctx** — only if the user actually supplied circumstance ("came up while
      …", "from the ledger work"). Never invent one.
 
-3. Infer a tag **only on an unambiguous match**:
+3. Infer tags **only on an unambiguous match**:
 
    ```sh
    python3 "$VM" projects
    ```
 
-   If the thought plainly names one of these projects, pass `--tag <name>`. If it
-   names none, or could mean two of them, pass no tag. Do not guess, and do not
-   ask.
+   If the thought plainly names one or more of these projects, pass `--tag
+   <name> [<name2> ...]` — all of them, not just the first. If it names none, or
+   is unsure which of two it means (as opposed to plainly meaning both), pass no
+   tag. Do not guess, and do not ask.
 
 4. File it:
 
    ```sh
-   python3 "$VM" backlog add "<title>" --description "<description>" --ctx "<ctx>" --tag <name>
+   python3 "$VM" backlog add "<title>" --description "<description>" --ctx "<ctx>" --tag <name> [<name2> ...]
    ```
 
    Omit any flag you have no value for.

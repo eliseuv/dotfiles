@@ -69,7 +69,10 @@ python3 "$VM" backlog list --tag <name>
 
 Hold both Direction's items and the backlog entries for step 2. Drain each
 once its fate is decided — a backlog entry via the tool, a `## Direction` line
-by removing it directly from the file:
+by removing it directly from the file. An entry can carry more than one tag —
+if one also names another project that hasn't been folded in yet, hand that
+project its share before removing the entry, so nothing is lost to whichever
+pass runs first:
 
 ```sh
 python3 "$VM" backlog remove "<title>"

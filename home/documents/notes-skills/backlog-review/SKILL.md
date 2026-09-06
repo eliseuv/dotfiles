@@ -30,7 +30,8 @@ when tracking was migrated on most of these repos.
 ## Present the overview
 
 Group **by tag first** — one cluster per project, then the untagged entries — and
-within each cluster by theme, oldest first. Keep it scannable: a line per entry,
+within each cluster by theme, oldest first. An entry tagged at more than one
+project appears in each of its clusters. Keep it scannable: a line per entry,
 not a paragraph.
 
 Then give an actual assessment. Be specific and be critical; a review that
@@ -62,8 +63,8 @@ Apply each accepted change immediately, as it is accepted, through `vaultmeta` �
 never by hand-editing `Backlog.md`:
 
 - **drop** → `python3 "$VM" backlog remove "<title>"`
-- **retag** → `python3 "$VM" backlog update "<title>" --tag <name>` (or
-  `--clear-tag` to untag).
+- **retag** → `python3 "$VM" backlog update "<title>" --tag <name> [<name2> ...]`
+  (replaces the entry's whole tag set; `--clear-tag` to untag entirely).
 - **retitle** → `python3 "$VM" backlog update "<title>" --title "<new title>"`.
 - **rewrite** → `python3 "$VM" backlog update "<title>" --description "<new text>"`.
 - **merge** → pick the entry that survives, update it once with the merged

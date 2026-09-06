@@ -157,6 +157,10 @@ python3 "$VM" backlog list --tag "$NAME"
 python3 "$VM" backlog remove "<title>"   # once its fate is decided
 ```
 
+An entry can carry more than one tag — if one also names another project that
+hasn't been folded in yet, hand that project its share before removing the
+entry, so nothing is lost to whichever review pass runs first.
+
 Do all of this before proposing anything of your own — same rule as every other
 `*-review` skill: the user's captured thoughts outrank your suggestions.
 

@@ -18,40 +18,51 @@ python3 "$VM" backlog list --json
 If the user named an entry, use it. Otherwise offer the entries with
 `AskUserQuestion`, oldest and best-formed first.
 
-## 2. Branch on the tag
+## 2. Branch on the tags
 
-Check what the tag refers to:
+An entry can carry more than one tag (`tag: #a #b`). Check what each refers to:
 
 ```sh
 python3 "$VM" projects --json
 ```
 
-**Tagged at a project that exists** — this is almost certainly an *addition*, not
-a new seed. Confirm that reading with the user before writing anything, then:
+**Tagged at one or more projects that exist** — this is almost certainly an
+*addition*, not a new seed. Confirm that reading with the user before writing
+anything, then handle every matching tag before draining the entry — graduated
+repos first, seed projects last:
 
-- the project is still a **vault seed** (`state: seed`) → invoke
-  `learning-init` or `project-init` for that slug, handing it this entry as
-  the material to fold in. Both skills pull and drain their own tagged backlog
-  entries on open (`backlog list --tag <slug>` / `backlog remove "<title>"`),
-  so **do not remove the entry yourself here** — invoking the skill is the
-  entire handoff, and step 5 below does not apply to this branch.
 - the project has **graduated** (`state: repo`) → a graduated repo has no
-  self-pull mechanism, so drive both halves of the handoff here:
+  self-pull mechanism, so write directly, but do not remove the entry yet if
+  another tag still needs handling:
   ```sh
   python3 "$VM" spec -f <path-from-projects-json>/PROJECT_SPEC.md \
     directions --add "<one-line text>"
-  python3 "$VM" backlog remove "<title>"
   ```
   `directions --add` appends a bullet to that repo's `DIRECTIONS.md` — the
   user's channel into the project — and `/project-review` folds it into the
   spec on its next pass. Do not write it into `PROJECT_SPEC.md` yourself —
   turning prose into typed items is a review pass's job, done with the user
   present. Do not add a `## Log` entry either: the Log records what happened
-  to the project, not what was filed about it. Remove the backlog entry
-  immediately once `directions --add` succeeds — unlike the seed branch above,
-  nothing else will ever drain it.
+  to the project, not what was filed about it.
+- the project is still a **vault seed** (`state: seed`) → invoke
+  `learning-init` or `project-init` for that slug, handing it this entry as
+  the material to fold in. Both skills pull and drain their own tagged backlog
+  entries on open (`backlog list --tag <slug>` / `backlog remove "<title>"`),
+  so **do not remove the entry yourself** — invoking the skill is the drain,
+  and step 5 below does not apply to this branch. If a second tag also names a
+  still-seed project, its `*-init` invocation will find nothing left to pull
+  (the first invocation already removed the entry) — hand it the content
+  directly instead of relying on the self-pull.
 
-**Untagged, or tagged at something that does not exist** — continue to step 3.
+Once every graduated-repo tag has been written and the (at most one
+self-draining) seed-tag invocation has run, remove the entry yourself only if
+no seed tag did it for you:
+```sh
+python3 "$VM" backlog remove "<title>"
+```
+
+**Untagged, or every tag names something that does not exist** — continue to
+step 3.
 
 ## 3. Establish the path
 

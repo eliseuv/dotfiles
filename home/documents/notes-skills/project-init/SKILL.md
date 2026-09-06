@@ -205,7 +205,9 @@ python3 "$VM" backlog list --tag <slug>
 resume?".) A project seed has no single "goals or outline" field the way a
 learning goals file does, so fold each pulled entry in exactly as if the user
 had written it straight into `## 1. Directions`: turn it into a typed item —
-`Q-`, `D-`, `R-`, or `NG-`, whichever the content actually is — then drain it:
+`Q-`, `D-`, `R-`, or `NG-`, whichever the content actually is. An entry can
+carry more than one tag — if one also names another still-open project, hand
+that project its share first, since draining removes the entry for good:
 
 ```bash
 python3 "$VM" backlog remove "<title>"
