@@ -11,6 +11,7 @@
 
 	/* try increasing if you encounter problems */
 	--urlbar-height-setting: 22px;
+	--navbar-height-setting: var(--urlbar-height-setting);
 	--tab-min-height: 16px !important;
 
 	/* I don't recommend you touch this unless you know what you're doing */
