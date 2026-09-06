@@ -1,19 +1,15 @@
 { ... }:
 {
 
-  # Vault-relative paths for the notes vault's vaultmeta tool. Constant across
-  # machines (resolved against VAULT_DIR, which is host-specific — see the
-  # importing host file). Mirrors notes/.env.example.
+  # Vault-relative path needed outside the vault directory: project-review (a
+  # graduated-repo skill, so it can run from inside any repo, not the vault)
+  # interpolates $TEMPLATES_DIR directly in a shell command. Every other
+  # vault-relative path lives only in notes/.env now — vault-local skills
+  # resolve them through `vaultmeta.py path`, never as raw env vars, so they
+  # don't need to be global. Constant across machines (resolved against
+  # VAULT_DIR, which is host-specific — see the importing host file).
   home.sessionVariables = {
-    BACKLOG_FILE = "Backlog.md";
-    IDEA_DIR = "Idea";
-    IDEA_INBOX_FILE = "Idea/Inbox.md";
-    LEARNING_DIR = "Learning";
-    PROJECT_DIR = "Project";
     TEMPLATES_DIR = "Templates";
-    FLAKES_DIR = "Templates/flakes";
-    GITIGNORE_DIR = "Templates/gitignore";
-    EXTERNAL_INDEX_FILE = "Projects.md";
   };
 
   # Claude Code skills that operate on graduated learning/project repos (outside
