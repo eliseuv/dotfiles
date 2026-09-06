@@ -111,6 +111,18 @@ spec meta --set category=dev-tools language=rust
 Flag it now if the user wants a language with no fragment — cheaper to decide
 here than mid-graduation.
 
+If an existing epic covers what this project is for, offer to attach it:
+
+```bash
+python3 "$VM" epic list
+spec meta --set epic=<slug>
+```
+
+Only offer one that already exists — creating an epic is `/epic-init`'s
+interrogation, not a field set in passing. Attaching is cheap and reversible;
+leaving it unset is the right default when nothing fits, and most projects
+belong to no epic.
+
 Write the Problem section and whatever goals and constraints the user already
 gave you, with `unknown` where you don't know:
 

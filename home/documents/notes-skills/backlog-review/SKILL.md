@@ -24,6 +24,11 @@ live before recommending anything about it:
 python3 "$VM" external-index && cat "$(python3 "$VM" path EXTERNAL_INDEX_FILE)"
 ```
 
+The index is grouped by epic, so entries tagged at different members of one epic
+belong together in the overview even though their tags differ — group by epic
+first, then by project. An entry tagged at the epic itself is about the ambition
+rather than any one member.
+
 Judge staleness from **Last commit**, not from `updated:` — that field records
 when tracking was migrated on most of these repos.
 

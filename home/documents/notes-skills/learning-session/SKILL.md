@@ -35,9 +35,18 @@ Every `error:` line is a hard stop - report it plainly and do not proceed.
 Do not read the whole roadmap - it's written for the curriculum, not a
 session.
 
+If `.claude/PROJECT.md` carries an `epic:`, read that epic's `## Ambition` and
+`## Done when` too - a track that feeds a project is studied differently from
+one pursued for its own sake:
+
+```sh
+EPIC="$(python3 "$VM" meta .claude/PROJECT.md epic)" && python3 "$VM" epic show "$EPIC"
+```
+
 ## 2. Report and stop
 
 One short summary: which unit is in play, what's already built, what the
-milestone/checkpoint ahead is, and anything sitting in `## Direction`. Do not
+milestone/checkpoint ahead is, anything sitting in `## Direction`, and - when
+there is one - the epic this track serves. Do not
 edit any file - this is orientation, not `/learning-review` or end-of-session
 bookkeeping. Then wait for the user's direction.

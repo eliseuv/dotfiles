@@ -137,6 +137,19 @@ agenda: note gaps or contradictions; items vague or big enough to warrant a
 decomposition sketch (sketch it here, don't write it yet — that's step 4's job
 once accepted); and extensions an item implies but doesn't state.
 
+If `.claude/PROJECT.md` carries an `epic:`, read that epic's `## Ambition` and
+`## Done when` alongside them:
+
+```sh
+EPIC="$(python3 "$VM" meta .claude/PROJECT.md epic)" && python3 "$VM" epic show "$EPIC"
+```
+
+It is review material in its own right. A repo whose goals have drifted out of
+serving its epic is a finding worth raising — either the goals are wrong or the
+membership is, and both are the user's call. Say which you think it is. Do not
+edit the epic note or another member's files from here; propose, and point at
+`/epic-init`.
+
 **Process the inbox before proposing anything of your own.** Each answered
 question becomes a durable item and is then closed:
 

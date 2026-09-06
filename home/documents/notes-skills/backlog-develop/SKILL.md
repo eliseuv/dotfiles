@@ -61,6 +61,18 @@ no seed tag did it for you:
 python3 "$VM" backlog remove "<title>"
 ```
 
+**Tagged at an epic** (`state: epic`) — the thought is about an ambition
+spanning several projects, not about a project. Settle which of two things it is
+with the user, then treat it as one more tag to handle in the pass above:
+
+- about the **epic itself** — the ambition shifting, a boundary being drawn, a
+  member joining or leaving → invoke `epic-init` for that slug, handing it this
+  entry. Like the seed branch, it pulls and drains its own tagged entries, so
+  **do not remove the entry yourself** for this tag.
+- about **one member** — route it to that member instead, by the branches above.
+  `python3 "$VM" epic show <slug>` lists them. Ask which; do not guess, and do
+  not fan it out to every member just because it named the group.
+
 **Untagged, or every tag names something that does not exist** — continue to
 step 3.
 

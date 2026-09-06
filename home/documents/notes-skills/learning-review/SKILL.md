@@ -82,6 +82,19 @@ Do this before proposing anything of your own — same rule as every other
 `*-init`/`*-review` skill: the user's captured thoughts outrank your
 suggestions.
 
+If `.claude/PROJECT.md` carries an `epic:`, read that epic's `## Ambition` and
+`## Done when` as well:
+
+```sh
+EPIC="$(python3 "$VM" meta .claude/PROJECT.md epic)" && python3 "$VM" epic show "$EPIC"
+```
+
+A track serving an epic is scoped by what its siblings need from it, not only by
+its own goal — that is often the argument for cutting a unit the curriculum
+would otherwise keep. If the track no longer serves the epic, raise it: either
+the curriculum drifted or the membership is wrong. Propose; do not edit the epic
+note from here.
+
 ## 2. Read state, then propose — Direction leads, the principles fill in
 
 Read `ROADMAP.md` in full, including every unit's `### Progress notes`, the
