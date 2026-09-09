@@ -32,7 +32,7 @@
   networking.hostName = "tardis";
 
   # Select default session for Display Manager
-  services.displayManager.defaultSession = "hyprland";
+  services.displayManager.defaultSession = "hyprland-uwsm";
 
   # Disk encryption
   boot.initrd.luks.devices."luks-2ac9cd27-6ff4-4407-9808-c63a5251c44c".device =
