@@ -36,7 +36,7 @@
   networking.hostName = "GLaDOS";
 
   # Select default session for Display Manager
-  services.displayManager.defaultSession = "hyprland";
+  services.displayManager.defaultSession = "hyprland-uwsm";
 
   # Mount disks
   fileSystems = {
