@@ -77,7 +77,7 @@ case $chosen in
     ans=$(rdialog &)
     if [[ $ans == "yes" ]] || [[ $ans == "YES" ]] || [[ $ans == "y" ]]; then
         mpc -q pause
-        amixer set Master mute
+        wpctl set-mute @DEFAULT_SINK@ 1
         $lock_command
         systemctl suspend
     elif [[ $ans == "no" ]] || [[ $ans == "NO" ]] || [[ $ans == "n" ]]; then
