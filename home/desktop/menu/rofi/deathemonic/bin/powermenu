@@ -46,7 +46,7 @@ show_msg() {
 options="$lock\n$suspend\n$logout\n$reboot\n$shutdown"
 
 lock_command="hyprlock"
-exit_command="hyprctl dispatch exit"
+exit_command="uwsm stop"
 
 chosen="$(echo -e "$options" | $rofi_command -p "UP - $uptime" -dmenu -selected-row 0)"
 case $chosen in
