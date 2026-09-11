@@ -1,7 +1,7 @@
 { pkgs, ... }:
 {
 
-  home.packages = [ pkgs.gcr ];
+  home.packages = [ pkgs.gcr_4 ];
 
   programs.gpg = {
     enable = true;
