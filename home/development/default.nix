@@ -23,6 +23,7 @@
     ./languages/fortran.nix
     ./languages/asm.nix
     ./languages/lean.nix
+    ./languages/ocaml.nix
 
     # Development environments
     ./environment/direnv.nix
