@@ -15,6 +15,8 @@
     alegreya
     # Serif font
     ibm-plex
+    # Fallback glyph font, used when no active font can render a character
+    symbola
 
     # :lang yaml LSP
     yaml-language-server
