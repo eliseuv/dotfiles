@@ -22,6 +22,7 @@
     ./languages/uiua.nix
     ./languages/fortran.nix
     ./languages/asm.nix
+    ./languages/lean.nix
 
     # Development environments
     ./environment/direnv.nix
