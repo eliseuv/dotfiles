@@ -4,8 +4,13 @@
   home.packages = with pkgs; [
 
     python3
+    python3Packages.cython
+    python3Packages.pytest
 
     basedpyright
+
+    # :lang python +conda
+    conda
 
   ];
 
