@@ -9,9 +9,6 @@
 
     basedpyright
 
-    # :lang python +conda
-    conda
-
   ];
 
   programs.uv = {
