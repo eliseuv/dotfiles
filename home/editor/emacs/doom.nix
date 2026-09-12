@@ -23,6 +23,13 @@
     # :lang markdown +grip live preview
     python3Packages.grip
 
+    # :lang org org-roam graph visualization
+    graphviz
+    # :lang org org-plot/gnuplot
+    gnuplot
+    # :lang org org-download-clipboard
+    maim
+
   ];
 
   home.shellAliases.doom-sync = "doom sync -u && doom sync && doom gc -! -v";
