@@ -13,7 +13,7 @@
 
   # Hostname
   networking.hostName = "wheatley";
-  networking.firewall.allowedTCPPorts = [ 3000 ]; # ttyd
+  networking.firewall.allowedTCPPorts = [ 3000 5173 1111 ]; # ttyd, vite, zola
 
   # Remove bootloader timeout
   boot.loader.timeout = 0;
