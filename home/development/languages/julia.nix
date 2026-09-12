@@ -2,7 +2,7 @@
 let
   # Update environment script
   julia-env-update = pkgs.writeShellScriptBin "julia-env-update" ''
-    ${lib.getExe pkgs.julia-bin} --eval "using Pkg; Pkg.update()" && ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed" || ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update failed" -u critical
+    ${lib.getExe pkgs.julia-bin} --eval "using Pkg; Pkg.add([\"LanguageServer\", \"SymbolServer\"]); Pkg.update()" && ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed" || ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update failed" -u critical
   '';
   # Cleanup environment script
   julia-env-gc = pkgs.writeShellScriptBin "julia-env-gc" ''
