@@ -24,6 +24,7 @@
     ./languages/asm.nix
     ./languages/lean.nix
     ./languages/ocaml.nix
+    ./languages/sh.nix
 
     # Development environments
     ./environment/direnv.nix
