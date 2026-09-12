@@ -29,6 +29,7 @@
     gnuplot
     # :lang org org-download-clipboard
     maim
+    xclip
 
   ];
 
