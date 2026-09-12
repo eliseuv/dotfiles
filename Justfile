@@ -5,6 +5,8 @@ update *inputs:
     git commit --message "[flake] update {{inputs}}"
 
 commit-gen:
+    #!/usr/bin/env bash
+    set -euo pipefail
     git diff --quiet && git diff --cached --quiet || \
         (echo "commit-gen: uncommitted changes present, commit before switching" >&2 && exit 1)
     gen="$(nixos-rebuild list-generations | rg "True$" | sd '^(\d+)\W+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\W+([\w\.]+)\W+([\w\.]+).+True$' '$1 NixOS $2 Linux $3')"
