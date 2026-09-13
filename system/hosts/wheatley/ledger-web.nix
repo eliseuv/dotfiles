@@ -41,6 +41,9 @@ in
       # 3000 is taken by ttyd (see wheatley's configuration.nix firewall
       # comment).
       PORT = "3001";
+      # No auth on this app — bound wide open on the LAN deliberately, per
+      # request, since wheatley's network is trusted.
+      BIND_ADDR = "0.0.0.0";
       STATIC_DIR = "${ledgerWeb.webUi}/dist";
     };
 

@@ -16,7 +16,7 @@
 
   # Hostname
   networking.hostName = "wheatley";
-  networking.firewall.allowedTCPPorts = [ 3000 5173 5174 1111 ]; # ttyd, vite (+fallback), zola
+  networking.firewall.allowedTCPPorts = [ 3000 3001 5173 5174 1111 ]; # ttyd, ledger-web, vite (+fallback), zola
 
   # Remove bootloader timeout
   boot.loader.timeout = 0;

@@ -118,11 +118,11 @@
     "ledger-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1789265251,
-        "narHash": "sha256-BrJZEqZO87K9xhSP8d+Jzwh0uzjH0SaWE+4xxKeEcHc=",
+        "lastModified": 1789267874,
+        "narHash": "sha256-vYKqdxlwXlr3Ryssv4zYKH99HJsEpr3/xfH+R+GQh14=",
         "ref": "refs/heads/master",
-        "rev": "c89a92440146e92dbcb788e924af8524240043d3",
-        "revCount": 124,
+        "rev": "c19436a7f4d95861f36dd868a81eac7af63bdd2f",
+        "revCount": 125,
         "type": "git",
         "url": "file:///home/evf/Projects/ledger"
       },
