@@ -9,6 +9,9 @@
     # Profiles
     ../../profiles/base.nix
 
+    # Services
+    ./ledger-web.nix
+
   ];
 
   # Hostname
