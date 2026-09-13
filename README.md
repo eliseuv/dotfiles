@@ -151,6 +151,10 @@ commit in `flake.lock`, commits that, then runs `system-switch`.* Notes:
   step fails with "nothing to commit" — `deploy-service` tolerates this
   and still runs `system-switch`, same as `update-system`/`update-home`
   tolerate a no-op `update`.
+- If the switch itself is then also a no-op (same generation, nothing
+  changed to activate), `commit-gen` finds its generation tag already
+  exists — from the run that actually deployed it — and skips instead of
+  failing. Re-running `deploy-service` is safe either way.
 
 Example, deploying ledger to wheatley:
 

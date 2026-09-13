@@ -10,7 +10,14 @@ commit-gen:
     git diff --quiet && git diff --cached --quiet || \
         (echo "commit-gen: uncommitted changes present, commit before switching" >&2 && exit 1)
     gen="$(nixos-rebuild list-generations | rg "True$" | sd '^(\d+)\W+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\W+([\w\.]+)\W+([\w\.]+).+True$' '$1 NixOS $2 Linux $3')"
-    git tag --annotate "$(hostname)-${gen%% *}" \
+    tag="$(hostname)-${gen%% *}"
+    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+        # A switch that lands on the same generation (nothing to activate)
+        # re-runs commit-gen; the generation is already tagged, so no-op.
+        echo "commit-gen: $tag already exists, generation unchanged, skipping"
+        exit 0
+    fi
+    git tag --annotate "$tag" \
         --message "$(hostname) @ ${gen}" \
         --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
     git push --follow-tags
