@@ -11,6 +11,7 @@
 
     # Services
     ./ledger-web.nix
+    ./ledger-deploy.nix
 
   ];
 

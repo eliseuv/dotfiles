@@ -166,6 +166,35 @@ git push wheatley wheatley
 ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-src'
 ```
 
+#### Automatic deploy-on-push
+
+On wheatley, pushing to `~/Projects/ledger` is enough on its own —
+`system/hosts/wheatley/ledger-deploy.nix` runs the pipeline above without
+a manual `deploy-service` call:
+
+- A `post-receive` hook (installed by `system.activationScripts`, since
+  `.git/hooks` isn't itself a path the dotfiles repo can track) touches a
+  trigger file on every push.
+- A `systemd.path` unit watches that file and runs the deploy chain, split
+  by privilege so nothing ever needs sudo or a password: `just update
+  ledger-src` as `evf`, then `nh os switch .` as **root** (the service
+  itself runs as root, so `nh` never shells out to sudo), then `just
+  after-switch` as `evf` again.
+
+The `evf` steps need to push/tag over SSH; they use `evf`'s
+`gpg-agent`-backed SSH auth socket, which — because `evf` has
+`loginctl linger` enabled — stays up with no session logged in. That
+key's passphrase cache (`home/auth/gpg.nix`, 12h TTL) can still go cold
+with nothing around to unlock it; if so, the tag/push step fails
+(`systemctl status ledger-deploy` will show it) even though the actual
+deploy — build, activate, `ledger-web.service` restart — already
+succeeded. Re-running `just deploy-service ledger-src` by hand, or just
+pushing again, clears it.
+
+To add this for another service, copy `ledger-deploy.nix`'s shape,
+swapping the repo path, `<name>-src` input, and the hostname/uid it
+already derives at runtime.
+
 ## Installation
 
 1. Clone the repository:
