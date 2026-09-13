@@ -38,7 +38,9 @@ in
       # The username must be explicit: sqlx doesn't resolve it from the
       # connecting OS user when omitted, so peer auth fails without it.
       DATABASE_URL = "postgres://ledger@localhost/ledger?host=/run/postgresql";
-      PORT = "3000";
+      # 3000 is taken by ttyd (see wheatley's configuration.nix firewall
+      # comment).
+      PORT = "3001";
       STATIC_DIR = "${ledgerWeb.webUi}/dist";
     };
 
