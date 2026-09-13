@@ -85,6 +85,14 @@
       flake = false;
     };
 
+    # Local homebrew projects, packaged via pkgs/<name>/default.nix. Only
+    # git-committed files are picked up — commit in the project repo before
+    # `nixos-rebuild` will see changes.
+    ledger-src = {
+      url = "git+file:///home/evf/Projects/ledger";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -158,6 +166,15 @@
         };
     in
     {
+
+      packages.${system} =
+        let
+          ledgerWeb = import ./pkgs/ledger-web { inherit pkgs inputs; };
+        in
+        {
+          ledger-web-bin = ledgerWeb.bin;
+          ledger-web-ui = ledgerWeb.webUi;
+        };
 
       nixosConfigurations = builtins.mapAttrs mkSystem hosts;
 
