@@ -41,6 +41,10 @@ This repository contains my personal NixOS and Home Manager configuration, manag
   - `users/<user>.nix`: Per-user identity (git name/email).
   - Remaining directories are individual program modules, imported by
     profiles or host files.
+- `pkgs/<name>/default.nix`: Packaging for local homebrew projects that
+  live in their own repo (e.g. `~/Projects/ledger`), pulled in via a
+  `<name>-src` flake input (`flake = false`, `git+file://…`). See
+  "Deploying Local Services" below.
 - `secrets.yaml`: Encrypted secrets (sops-nix, age).
 
 ## Usage
@@ -110,6 +114,53 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
   ```
 
   *Cleans up old generations (keeps last 4 by default).*
+
+### Deploying Local Services
+
+Local homebrew projects (own repo, own git history) that a host runs as a
+service — e.g. `~/Projects/ledger` on `wheatley`, see `pkgs/ledger-web/` —
+are pulled into the flake as a `<name>-src` input pointing at
+`git+file://<path-on-that-host>`. Because it's a `git+file://` input, it's
+pinned in `flake.lock` to a specific commit: pushing new code to the
+project repo does **not** by itself change what's built or running.
+
+One-time setup, per project repo, on the host it deploys to:
+
+```bash
+git -C ~/Projects/<project> config receive.denyCurrentBranch updateInstead
+```
+
+A plain (non-bare) checkout refuses a push to its checked-out branch by
+default. `updateInstead` makes the push also update the working tree —
+but only if that tree is clean and the push is a fast-forward.
+
+Deploy pipeline, after pushing a new commit (`git push <host-remote>
+<branch>` from the project repo, updating the host's checkout per above):
+
+```bash
+ssh -t <host> -- 'cd ~/dotfiles && just deploy-service <input>'
+```
+
+*Bumps `<input>` (the `<name>-src` flake input) to the checkout's current
+commit in `flake.lock`, commits that, then runs `system-switch`.* Notes:
+
+- `-t` is required: `nh os switch`'s activation step needs a real sudo
+  prompt, and there's no askpass helper configured.
+- If `<input>` was already at the latest commit (e.g. re-running after a
+  partial failure), the `flake.lock` update is a no-op and its commit
+  step fails with "nothing to commit" — `deploy-service` tolerates this
+  and still runs `system-switch`, same as `update-system`/`update-home`
+  tolerate a no-op `update`.
+
+Example, deploying ledger to wheatley:
+
+```bash
+# In ~/Projects/ledger:
+git push wheatley wheatley
+
+# Then:
+ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-src'
+```
 
 ## Installation
 
