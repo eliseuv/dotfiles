@@ -41,3 +41,12 @@ update-system:
 update-home:
     -{{just_executable()}} update
     {{just_executable()}} home-switch
+
+# Pick up a just-pushed commit for a locally-packaged service (see
+# pkgs/<name>/default.nix and README's "local homebrew projects" pattern)
+# and switch this host onto it. Run on the target host itself, after
+# `git push <host-remote> <branch>` in the service's own repo.
+# Usage: just deploy-service ledger-src
+deploy-service input:
+    {{just_executable()}} update {{input}}
+    {{just_executable()}} system-switch
