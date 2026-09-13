@@ -51,5 +51,5 @@ update-home:
 # deploy-service <input>'.
 # Usage: just deploy-service ledger-src
 deploy-service input:
-    {{just_executable()}} update {{input}}
+    -{{just_executable()}} update {{input}}
     {{just_executable()}} system-switch
