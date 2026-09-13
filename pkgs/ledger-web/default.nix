@@ -29,7 +29,7 @@
     pname = "ledger-web-ui";
     version = "0.1.0";
     src = "${inputs.ledger-src}/ledger-web-ui";
-    npmDepsHash = pkgs.lib.fakeHash;
+    npmDepsHash = "sha256-Vd3AC39U6d3ZD/IaA3yGbkgrhNr0ktGMg3B0LR3n6Eg=";
     nodejs = pkgs.nodejs_22;
     installPhase = ''
       runHook preInstall
