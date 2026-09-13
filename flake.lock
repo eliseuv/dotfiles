@@ -118,11 +118,11 @@
     "ledger-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1789310195,
-        "narHash": "sha256-lFh+H2CzARZlGtUy9qs7kkE/LMd8D9I+s2muKbnDwqQ=",
+        "lastModified": 1789316167,
+        "narHash": "sha256-Xb4PsahEZRcHmvobpuKBUlxPVdsPj/ZBPZ70dKdC62Y=",
         "ref": "refs/heads/wheatley",
-        "rev": "75770401dee2f40a04e878ff7215108d76115de8",
-        "revCount": 131,
+        "rev": "2f217cafca340f7af088fa09233d7271e4bd941c",
+        "revCount": 132,
         "type": "git",
         "url": "file:///home/evf/Projects/ledger"
       },
