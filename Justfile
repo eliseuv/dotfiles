@@ -45,7 +45,10 @@ update-home:
 # Pick up a just-pushed commit for a locally-packaged service (see
 # pkgs/<name>/default.nix and README's "local homebrew projects" pattern)
 # and switch this host onto it. Run on the target host itself, after
-# `git push <host-remote> <branch>` in the service's own repo.
+# `git push <host-remote> <branch>` in the service's own repo. `nh os
+# switch` needs a real sudo prompt, so over ssh use `-t` (no askpass
+# helper is configured): ssh -t <host> -- 'cd ~/dotfiles && just
+# deploy-service <input>'.
 # Usage: just deploy-service ledger-src
 deploy-service input:
     {{just_executable()}} update {{input}}
