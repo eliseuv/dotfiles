@@ -41,6 +41,7 @@
           devices = [
             "TARDIS"
             "A56"
+            "wheatley"
           ];
         };
 

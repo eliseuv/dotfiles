@@ -29,6 +29,7 @@
           devices = [
             "GLaDOS"
             "A56"
+            "wheatley"
           ];
         };
 
