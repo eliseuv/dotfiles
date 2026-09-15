@@ -89,7 +89,7 @@
     # git-committed files are picked up — commit in the project repo before
     # `nixos-rebuild` will see changes.
     ledger-src = {
-      url = "git+file:///home/evf/Projects/ledger";
+      url = "git+file:///home/evf/Services/ledger";
       flake = false;
     };
 

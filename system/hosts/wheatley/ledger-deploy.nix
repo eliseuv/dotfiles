@@ -1,5 +1,5 @@
 # Auto-deploys ledger-web whenever a new commit is pushed to
-# ~/Projects/ledger (see ledger-web.nix and pkgs/ledger-web/default.nix).
+# ~/Services/ledger (see ledger-web.nix and pkgs/ledger-web/default.nix).
 #
 # `receive.denyCurrentBranch = updateInstead` (set once, manually, on that
 # repo) already makes a push update its working tree. What's missing is
@@ -27,7 +27,7 @@
 { config, pkgs, ... }:
 let
   dotfilesPath = config.dotfiles.path;
-  ledgerRepo = "/home/evf/Projects/ledger";
+  ledgerRepo = "/home/evf/Services/ledger";
   triggerDir = "/run/ledger-deploy";
   triggerFile = "${triggerDir}/trigger";
 
@@ -65,7 +65,7 @@ in
   '';
 
   systemd.paths.ledger-deploy = {
-    description = "Watch for pushes to ~/Projects/ledger";
+    description = "Watch for pushes to ~/Services/ledger";
     wantedBy = [ "multi-user.target" ];
     pathConfig.PathModified = triggerFile;
   };

@@ -1,4 +1,4 @@
-# Packaging for ~/Projects/ledger's web app (ledger-web + ledger-web-ui),
+# Packaging for ~/Services/ledger's web app (ledger-web + ledger-web-ui),
 # sourced from the `ledger-src` flake input (flake = false, git+file://,
 # see flake.nix). Only git-committed files in that project are visible here.
 #

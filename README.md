@@ -42,7 +42,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
   - Remaining directories are individual program modules, imported by
     profiles or host files.
 - `pkgs/<name>/default.nix`: Packaging for local homebrew projects that
-  live in their own repo (e.g. `~/Projects/ledger`), pulled in via a
+  live in their own repo (e.g. `~/Services/ledger`), pulled in via a
   `<name>-src` flake input (`flake = false`, `git+file://…`). See
   "Deploying Local Services" below.
 - `secrets.yaml`: Encrypted secrets (sops-nix, age).
@@ -118,7 +118,7 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
 ### Deploying Local Services
 
 Local homebrew projects (own repo, own git history) that a host runs as a
-service — e.g. `~/Projects/ledger` on `wheatley`, see `pkgs/ledger-web/` —
+service — e.g. `~/Services/ledger` on `wheatley`, see `pkgs/ledger-web/` —
 are pulled into the flake as a `<name>-src` input pointing at
 `git+file://<path-on-that-host>`. Because it's a `git+file://` input, it's
 pinned in `flake.lock` to a specific commit: pushing new code to the
@@ -127,7 +127,7 @@ project repo does **not** by itself change what's built or running.
 One-time setup, per project repo, on the host it deploys to:
 
 ```bash
-git -C ~/Projects/<project> config receive.denyCurrentBranch updateInstead
+git -C ~/Services/<project> config receive.denyCurrentBranch updateInstead
 ```
 
 A plain (non-bare) checkout refuses a push to its checked-out branch by
@@ -159,7 +159,7 @@ commit in `flake.lock`, commits that, then runs `system-switch`.* Notes:
 Example, deploying ledger to wheatley:
 
 ```bash
-# In ~/Projects/ledger:
+# In ~/Services/ledger:
 git push wheatley wheatley
 
 # Then:
@@ -168,7 +168,7 @@ ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-src'
 
 #### Automatic deploy-on-push
 
-On wheatley, pushing to `~/Projects/ledger` is enough on its own —
+On wheatley, pushing to `~/Services/ledger` is enough on its own —
 `system/hosts/wheatley/ledger-deploy.nix` runs the pipeline above without
 a manual `deploy-service` call:
 

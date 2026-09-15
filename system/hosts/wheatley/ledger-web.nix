@@ -1,4 +1,4 @@
-# Runs ~/Projects/ledger's web app (see pkgs/ledger-web/default.nix) as a
+# Runs ~/Services/ledger's web app (see pkgs/ledger-web/default.nix) as a
 # boot-time system service, backed by its own local Postgres instance.
 { pkgs, inputs, ... }:
 

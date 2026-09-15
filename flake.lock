@@ -124,11 +124,11 @@
         "rev": "7f13572c8ad08637a8cf99ff44a9a581559e26c0",
         "revCount": 140,
         "type": "git",
-        "url": "file:///home/evf/Projects/ledger"
+        "url": "file:///home/evf/Services/ledger"
       },
       "original": {
         "type": "git",
-        "url": "file:///home/evf/Projects/ledger"
+        "url": "file:///home/evf/Services/ledger"
       }
     },
     "neovim-nightly-overlay": {
