@@ -74,6 +74,13 @@ in
     description = "Deploy ledger-web from the latest push";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
+    # `nh os switch` (step 2, run directly as root below rather than via
+    # `su`) shells out to a bare `nix`. Steps 1 and 3 go through `su`,
+    # which pulls in PAM's fuller PATH for evf, but this unit's own PATH
+    # is systemd's bare default (coreutils/findutils/grep/sed/systemd) —
+    # no `nix` on it — so `nh` fails with a cryptic "No output from nix
+    # --version command" instead of "command not found".
+    path = [ config.nix.package ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${deployScript}";
