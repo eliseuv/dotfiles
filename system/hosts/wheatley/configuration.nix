@@ -13,6 +13,9 @@
     ./ledger-web.nix
     ./ledger-deploy.nix
 
+    # Tailscale
+    ../../extra/tailscale.nix
+
   ];
 
   # Hostname
