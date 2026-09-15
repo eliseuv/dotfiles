@@ -13,6 +13,9 @@
     # Web terminal
     ../extra/ttyd.nix
 
+    # Claude Code Remote Control
+    ../extra/claude-remote-control.nix
+
   ];
 
 }
