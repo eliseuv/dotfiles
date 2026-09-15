@@ -25,6 +25,10 @@ commit-gen:
 gc keep='4':
     nh clean all --keep {{keep}} --no-gcroots
 
+vpn:
+    sudo tailscale up
+    tailscale status
+
 home-switch:
     nh home switch .
 
