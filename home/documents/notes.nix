@@ -1,4 +1,10 @@
-{ ... }:
+{ lib, ... }:
+let
+  skillsDirectory = ./notes-skills;
+  sharedSkills = lib.mapAttrs (
+    name: _: skillsDirectory + "/${name}"
+  ) (lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDirectory));
+in
 {
 
   # Vault-relative path needed outside the vault directory: project-review (a
@@ -12,13 +18,13 @@
     TEMPLATES_DIR = "Templates";
   };
 
-  # Claude Code skills that operate on graduated learning/project repos (outside
-  # the vault). Vault-specific skills live in the vault's own .claude/skills
-  # instead, since they're only useful there. Only relevant on hosts that
-  # import this file.
-  home.file.".claude/skills" = {
-    source = ./notes-skills;
-    recursive = true;
+  # Personal skills that operate on graduated learning/project repos (outside
+  # the vault). Declare them as an attribute set so other modules can add
+  # skills through the same options. Vault-specific skills remain local to the
+  # vault.
+  programs = {
+    claude-code.skills = sharedSkills;
+    codex.skills = sharedSkills;
   };
 
 }
