@@ -22,8 +22,6 @@
 
     # AI
     ./ai/claude.nix
-    ./ai/antigravity.nix
-    ./ai/copilot.nix
     ./ai/codex.nix
 
     # Extra
