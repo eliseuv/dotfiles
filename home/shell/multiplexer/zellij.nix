@@ -74,21 +74,48 @@
       }
     '';
 
-    # Clear Zellij's shortcuts so ordinary shell/editor keys pass through.
+    # Only Normal mode clears Zellij's defaults outright, so ordinary
+    # shell/editor keys pass through everywhere else Zellij isn't reachable
+    # via the backtick prefix. Other modes layer overrides on top of Zellij's
+    # own (already tmux-flavored) defaults instead of reimplementing them.
     # NewTab/NewPane inherit the focused pane's cwd; tabs are numbered from 1.
     extraConfig = ''
-      keybinds clear-defaults=true {
-          normal {
+      keybinds {
+          normal clear-defaults=true {
               bind "`" { SwitchToMode "Tmux"; }
-              bind "Ctrl a" { Write 96; }
+          }
+
+          // From any other reachable mode, backtick jumps straight into
+          // Tmux mode too (Normal already handles its own case above).
+          shared_except "normal" "tmux" "locked" {
+              unbind "Ctrl b"
+              bind "`" { SwitchToMode "Tmux"; }
+          }
+
+          // Unprefixed vi-style pane navigation (vim-tmux-navigator-style,
+          // at the Zellij level rather than left to Neovim).
+          shared_except "move" "locked" {
+              unbind "Ctrl h"
+              unbind "Ctrl j"
+              unbind "Ctrl k"
+              unbind "Ctrl l"
+          }
+          shared_except "locked" {
+              bind "Ctrl h" { MoveFocus "Left"; }
+              bind "Ctrl j" { MoveFocus "Down"; }
+              bind "Ctrl k" { MoveFocus "Up"; }
+              bind "Ctrl l" { MoveFocus "Right"; }
               bind "Ctrl Shift h" { GoToPreviousTab; }
               bind "Ctrl Shift l" { GoToNextTab; }
+              bind "Ctrl a" { Write 96; }
           }
+
           tmux {
               bind "Esc" "Ctrl c" { SwitchToMode "Normal"; }
               bind "`" "Ctrl a" { Write 96; SwitchToMode "Normal"; }
               bind "c" { NewTab; SwitchToMode "Normal"; }
               bind "h" { ToggleTab; SwitchToMode "Normal"; }
+              bind "b" { GoToPreviousTab; SwitchToMode "Normal"; }
               bind "l" "%" { NewPane "Right"; SwitchToMode "Normal"; }
               bind "j" "\"" { NewPane "Down"; SwitchToMode "Normal"; }
               bind "k" { ToggleFloatingPanes; SwitchToMode "Normal"; }
@@ -169,8 +196,10 @@
   # Native floating panes replace floax, but do not reproduce its sizing or
   # cross-tab scratchpad. zjstatus (in the tmux layout above) replaces
   # zellij:tab-bar and covers what the built-in bar lacked (hostname/time).
-  # Fingers (U/H/E and Alt-h/j/k/l/o), tmuxinator (T), and vim-tmux-navigator
-  # need separate Zellij integrations. Keep Ctrl-h/j/k/l available to Neovim.
+  # Fingers (U/H/E and Alt-h/j/k/l/o) and tmuxinator (T) still need separate
+  # Zellij integrations. Ctrl-h/j/k/l now does pane navigation at the Zellij
+  # level (see extraConfig above), so Neovim's vim-tmux-navigator should defer
+  # to it rather than also claiming those keys.
   # Scroll mode supports vi motion/search; select text with the mouse to copy.
   home.shellAliases = {
     zj = "zellij attach --create";
