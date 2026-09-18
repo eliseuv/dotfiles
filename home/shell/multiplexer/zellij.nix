@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 {
 
   programs.zellij = {
@@ -16,11 +16,59 @@
       on_force_close = "detach";
     };
 
+    # zjstatus (github.com/dj95/zjstatus) replaces zellij:tab-bar so tabs,
+    # mode and session/host/time info render in one Catppuccin Mocha bar.
+    # First launch after this changes: approve the pane's RunCommands
+    # permission prompt (press "y") so the hostname widget can run.
     layouts.tmux = ''
       layout {
           default_tab_template {
               pane size=1 borderless=true {
-                  plugin location="zellij:tab-bar"
+                  plugin location="file:${pkgs.zellijPlugins.zjstatus}" {
+                      color_base     "#1e1e2e"
+                      color_mantle   "#181825"
+                      color_text     "#cdd6f4"
+                      color_overlay0 "#6c7086"
+                      color_overlay2 "#9399b2"
+                      color_lavender "#b4befe"
+                      color_blue     "#89b4fa"
+                      color_peach    "#fab387"
+                      color_yellow   "#f9e2af"
+                      color_green    "#a6e3a1"
+                      color_teal     "#94e2d5"
+                      color_maroon   "#eba0ac"
+                      color_red      "#f38ba8"
+
+                      format_left   "{mode} #[fg=$lavender,bg=$mantle,bold]{session} "
+                      format_center "{tabs}"
+                      format_right  "{command_hostname}{datetime}"
+                      format_space  "#[bg=$mantle]"
+
+                      border_enabled "false"
+
+                      mode_normal          "#[fg=$base,bg=$blue,bold] NORMAL "
+                      mode_locked          "#[fg=$base,bg=$red,bold] LOCKED "
+                      mode_resize          "#[fg=$base,bg=$yellow,bold] RESIZE "
+                      mode_scroll          "#[fg=$base,bg=$green,bold] SCROLL "
+                      mode_enter_search    "#[fg=$base,bg=$teal,bold] SEARCH "
+                      mode_search          "#[fg=$base,bg=$teal,bold] SEARCH "
+                      mode_rename_tab      "#[fg=$base,bg=$maroon,bold] RENAME "
+                      mode_tmux            "#[fg=$base,bg=$peach,bold] TMUX "
+                      mode_default_to_mode "normal"
+
+                      tab_normal    "#[fg=$overlay0,bg=$mantle] {index} {name} "
+                      tab_active    "#[fg=$base,bg=$lavender,bold] {index} {name} "
+                      tab_separator "#[fg=$overlay0,bg=$mantle]│"
+
+                      command_hostname_command    "hostname"
+                      command_hostname_format     "#[fg=$overlay2,bg=$mantle] {stdout} "
+                      command_hostname_interval   "0"
+                      command_hostname_rendermode "static"
+
+                      datetime          "#[fg=$text,bg=$mantle,bold] {format} "
+                      datetime_format   "%Y-%m-%d %H:%M"
+                      datetime_timezone "America/Sao_Paulo"
+                  }
               }
               children
           }
@@ -121,7 +169,8 @@
   };
 
   # Native floating panes replace floax, but do not reproduce its sizing or
-  # cross-tab scratchpad. The built-in bar does not show application/uptime.
+  # cross-tab scratchpad. zjstatus (in the tmux layout above) replaces
+  # zellij:tab-bar and covers what the built-in bar lacked (hostname/time).
   # Fingers (U/H/E and Alt-h/j/k/l/o), tmuxinator (T), and vim-tmux-navigator
   # need separate Zellij integrations. Keep Ctrl-h/j/k/l available to Neovim.
   # Scroll mode supports vi motion/search; select text with the mouse to copy.
