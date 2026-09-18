@@ -12,8 +12,6 @@
       copy_clipboard = "system";
       copy_on_select = true;
       pane_frames = false;
-      auto_layout = false;
-      on_force_close = "detach";
     };
 
     # zjstatus (github.com/dj95/zjstatus) replaces zellij:tab-bar so tabs,
