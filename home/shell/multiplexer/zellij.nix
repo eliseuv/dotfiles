@@ -1,3 +1,21 @@
+# Modeled after home/shell/multiplexer/tmux.nix; kept in sync with
+# ~/Projects/windows-dotfiles/zellij/config.kdl (the Windows port of this
+# same tmux reference).
+#
+# Settings from that reference with no Zellij equivalent (checked, not
+# missed):
+#   - escapeTime / focusEvents / clock24: no matching settings.* option
+#     exists. repeat-time's equivalent is the persistent Resize mode instead
+#     (see the tmux-mode "r" binding below) rather than a timed repeat window.
+#   - terminal-overrides ",*:RGB" (Neovim color fix): no equivalent knob;
+#     Zellij's own terminal handling doesn't need one.
+#   - tmux-fingers (URL/hash/path picker) and tmux-floax's specific
+#     90%/90% floating-pane sizing: no bundled Zellij plugin/setting
+#     equivalent (native floating panes, bound to "k" below, replace floax's
+#     core function but not its sizing or cross-tab scratchpad).
+#   - tmuxinator-cwd / smug (session-template launchers): no Zellij
+#     equivalent. Zellij's own bundled session-manager plugin (reachable via
+#     "w" then "s" below) and its native layouts cover similar ground.
 { pkgs, ... }:
 {
 
