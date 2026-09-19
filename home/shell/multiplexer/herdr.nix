@@ -15,17 +15,17 @@
     name = "catppuccin-mocha"
 
     [keys]
-    prefix = "grave"
+    prefix = "backtick"
     new_tab = "prefix+c"
-    toggle_last_tab = "prefix+h"
+    last_pane = "prefix+h"
     previous_tab = "ctrl+shift+h"
     next_tab = "ctrl+shift+l"
     split_vertical = "prefix+l"
     split_horizontal = "prefix+j"
-    move_left = "ctrl+h"
-    move_down = "ctrl+j"
-    move_up = "ctrl+k"
-    move_right = "ctrl+l"
+    focus_pane_left = "ctrl+h"
+    focus_pane_down = "ctrl+j"
+    focus_pane_up = "ctrl+k"
+    focus_pane_right = "ctrl+l"
   '';
 
   home.shellAliases = {
