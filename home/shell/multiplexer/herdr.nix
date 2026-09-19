@@ -6,10 +6,15 @@
   ];
 
   xdg.configFile."herdr/config.toml".text = ''
+    [terminal]
+    new_cwd = "follow"
+
     [ui]
     tab_bar_position = "top"
     pane_borders = true
+    pane_outer_borders = false
     pane_gaps = false
+    copy_on_select = true
 
     [theme]
     name = "catppuccin-mocha"
@@ -29,7 +34,10 @@
   '';
 
   home.shellAliases = {
-    hr = "herdr";
+    h = "herdr";
+    ha = "herdr session attach";
+    hn = "herdr --session";
+    hl = "herdr session list";
   };
 
 }
