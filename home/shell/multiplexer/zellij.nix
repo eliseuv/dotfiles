@@ -100,8 +100,20 @@
     # NewTab/NewPane inherit the focused pane's cwd; tabs are numbered from 1.
     extraConfig = ''
       keybinds {
+          // A shared_except block elsewhere in this file does not reliably
+          // reach a mode declared with clear-defaults=true (verified: only
+          // bindings written directly inside a mode's own block apply to
+          // it), so every bind this mode needs has to be restated here
+          // instead of relying on the shared_except "locked" block below.
           normal clear-defaults=true {
               bind "`" { SwitchToMode "Tmux"; }
+              bind "Ctrl h" { MoveFocus "Left"; }
+              bind "Ctrl j" { MoveFocus "Down"; }
+              bind "Ctrl k" { MoveFocus "Up"; }
+              bind "Ctrl l" { MoveFocus "Right"; }
+              bind "Ctrl Shift h" { GoToPreviousTab; }
+              bind "Ctrl Shift l" { GoToNextTab; }
+              bind "Ctrl a" { Write 96; }
           }
 
           // From any other reachable mode, backtick jumps straight into
