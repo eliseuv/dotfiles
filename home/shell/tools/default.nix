@@ -24,6 +24,8 @@
     ./viddy.nix
     # Systemctl TUI
     ./systemctl-tui.nix
+    # Terminal kanban board
+    ./tuiboard.nix
     # Reverse Engineering
     ./rizin.nix
   ];
