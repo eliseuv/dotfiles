@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
 
   home.packages = with pkgs; [
@@ -39,5 +39,14 @@
     hn = "herdr --session";
     hl = "herdr session list";
   };
+
+  # herdr's claude/codex integrations are hook scripts it writes into
+  # ~/.claude and ~/.codex itself (`herdr integration install <target>`),
+  # not Nix-managed files, so reassert them on every switch to make the
+  # setup reproducible on a fresh machine instead of a one-off manual step.
+  home.activation.herdrAgentIntegrations = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.herdr}/bin/herdr integration install claude
+    run ${pkgs.herdr}/bin/herdr integration install codex
+  '';
 
 }
