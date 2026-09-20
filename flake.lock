@@ -267,11 +267,11 @@
     "shoin-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1788941771,
-        "narHash": "sha256-Lwtj6fTfXz8b+6uAkIly7iDKWvUvXEBk3Fb9Si0CYTU=",
+        "lastModified": 1789836919,
+        "narHash": "sha256-IJEx0vAAyzOxSOk4xg6a0kLOcpd5CYsJPZ8uTMBkw+o=",
         "owner": "nol00p",
         "repo": "Shoin",
-        "rev": "715f46d9ed13be1c63304184e43fa4e523f02602",
+        "rev": "aec39b5cf29b8e77f33c3308683020b507995f89",
         "type": "github"
       },
       "original": {
