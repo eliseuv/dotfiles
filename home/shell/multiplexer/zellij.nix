@@ -30,7 +30,7 @@
       copy_clipboard = "system";
       copy_on_select = true;
       pane_frames = true;
-      pane_frame_style = "full";
+      pane_frame_style = "titles";
     };
 
     # zjstatus (github.com/dj95/zjstatus) replaces zellij:tab-bar so tabs,
