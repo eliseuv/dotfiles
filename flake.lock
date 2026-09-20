@@ -269,14 +269,14 @@
       "locked": {
         "lastModified": 1789836919,
         "narHash": "sha256-IJEx0vAAyzOxSOk4xg6a0kLOcpd5CYsJPZ8uTMBkw+o=",
-        "owner": "nol00p",
-        "repo": "Shoin",
+        "owner": "eliseuv",
+        "repo": "shoin",
         "rev": "aec39b5cf29b8e77f33c3308683020b507995f89",
         "type": "github"
       },
       "original": {
-        "owner": "nol00p",
-        "repo": "Shoin",
+        "owner": "eliseuv",
+        "repo": "shoin",
         "type": "github"
       }
     },

@@ -81,7 +81,7 @@
       flake = false;
     };
     shoin-src = {
-      url = "github:nol00p/Shoin";
+      url = "github:eliseuv/shoin";
       flake = false;
     };
 
