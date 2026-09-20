@@ -26,7 +26,7 @@ let
 
   shoin = pkgs.rustPlatform.buildRustPackage {
     pname = "shoin";
-    version = "0.1.2";
+    version = "0.1.5";
     src = inputs.shoin-src;
     cargoLock.lockFile = "${inputs.shoin-src}/Cargo.lock";
   };
