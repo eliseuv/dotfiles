@@ -267,11 +267,11 @@
     "shoin-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1789836919,
-        "narHash": "sha256-IJEx0vAAyzOxSOk4xg6a0kLOcpd5CYsJPZ8uTMBkw+o=",
+        "lastModified": 1789954656,
+        "narHash": "sha256-MagFx8RZxqaCgLnXWtVvIONan6lvTLlc14SnkiTB5Ic=",
         "owner": "eliseuv",
         "repo": "shoin",
-        "rev": "aec39b5cf29b8e77f33c3308683020b507995f89",
+        "rev": "f44c97cacac6566bb90f8de2260efc8be37a0cdd",
         "type": "github"
       },
       "original": {
