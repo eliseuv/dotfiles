@@ -31,6 +31,13 @@ let
     cargoLock.lockFile = "${inputs.shoin-src}/Cargo.lock";
   };
 
+  ekphos = pkgs.rustPlatform.buildRustPackage {
+    pname = "ekphos";
+    version = "0.50.20";
+    src = inputs.ekphos-src;
+    cargoLock.lockFile = "${inputs.ekphos-src}/Cargo.lock";
+  };
+
   # Excluded:
   # - late-cli (github:mpiorowski/late-sh, late-cli member): transitively
   #   depends on webrtc-sys, whose build.rs downloads a prebuilt WebRTC
@@ -48,6 +55,7 @@ in
   home.packages = [
     lazydiff
     shoin
+    ekphos
   ];
 
 }

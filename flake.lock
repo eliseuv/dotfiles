@@ -18,6 +18,22 @@
         "type": "github"
       }
     },
+    "ekphos-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790031133,
+        "narHash": "sha256-s/StX6GI0lWHeJXTmpaj3SHWKEGIIfJMzY5Vfk3UKEQ=",
+        "owner": "nostacks",
+        "repo": "ekphos",
+        "rev": "62a786b961b59c62275b189941bc93c3064eea71",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nostacks",
+        "repo": "ekphos",
+        "type": "github"
+      }
+    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -233,6 +249,7 @@
     "root": {
       "inputs": {
         "catppuccin": "catppuccin",
+        "ekphos-src": "ekphos-src",
         "fenix": "fenix",
         "home-manager": "home-manager",
         "lazydiff-src": "lazydiff-src",

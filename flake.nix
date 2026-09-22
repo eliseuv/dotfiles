@@ -84,6 +84,10 @@
       url = "github:eliseuv/shoin";
       flake = false;
     };
+    ekphos-src = {
+      url = "github:nostacks/ekphos";
+      flake = false;
+    };
 
     # Local homebrew projects, packaged via pkgs/<name>/default.nix. Only
     # git-committed files are picked up — commit in the project repo before
