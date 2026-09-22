@@ -1,11 +1,13 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
 
   home.packages = with pkgs; [
 
     # LLVM tools for C/C++ development
     clang
-    clang-tools
+    # lowPrio: clang-tools and clang-analyzer both ship bin/scan-view;
+    # defer to clang-analyzer's copy on conflict.
+    (lib.lowPrio clang-tools)
     clang-manpages
     clang-analyzer
 
