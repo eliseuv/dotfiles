@@ -1,56 +1,39 @@
 ---
 name: project-session
-description: Orient at the start of an ad-hoc session in a graduated project repo - surface the handoff, outstanding queue, and anything blocked or freshly written into DIRECTIONS.md. Use when starting or resuming work in a graduated project repo, before writing any code.
+description: Orient at the start of a graduated project session by surfacing its current POC, available checkpoints, blockers, handoff and user Directions. Read-only; use before implementation or review.
 ---
 
 # project-session
 
-The session-start counterpart to `/project-review` and `/project-implement`:
-read-only orientation, not a revision or build pass. It runs the same
-`vaultmeta spec` queries this vault's own `CLAUDE.md` recommends for
-orienting in a few hundred tokens, as an explicit, repeatable trigger.
+Resolve the vault and configuration:
 
 ```sh
 VM="$NOTES_VAULT/vaultmeta/vaultmeta.py"
 eval "$(python3 "$VM" env | sed 's/^/export /')"
-```
-
-## 0. The gate
-
-```sh
 NAME="$(basename "$(git rev-parse --show-toplevel)")"
 python3 "$VM" gate review project "$NAME"
 ```
 
-Every `error:` line is a hard stop - report it plainly and do not proceed.
-
-## 1. Read five things, nothing else
+Report and stop on gate errors. Otherwise read these compact queries:
 
 ```sh
+python3 "$VM" spec directions
 python3 "$VM" spec handoff
 python3 "$VM" spec status
+python3 "$VM" spec ls P --columns id,status,title,objective
+python3 "$VM" spec ready
 python3 "$VM" spec blocked
-python3 "$VM" spec directions
-python3 "$VM" spec ls R --status specified --columns id,title,acceptance
 ```
 
-Do not read `PROJECT_SPEC.md` whole - it's queried for a reason.
+Use get only for the current POC/checkpoint when more detail is needed. Do not read
+PROJECT_SPEC.md whole to orient. Read vault Goals.md for broader context; do not
+infer activity from updated dates or look for the retired epic subsystem.
 
-If `.claude/PROJECT.md` carries an `epic:`, read that epic's `## Ambition` and
-`## Done when` too - they say what this repo is for beyond its own spec, and a
-session that doesn't know its project serves a larger aim will optimise against
-the wrong thing:
+Report the current POC's intended demonstration, active/verifying checkpoint,
+available next slice, explicit blockers, and unprocessed user input. Recommend the
+first available checkpoint in the current POC without treating order as dependency.
+On version 1, ready shows legacy work; note that project-review should migrate it
+before checkpoint implementation. Existing R/M in version 2 are historical only.
 
-```sh
-EPIC="$(python3 "$VM" meta .claude/PROJECT.md epic)" && python3 "$VM" epic show "$EPIC"
-```
-
-## 2. Report and stop
-
-One short summary: what the last session's handoff says, the current status
-line, anything blocked on an open question, anything sitting unprocessed in
-`DIRECTIONS.md` (or the spec's `## 1. Directions` if still a vault seed), what's
-specified but not yet implemented, and - when there is one - the epic this serves
-and where its siblings stand. Do not edit any file, create a
-branch, or implement anything - that's `/project-implement`'s job. Then wait
-for the user's direction.
+Stop after orientation. No edits, branches, migrations, implementation or channel
+draining happen in this skill.
