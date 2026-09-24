@@ -4,6 +4,9 @@ update *inputs:
     git add flake.lock
     git commit --message "[flake] update {{inputs}}"
 
+update-nix:
+    {{just_executable()}} update nixpkgs nixpkgs-master nixpkgs-stable
+
 commit-gen:
     #!/usr/bin/env bash
     set -euo pipefail
