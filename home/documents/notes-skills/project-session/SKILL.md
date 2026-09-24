@@ -32,6 +32,9 @@ infer activity from updated dates or look for the retired epic subsystem.
 Report the current POC's intended demonstration, active/verifying checkpoint,
 available next slice, explicit blockers, and unprocessed user input. Recommend the
 first available checkpoint in the current POC without treating order as dependency.
+If the checkpoint queue is empty, inspect verifying POCs and active/planned POCs
+whose live checkpoints are all done. Their integrated acceptance demo may be the
+next action; do not report the project complete from an empty queue alone.
 On version 1, ready shows legacy work; note that project-review should migrate it
 before checkpoint implementation. Existing R/M in version 2 are historical only.
 

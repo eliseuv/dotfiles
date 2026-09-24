@@ -1,23 +1,14 @@
 { lib, ... }:
 let
   skillsDirectory = ./notes-skills;
-  sharedSkills = lib.mapAttrs (
-    name: _: skillsDirectory + "/${name}"
-  ) (lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDirectory));
+  sharedSkills = lib.mapAttrs (name: _: skillsDirectory + "/${name}") (
+    lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDirectory)
+  );
 in
 {
 
-  # Vault-relative path needed outside the vault directory: project-review (a
-  # graduated-repo skill, so it can run from inside any repo, not the vault)
-  # interpolates $TEMPLATES_DIR directly in a shell command. Every other
-  # vault-relative path lives only in notes/.env now — vault-local skills
-  # resolve them through `vaultmeta.py path`, never as raw env vars, so they
-  # don't need to be global. Constant across machines (resolved against
-  # VAULT_DIR, which is host-specific — see the importing host file).
-  home.sessionVariables = {
-    TEMPLATES_DIR = "Templates";
-  };
-
+  # NOTES_VAULT is the host-defined bootstrap pointer. Skills resolve all other
+  # paths with vaultmeta env so a global default cannot override vault .env.
   home.shellAliases = {
     n = "cd $NOTES_VAULT && shoin Goals.md";
   };

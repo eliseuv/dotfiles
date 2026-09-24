@@ -35,8 +35,9 @@ release/phase boundaries as successive POCs. Preserve old completion as history;
 new verifying checkpoints still need actual evidence before done. Fill only gaps
 that existing scope or user answers establish.
 
-Missing spec: initialize version 2 using the vault template, with category,
-language and original started date from tracking. Preserve all existing planning
+Missing spec: initialize version 2 using the vault template. Carry category and
+the original started date from tracking; determine language from the repository's
+flake and manifests (tracking does not require a language field). Preserve all existing planning
 content, reasoning, exclusions and shipped history in item bodies or legacy prose.
 Goals derive from what the README says the project is, not just outstanding tasks.
 Translate phases into POCs only where they describe distinct demonstrable outcomes;

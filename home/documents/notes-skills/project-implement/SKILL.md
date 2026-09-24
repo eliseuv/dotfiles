@@ -34,8 +34,13 @@ python3 "$VM" spec ls NG
 Use explicit user selection when given. Otherwise offer available checkpoints and
 raw Directions input with the structured input tool, recommending the first
 available slice in the current POC. Include active/verifying work to resume.
-Do not offer blocked work or silently activate draft POCs. If nothing is available,
-report the blockers or empty queue; do not invent new work.
+Do not offer blocked work or silently activate draft POCs. Also offer the integrated
+verification of a non-blocked POC at verifying, or active/planned with all live
+checkpoints done. Check its members with `spec ls CP --where poc=P-n --not-status
+done superseded dropped`; only an empty result (with at least one completed
+checkpoint) leaves the POC demo ready. An empty checkpoint queue does not mean
+there is no remaining work. Stop only when neither checkpoint work, a POC demo,
+nor selected raw input remains actionable.
 
 For selected raw input, settle its acceptance, verification and POC membership,
 write a CP item before coding, then drain only the represented line. Move a global
@@ -45,6 +50,12 @@ Run `spec validate` before coding; resolve structural or acceptance gaps in the
 selected work rather than building against an invalid specification.
 
 ## Preflight and implement
+
+When the selected work is only a POC demo, query its acceptance/verification and
+completed checkpoints, set the POC verifying, and execute that workflow. Record
+actual evidence before done; failures leave it verifying with a concrete next
+action. Do not reopen completed checkpoints or invent implementation work just
+to finish the POC. Apply the same repository preflight, validation and handoff.
 
 Inspect git status. Preserve unrelated user edits; isolate the work in a branch or
 worktree where needed. Ask only if a concrete overlap cannot be resolved safely.
@@ -57,8 +68,8 @@ dependencies and question blockers to the replacements. Implement the authorized
 slice(s), without treating an unfinished remainder as complete.
 
 When the first checkpoint starts, set the project lifecycle to in-progress and
-its POC to active; then set the checkpoint active. Read existing code, follow repository conventions and
-implement only the scoped slice. Run the repository's normal checks (prefer its
+its POC to active; then set the checkpoint active. Read existing code, follow
+repository conventions and implement only the scoped slice. Run the repository's normal checks (prefer its
 check recipe/devshell), plus the checkpoint's verification procedure. Fixture
 inputs, expected outputs and observed results must establish acceptance. Compiling
 or passing unrelated tests does not establish a broader exit demo.
@@ -77,7 +88,8 @@ python3 "$VM" spec set CP-n 'evidence=<observed result; reproducible reference>'
 ```
 
 Never invent evidence or weaken acceptance to obtain a green state. After all live
-checkpoints in a POC complete, set P verifying and execute its integrated acceptance workflow.
+checkpoints in a POC complete, set P verifying and execute its integrated
+acceptance workflow.
 Only its successful result warrants evidence and done on P. Do not automatically
 start the next draft POC.
 
