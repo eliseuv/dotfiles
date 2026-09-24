@@ -218,6 +218,22 @@
         "url": "https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.xz"
       }
     },
+    "nixpkgs-master": {
+      "locked": {
+        "lastModified": 1790206175,
+        "narHash": "sha256-muoGM3JPg5t1L/ahM5PVTqPE9YnXjQRyM3m7gkilHE0=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f992359594466a7a9ce965b81eb593c602b6f8eb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "master",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1789114715,
@@ -257,6 +273,7 @@
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs_2",
+        "nixpkgs-master": "nixpkgs-master",
         "nixpkgs-stable": "nixpkgs-stable",
         "shoin-src": "shoin-src",
         "sops-nix": "sops-nix",

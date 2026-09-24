@@ -28,6 +28,10 @@
     # Stable Nixpkgs
     nixpkgs-stable.url = "nixpkgs/nixos-26.05";
 
+    # Nixpkgs master, used for packages that need to track upstream releases
+    # more closely than nixos-unstable does (e.g. claude-code)
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
+
     # Home Manager
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -51,7 +55,6 @@
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
 
     # Fenix
     fenix = {
