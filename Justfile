@@ -56,14 +56,33 @@ update-home:
     -{{just_executable()}} update
     {{just_executable()}} home-switch
 
+# Pin a locally-packaged service (pkgs/<pkg>/pin.json) to the current HEAD
+# of the repo it points at, and commit that. No-op when already pinned
+# there, so re-running after a partial failure is safe.
+pin-service pkg:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    pin="pkgs/{{pkg}}/pin.json"
+    url="$(jq -r .url "$pin")"
+    rev="$(git -C "${url#file://}" rev-parse HEAD)"
+    if [ "$rev" = "$(jq -r .rev "$pin")" ]; then
+        echo "pin-service: {{pkg}} already pinned at $rev, skipping"
+        exit 0
+    fi
+    jq --arg rev "$rev" '.rev = $rev' "$pin" > "$pin.tmp"
+    mv -f "$pin.tmp" "$pin"
+    git restore --staged .
+    git add "$pin"
+    git commit --message "[pkgs] pin {{pkg}} ${rev:0:7}"
+
 # Pick up a just-pushed commit for a locally-packaged service (see
-# pkgs/<name>/default.nix and README's "local homebrew projects" pattern)
+# pkgs/<pkg>/default.nix and README's "local homebrew projects" pattern)
 # and switch this host onto it. Run on the target host itself, after
 # `git push <host-remote> <branch>` in the service's own repo. `nh os
 # switch` needs a real sudo prompt, so over ssh use `-t` (no askpass
 # helper is configured): ssh -t <host> -- 'cd ~/dotfiles && just
-# deploy-service <input>'.
-# Usage: just deploy-service ledger-src
-deploy-service input:
-    -{{just_executable()}} update {{input}}
+# deploy-service <pkg>'.
+# Usage: just deploy-service ledger-web
+deploy-service pkg:
+    {{just_executable()}} pin-service {{pkg}}
     {{just_executable()}} system-switch

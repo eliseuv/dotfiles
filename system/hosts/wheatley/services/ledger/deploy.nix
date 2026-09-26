@@ -3,15 +3,15 @@
 #
 # `receive.denyCurrentBranch = updateInstead` (set once, manually, on that
 # repo) already makes a push update its working tree. What's missing is
-# that ledger-src is a git+file:// flake input pinned in flake.lock, so the
-# push alone doesn't change what's built — see README.md's "Deploying
+# that ledger-web's source is pinned to a commit in
+# pkgs/ledger-web/pin.json, so the push alone doesn't change what's built — see README.md's "Deploying
 # Local Services" for the full manual pipeline this automates.
 #
 # A post-receive hook (installed below, since .git/hooks isn't a tracked
 # path) touches a trigger file; a systemd.path unit watches it and runs
 # the same three-stage pipeline `just deploy-service` does by hand, split
 # across privilege boundaries so no sudo/password is ever needed:
-#   1. evf: bump the ledger-src lock (`just update ledger-src`)
+#   1. evf: bump the ledger-web pin (`just pin-service ledger-web`)
 #   2. root: build + activate (`nh os switch .` — already root, so nh
 #      never shells out to sudo)
 #   3. evf: tag the generation, push, sync home-manager, gc
@@ -44,7 +44,7 @@ let
     sshAuthSock="/run/user/$(${pkgs.coreutils}/bin/id -u evf)/gnupg/S.gpg-agent.ssh"
 
     /run/wrappers/bin/su -s /bin/sh -c \
-      "cd ${dotfilesPath} && SSH_AUTH_SOCK=$sshAuthSock ${pkgs.just}/bin/just update ledger-src || true" \
+      "cd ${dotfilesPath} && SSH_AUTH_SOCK=$sshAuthSock ${pkgs.just}/bin/just pin-service ledger-web || true" \
       evf
 
     cd ${dotfilesPath} && ${pkgs.nh}/bin/nh os switch .

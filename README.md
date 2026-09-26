@@ -42,9 +42,9 @@ This repository contains my personal NixOS and Home Manager configuration, manag
   - Remaining directories are individual program modules, imported by
     profiles or host files.
 - `pkgs/<name>/default.nix`: Packaging for local homebrew projects that
-  live in their own repo (e.g. `~/Services/ledger`), pulled in via a
-  `<name>-src` flake input (`flake = false`, `git+file://…`). See
-  "Deploying Local Services" below.
+  live in their own repo (e.g. `~/Services/ledger`), fetched from the
+  commit pinned in `pkgs/<name>/pin.json`. See "Deploying Local Services"
+  below.
 - `secrets/`: Encrypted secrets (sops-nix, age): `user.yaml` for home-manager, one file per host for system secrets.
 
 ## Usage
@@ -119,10 +119,14 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
 
 Local homebrew projects (own repo, own git history) that a host runs as a
 service — e.g. `~/Services/ledger` on `wheatley`, see `pkgs/ledger-web/` —
-are pulled into the flake as a `<name>-src` input pointing at
-`git+file://<path-on-that-host>`. Because it's a `git+file://` input, it's
-pinned in `flake.lock` to a specific commit: pushing new code to the
+are fetched with `builtins.fetchGit` from `file://<path-on-that-host>`, at
+the commit pinned in `pkgs/<name>/pin.json`: pushing new code to the
 project repo does **not** by itself change what's built or running.
+
+They are deliberately not flake inputs. Every host locks and updates every
+flake input, and the repo only exists on the one host that runs it, so
+`just update` would fail everywhere else. The `fetchGit` is only forced by
+a host whose config uses the package.
 
 One-time setup, per project repo, on the host it deploys to:
 
@@ -138,19 +142,18 @@ Deploy pipeline, after pushing a new commit (`git push <host-remote>
 <branch>` from the project repo, updating the host's checkout per above):
 
 ```bash
-ssh -t <host> -- 'cd ~/dotfiles && just deploy-service <input>'
+ssh -t <host> -- 'cd ~/dotfiles && just deploy-service <pkg>'
 ```
 
-*Bumps `<input>` (the `<name>-src` flake input) to the checkout's current
-commit in `flake.lock`, commits that, then runs `system-switch`.* Notes:
+*Bumps `pkgs/<pkg>/pin.json` to the checkout's current commit
+(`just pin-service <pkg>`), commits that, then runs `system-switch`.*
+Notes:
 
 - `-t` is required: `nh os switch`'s activation step needs a real sudo
   prompt, and there's no askpass helper configured.
-- If `<input>` was already at the latest commit (e.g. re-running after a
-  partial failure), the `flake.lock` update is a no-op and its commit
-  step fails with "nothing to commit" — `deploy-service` tolerates this
-  and still runs `system-switch`, same as `update-system`/`update-home`
-  tolerate a no-op `update`.
+- If `<pkg>` was already pinned at the latest commit (e.g. re-running
+  after a partial failure), `pin-service` skips without committing and
+  `deploy-service` still runs `system-switch`.
 - If the switch itself is then also a no-op (same generation, nothing
   changed to activate), `commit-gen` finds its generation tag already
   exists — from the run that actually deployed it — and skips instead of
@@ -163,7 +166,7 @@ Example, deploying ledger to wheatley:
 git push wheatley wheatley
 
 # Then:
-ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-src'
+ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-web'
 ```
 
 #### Automatic deploy-on-push
@@ -176,8 +179,8 @@ a manual `deploy-service` call:
   `.git/hooks` isn't itself a path the dotfiles repo can track) touches a
   trigger file on every push.
 - A `systemd.path` unit watches that file and runs the deploy chain, split
-  by privilege so nothing ever needs sudo or a password: `just update
-  ledger-src` as `evf`, then `nh os switch .` as **root** (the service
+  by privilege so nothing ever needs sudo or a password: `just
+  pin-service ledger-web` as `evf`, then `nh os switch .` as **root** (the service
   itself runs as root, so `nh` never shells out to sudo), then `just
   after-switch` as `evf` again.
 
@@ -188,11 +191,11 @@ key's passphrase cache (`home/auth/gpg.nix`, 12h TTL) can still go cold
 with nothing around to unlock it; if so, the tag/push step fails
 (`systemctl status ledger-deploy` will show it) even though the actual
 deploy — build, activate, `ledger-web.service` restart — already
-succeeded. Re-running `just deploy-service ledger-src` by hand, or just
+succeeded. Re-running `just deploy-service ledger-web` by hand, or just
 pushing again, clears it.
 
 To add this for another service, copy `services/ledger/deploy.nix`'s shape,
-swapping the repo path, `<name>-src` input, and the hostname/uid it
+swapping the repo path, `pkgs/<pkg>` name, and the hostname/uid it
 already derives at runtime.
 
 ## Installation

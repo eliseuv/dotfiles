@@ -147,22 +147,6 @@
         "type": "github"
       }
     },
-    "ledger-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1789597547,
-        "narHash": "sha256-rgFxTQy+x/6Ur13JI8Req2L3P4K3hnRMfrbiWUlrQL4=",
-        "ref": "refs/heads/main",
-        "rev": "8544ee142465cb57875fc56c5a73bcf38283d881",
-        "revCount": 146,
-        "type": "git",
-        "url": "file:///home/evf/Services/ledger"
-      },
-      "original": {
-        "type": "git",
-        "url": "file:///home/evf/Services/ledger"
-      }
-    },
     "neovim-nightly-overlay": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -307,7 +291,6 @@
         "fenix": "fenix",
         "home-manager": "home-manager",
         "lazydiff-src": "lazydiff-src",
-        "ledger-src": "ledger-src",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nix-index-database": "nix-index-database",
         "nix-minecraft": "nix-minecraft",

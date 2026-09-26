@@ -1,11 +1,24 @@
 # Packaging for ~/Services/ledger's web app (ledger-web + ledger-web-ui),
-# sourced from the `ledger-src` flake input (flake = false, git+file://,
-# see flake.nix). Only git-committed files in that project are visible here.
+# sourced from the commit pinned in ./pin.json. Only git-committed files in
+# that project are visible here.
+#
+# Deliberately not a flake input: that repo only exists on wheatley, and a
+# flake input is locked and updated on every host. builtins.fetchGit is
+# only forced when a host's config actually uses this package, and pure
+# evaluation accepts it because the rev is pinned.
 #
 # This is the template for packaging other local homebrew projects: one
-# `<name>-src` flake input + one `pkgs/<name>/default.nix`.
-{ pkgs, inputs }:
+# `pkgs/<name>/default.nix` + `pin.json`, bumped by `just pin-service`.
+{ pkgs }:
 
+let
+  pin = pkgs.lib.importJSON ./pin.json;
+  src = builtins.fetchGit {
+    inherit (pin) url rev;
+    # The pinned commit need not be on the default branch.
+    allRefs = true;
+  };
+in
 {
   # Builds the whole `ledger` cargo workspace (ledger-core, ledger-tui,
   # ledger-web) from a single Cargo.lock, matching the pattern in
@@ -14,8 +27,8 @@
   bin = pkgs.rustPlatform.buildRustPackage {
     pname = "ledger-web";
     version = "0.1.0";
-    src = inputs.ledger-src;
-    cargoLock.lockFile = "${inputs.ledger-src}/Cargo.lock";
+    inherit src;
+    cargoLock.lockFile = "${src}/Cargo.lock";
     nativeBuildInputs = [ pkgs.pkg-config ];
     buildInputs = [ pkgs.openssl ];
     # Tests expect a live Postgres connection, unavailable in the build
@@ -28,7 +41,7 @@
   webUi = pkgs.buildNpmPackage {
     pname = "ledger-web-ui";
     version = "0.1.0";
-    src = "${inputs.ledger-src}/ledger-web-ui";
+    src = "${src}/ledger-web-ui";
     npmDepsHash = "sha256-Vd3AC39U6d3ZD/IaA3yGbkgrhNr0ktGMg3B0LR3n6Eg=";
     nodejs = pkgs.nodejs_22;
     installPhase = ''

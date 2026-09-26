@@ -1,9 +1,9 @@
 # Runs ~/Services/ledger's web app (see pkgs/ledger-web/default.nix) as a
 # boot-time system service, backed by its own local Postgres instance.
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, ... }:
 
 let
-  ledgerWeb = import ../../../../../pkgs/ledger-web { inherit pkgs inputs; };
+  ledgerWeb = import ../../../../../pkgs/ledger-web { inherit pkgs; };
 in
 {
 
