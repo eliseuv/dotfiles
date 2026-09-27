@@ -30,6 +30,9 @@
     # Games
     ../../extra/steam.nix
 
+    # NAS home folder
+    ../../extra/companion-cube.nix
+
   ];
 
   # Hostname

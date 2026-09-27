@@ -23,6 +23,9 @@
     # Tailscale
     ../../extra/tailscale.nix
 
+    # NAS home folder
+    ../../extra/companion-cube.nix
+
     # Secrets
     ../../extra/sops.nix
 
@@ -38,7 +41,7 @@
   homelab.network = {
     lanSubnet = "192.168.0.0/24";
     lanAddress = "192.168.0.62";
-    nasAddress = "192.168.0.35";
+    nasAddress = config.companionCube.address;
     tailnetDomain = "taild628c9.ts.net";
     tailnetAddress = "100.97.1.97";
   };
