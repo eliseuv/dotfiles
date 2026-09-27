@@ -10,6 +10,7 @@ let
   mediaRoot = "/mnt/media";
   mediaServices = [ "qbittorrent" "sonarr" "radarr" "jellyfin" ];
   jellyfinTailnetPort = 8920;
+  lanSubnet = "192.168.0.0/24";
 
   arrUrl = service: "http://localhost:${toString config.services.${service}.settings.server.port}";
   arrApis = {
@@ -303,8 +304,17 @@ in
   services.flaresolverr.enable = true;
 
   services.jellyfin.enable = true;
-  services.jellyfin.openFirewall = true;
   users.users.jellyfin.extraGroups = [ "media" ];
+
+  # LAN only (web UI plus client discovery), matched on source rather than
+  # interface: the LAN NIC also carries globally routable IPv6 addresses, so an
+  # interface rule would admit the internet whenever the router passes inbound
+  # IPv6. IPv6 is left closed; LAN clients fall back to IPv4. Tailnet clients
+  # go through the HTTPS serve above, which reaches Jellyfin over loopback.
+  networking.firewall.extraCommands = ''
+    iptables -A nixos-fw -s ${lanSubnet} -p tcp --dport 8096 -j nixos-fw-accept
+    iptables -A nixos-fw -s ${lanSubnet} -p udp -m multiport --dports 1900,7359 -j nixos-fw-accept
+  '';
 
   # configDir defaults to the pre-26.05 jellyseerr path here, since it's
   # keyed off system.stateVersion (24.11 on this host), not the nixpkgs
