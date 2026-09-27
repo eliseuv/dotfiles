@@ -121,6 +121,20 @@ in
   homelab.services.minecraft = {
     port = config.services.minecraft-servers.servers.${serverName}.serverProperties.server-port;
     expose = "tailnet";
+    # No web UI to link or HTTP-monitor. The widget pings the game port itself
+    # (the scheme is ignored) and reports status, version and players.
+    dashboard = {
+      name = "Minecraft";
+      group = "Tools";
+      order = 3;
+      description = "Fabric server (Tailscale only)";
+      icon = "minecraft.png";
+      link = false;
+      widget = {
+        type = "minecraft";
+        url = "udp://127.0.0.1:${toString config.homelab.services.minecraft.port}";
+      };
+    };
   };
 
   # Daily restic snapshots to the NAS. Autosave is paused and a full flush

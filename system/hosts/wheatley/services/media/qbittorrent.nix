@@ -37,7 +37,18 @@ in
     restartUnits = [ "qbittorrent.service" "arr-sync.service" ];
   };
 
-  homelab.services.qbittorrent.port = config.services.qbittorrent.webuiPort;
+  homelab.services.qbittorrent = {
+    port = config.services.qbittorrent.webuiPort;
+    dashboard = {
+      name = "qBittorrent";
+      group = "Media";
+      order = 3;
+      description = "Download client";
+      icon = "qbittorrent.png";
+      widget.type = "qbittorrent";
+      widgetKey = "qbittorrent/api-key";
+    };
+  };
   # The one thing open to everyone: peers must reach it.
   homelab.services.torrent = {
     port = config.services.qbittorrent.torrentingPort;

@@ -9,7 +9,24 @@ in
   users.users.jellyfin.extraGroups = [ "media" ];
 
   # Fixed in Jellyfin's own network settings; the module has no option for it.
-  homelab.services.jellyfin.port = 8096;
+  homelab.services.jellyfin = {
+    port = 8096;
+    dashboard = {
+      name = "Jellyfin";
+      group = "Media";
+      order = 1;
+      description = "Media server";
+      icon = "jellyfin.png";
+      widget = {
+        type = "jellyfin";
+        # Jellyfin 12 dropped the legacy /emby route prefix that the v1 widget
+        # calls; v2 uses the plain paths and header auth.
+        version = 2;
+        enableBlocks = true;
+      };
+      widgetKey = "homepage/jellyfin";
+    };
+  };
   # Client discovery.
   networking.firewall.lan.allowedUDPPorts = [ 1900 7359 ];
 

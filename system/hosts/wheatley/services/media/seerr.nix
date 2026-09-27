@@ -10,6 +10,15 @@
   homelab.services.seerr = {
     port = config.services.seerr.port;
     expose = "tailnet";
+    dashboard = {
+      name = "Seerr";
+      group = "Media";
+      order = 2;
+      description = "Media requests";
+      icon = "jellyseerr.png";
+      widget.type = "seerr";
+      widgetKey = "homepage/seerr";
+    };
   };
 
 }

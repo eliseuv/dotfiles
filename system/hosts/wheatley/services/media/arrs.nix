@@ -11,9 +11,33 @@
 
   services.prowlarr.enable = true;
 
-  homelab.services.sonarr.port = config.services.sonarr.settings.server.port;
-  homelab.services.radarr.port = config.services.radarr.settings.server.port;
-  homelab.services.prowlarr.port = config.services.prowlarr.settings.server.port;
+  homelab.services = lib.mapAttrs (
+    service: tile: {
+      port = config.services.${service}.settings.server.port;
+      dashboard = tile // {
+        group = "Management";
+        icon = "${service}.png";
+        widget.type = service;
+        widgetKey = "homepage/${service}";
+      };
+    }
+  ) {
+    sonarr = {
+      name = "Sonarr";
+      order = 1;
+      description = "TV shows";
+    };
+    radarr = {
+      name = "Radarr";
+      order = 2;
+      description = "Movies";
+    };
+    prowlarr = {
+      name = "Prowlarr";
+      order = 3;
+      description = "Indexers";
+    };
+  };
 
   # Pin each *arr's API key to the sops copy (declared in ../dashboard)
   # instead of the one it generated on first start, so the keys the dashboard

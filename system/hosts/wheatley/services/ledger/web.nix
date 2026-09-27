@@ -11,6 +11,13 @@ in
   homelab.services.ledger = {
     port = 3001;
     expose = "tailnet";
+    dashboard = {
+      name = "Ledger";
+      group = "Tools";
+      order = 2;
+      description = "Ledger web app";
+      icon = "mdi-cash-multiple";
+    };
   };
 
   services.postgresql = {

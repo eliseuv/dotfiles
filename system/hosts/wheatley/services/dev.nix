@@ -8,8 +8,24 @@
     terminal = {
       port = 3000;
       expose = "tailnet";
+      dashboard = {
+        name = "Terminal";
+        group = "Dev";
+        order = 1;
+        description = "ttyd web terminal";
+        icon = "mdi-console";
+      };
     };
-    vite.port = 5173;
+    vite = {
+      port = 5173;
+      dashboard = {
+        name = "Vite";
+        group = "Dev";
+        order = 2;
+        description = "Vite dev server";
+        icon = "mdi-lightning-bolt";
+      };
+    };
     # Vite's next choice when 5173 is taken.
     vite-fallback.port = 5174;
     zola.port = 1111;

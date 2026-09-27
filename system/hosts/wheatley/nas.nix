@@ -21,6 +21,18 @@
     ];
   };
 
+  # Another host, so the tile links its fixed LAN address rather than a port
+  # here. DSM's cert is self-signed; Homepage's monitor doesn't verify it.
+  homelab.services.companion-cube.dashboard = {
+    name = "Companion Cube";
+    group = "Tools";
+    order = 1;
+    description = "Synology NAS (DSM)";
+    # Drawn over with the cube face; the dashboard theme CSS matches this name.
+    icon = "synology.png";
+    href = "https://192.168.0.35:5001";
+  };
+
   # Minecraft world backups (restic repo, see services/minecraft.nix).
   fileSystems."/mnt/minecraft" = {
     device = "192.168.0.35:/volume1/minecraft";
