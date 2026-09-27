@@ -74,9 +74,9 @@ let
 
   # Each *arr's own key (for its API) plus any the specs reference.
   credentials = {
-    sonarr = config.sops.secrets."homepage/sonarr".path;
-    radarr = config.sops.secrets."homepage/radarr".path;
-    prowlarr = config.sops.secrets."homepage/prowlarr".path;
+    sonarr = config.sops.secrets."sonarr/api-key".path;
+    radarr = config.sops.secrets."radarr/api-key".path;
+    prowlarr = config.sops.secrets."prowlarr/api-key".path;
     qbittorrent = config.sops.secrets."qbittorrent/api-key".path;
   };
 

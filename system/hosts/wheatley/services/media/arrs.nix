@@ -18,7 +18,7 @@
         group = "Management";
         icon = "${service}.png";
         widget.type = service;
-        widgetKey = "homepage/${service}";
+        widgetKey = "${service}/api-key";
       };
     }
   ) {
@@ -39,16 +39,17 @@
     };
   };
 
-  # Pin each *arr's API key to the sops copy (declared in ../dashboard)
-  # instead of the one it generated on first start, so the keys the dashboard
-  # and the cross-service wiring use can't drift from the apps'.
+  # Pin each *arr's API key to the sops copy instead of the one it generated on
+  # first start, so the keys the dashboard and arr-sync use can't drift from
+  # the apps'.
+  sops.secrets = lib.genAttrs [ "sonarr/api-key" "radarr/api-key" "prowlarr/api-key" ] (_: { });
   sops.templates = lib.genAttrs [ "sonarr.env" "radarr.env" "prowlarr.env" ] (
     file:
     let
       service = lib.removeSuffix ".env" file;
     in
     {
-      content = "${lib.toUpper service}__AUTH__APIKEY=${config.sops.placeholder."homepage/${service}"}";
+      content = "${lib.toUpper service}__AUTH__APIKEY=${config.sops.placeholder."${service}/api-key"}";
       restartUnits = [ "${service}.service" ];
     }
   );
