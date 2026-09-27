@@ -1,6 +1,12 @@
-# CompanionCube (Synology) home folder over NFS, on every host that imports
-# this. The export has no squashing, so access relies on evf's uid matching the
-# DSM user's (see environment/users.nix).
+# CompanionCube (Synology) personal share over NFS, on every host that imports
+# this. A dedicated shared folder rather than homes/evf: the export has no
+# squashing, and homes/evf belongs to the DSM user (uid 1026), so it would
+# have meant renumbering evf everywhere. This share's root was chowned to
+# 1000:100 from a client instead; DSM sees it as an unknown uid, with group
+# `users` (gid 100 on both sides) as its only way in.
+#
+# The share is DSM-encrypted: while it's locked on the NAS the mount fails
+# after the mount timeout, like an unreachable NAS.
 { config, lib, ... }:
 {
 
@@ -19,7 +25,7 @@
     # the cost of possibly losing a write interrupted mid-flight. The idle
     # timeout unmounts it so suspend/resume on another network finds it gone.
     fileSystems."/mnt/comp-cube" = {
-      device = "${config.companionCube.address}:/volume1/homes/evf";
+      device = "${config.companionCube.address}:/volume1/drive";
       fsType = "nfs";
       options = [
         "nfsvers=4.1"
