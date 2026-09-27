@@ -147,14 +147,19 @@ class="normal"
 [ "$max_pct" -ge 70 ] && class="warning"
 [ "$max_pct" -ge 90 ] && class="critical"
 
-session_section="󰚩    ${session_pct}%$( [ -n "$session_reset_short" ] && echo " (${session_reset_short})")"
-weekly_section="󰃭 ${weekly_pct}%$( [ -n "$weekly_reset_fmt" ] && echo " (${weekly_reset_fmt})")"
+session_section="󰚩 ${session_pct}%$( [ -n "$session_reset_short" ] && echo "   ${session_reset_short}")"
 session_span=$(span_section "$session_pct" "$session_section")
-weekly_span=$(span_section "$weekly_pct" "$weekly_section")
+session_line="Session: ${session_pct}%$( [ -n "$session_reset_fmt" ] && echo " (resets ${session_reset_fmt})")"
+weekly_line="Weekly:  ${weekly_pct}%$( [ -n "$weekly_reset_fmt" ] && echo " (resets ${weekly_reset_fmt})")"
 updated_at=$(date "+%a %H:%M")
 
-text="${session_span}   ${weekly_span}"
-tooltip="Last updated: ${updated_at}"
+# Weekly usage only lives in the tooltip; the class (border colour) still
+# follows max_pct so a weekly limit nearing its cap is visible on the bar
+text="${session_span}"
+tooltip="$(span_section "$session_pct" "$session_line")
+$(span_section "$weekly_pct" "$weekly_line")
+
+Last updated: ${updated_at}"
 
 output=$(jq -nc --arg text "$text" --arg tooltip "$tooltip" --arg class "$class" \
     '{text: $text, tooltip: $tooltip, class: $class}')
