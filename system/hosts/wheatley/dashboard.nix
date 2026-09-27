@@ -142,6 +142,9 @@ in
               icon = "jellyfin.png";
               widget = {
                 type = "jellyfin";
+                # Jellyfin 12 dropped the legacy /emby route prefix that the
+                # v1 widget calls; v2 uses the plain paths and header auth.
+                version = 2;
                 key = secret "JELLYFIN_KEY";
                 enableBlocks = true;
               };
