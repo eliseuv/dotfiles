@@ -3,8 +3,7 @@
 # rolls back with the generation. World state lives in /srv/minecraft and is
 # backed up to the NAS with restic (see below).
 #
-# Reachable over Tailscale only: the port is opened on tailscale0 alone, not
-# in the global allowedTCPPorts list like this host's other services.
+# Reachable on the LAN and over Tailscale (see firewall.nix).
 #
 # Console: `echo '<command>' > /run/minecraft/survival.stdin`; output goes to
 # `journalctl -u minecraft-server-survival -f`.
@@ -108,9 +107,9 @@ in
         difficulty = "normal";
         view-distance = 10;
         simulation-distance = 8;
-        # Tailscale already gates the network; the whitelist is a second
-        # layer. Left non-declarative for now: `whitelist add <name>` on the
-        # console.
+        # The firewall already limits it to the LAN and tailnet; the
+        # whitelist is a second layer. Left non-declarative for now:
+        # `whitelist add <name>` on the console.
         white-list = true;
         enforce-whitelist = true;
       };

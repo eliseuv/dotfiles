@@ -1,16 +1,15 @@
 # Media stack: qBittorrent (download client) -> Sonarr/Radarr (library
 # management) <- Prowlarr (indexers) -> Jellyfin (playback) <- Seerr (requests).
-# All native NixOS services, bound wide open on the LAN like this host's other
-# services (see ledger-web.nix) - Tailscale is the remote-access layer, there
-# is no reverse proxy. Downloads and library share one NFS mount (nas.nix) so
-# Sonarr/Radarr imports are hardlinks, not cross-device copies; service state
-# (SQLite) stays on local disk under /var/lib.
+# All native NixOS services, open on the LAN and, for Seerr and Jellyfin (over
+# HTTPS), the tailnet (see firewall.nix) - Tailscale is the remote-access
+# layer, there is no reverse proxy. Downloads and library share one NFS mount
+# (nas.nix) so Sonarr/Radarr imports are hardlinks, not cross-device copies;
+# service state (SQLite) stays on local disk under /var/lib.
 { config, lib, pkgs, ... }:
 let
   mediaRoot = "/mnt/media";
   mediaServices = [ "qbittorrent" "sonarr" "radarr" "jellyfin" ];
   jellyfinTailnetPort = 8920;
-  lanSubnet = "192.168.0.0/24";
 
   arrUrl = service: "http://localhost:${toString config.services.${service}.settings.server.port}";
   arrApis = {
@@ -250,7 +249,6 @@ in
     enable = true;
     webuiPort = 8080;
     torrentingPort = 51413;
-    openFirewall = true;
     serverConfig.Preferences = {
       Downloads.SavePath = "${mediaRoot}/downloads";
       # Substituted from sops below, keeping the key out of the Nix store.
@@ -267,19 +265,29 @@ in
     owner = config.services.qbittorrent.user;
     restartUnits = [ "qbittorrent.service" "arr-sync.service" ];
   };
-  # qBittorrent's openFirewall only opens the TCP side of each port.
-  networking.firewall.allowedUDPPorts = [ 51413 ];
+  # The torrent port is the one thing open to everyone: peers must reach it.
+  # Forced so it also drops the 5173 (vite) that the shared
+  # system/hardware/network.nix opens to everyone; wheatley keeps that one
+  # LAN-only (configuration.nix).
+  networking.firewall.allowedTCPPorts = lib.mkForce [ config.services.qbittorrent.torrentingPort ];
+  networking.firewall.allowedUDPPorts = [ config.services.qbittorrent.torrentingPort ];
+  networking.firewall.lan.allowedTCPPorts = [
+    config.services.qbittorrent.webuiPort
+    config.services.sonarr.settings.server.port
+    config.services.radarr.settings.server.port
+    config.services.prowlarr.settings.server.port
+    8096 # Jellyfin; tailnet clients use the HTTPS serve above
+  ];
+  # Jellyfin client discovery.
+  networking.firewall.lan.allowedUDPPorts = [ 1900 7359 ];
 
   services.sonarr.enable = true;
-  services.sonarr.openFirewall = true;
   users.users.sonarr.extraGroups = [ "media" ];
 
   services.radarr.enable = true;
-  services.radarr.openFirewall = true;
   users.users.radarr.extraGroups = [ "media" ];
 
   services.prowlarr.enable = true;
-  services.prowlarr.openFirewall = true;
 
   # Pin each *arr's API key to the sops copy (declared in dashboard.nix)
   # instead of the one it generated on first start, so the keys the dashboard
@@ -306,22 +314,10 @@ in
   services.jellyfin.enable = true;
   users.users.jellyfin.extraGroups = [ "media" ];
 
-  # LAN only (web UI plus client discovery), matched on source rather than
-  # interface: the LAN NIC also carries globally routable IPv6 addresses, so an
-  # interface rule would admit the internet whenever the router passes inbound
-  # IPv6. IPv6 is left closed; LAN clients fall back to IPv4. Tailnet clients
-  # go through the HTTPS serve above, which reaches Jellyfin over loopback.
-  networking.firewall.extraCommands = ''
-    iptables -A nixos-fw -s ${lanSubnet} -p tcp --dport 8096 -j nixos-fw-accept
-    iptables -A nixos-fw -s ${lanSubnet} -p udp -m multiport --dports 1900,7359 -j nixos-fw-accept
-  '';
-
   # configDir defaults to the pre-26.05 jellyseerr path here, since it's
   # keyed off system.stateVersion (24.11 on this host), not the nixpkgs
   # version - just a directory name, doesn't affect functionality.
-  services.seerr = {
-    enable = true;
-    openFirewall = true;
-  };
+  services.seerr.enable = true;
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ config.services.seerr.port ];
 
 }

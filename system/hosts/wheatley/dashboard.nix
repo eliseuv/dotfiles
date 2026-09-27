@@ -305,6 +305,6 @@ in
       locations."/".proxyPass = "http://127.0.0.1:${toString homepagePort}";
     };
   };
-  networking.firewall.allowedTCPPorts = [ 80 ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 80 ];
 
 }
