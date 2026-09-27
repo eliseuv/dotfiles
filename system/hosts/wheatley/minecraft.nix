@@ -53,7 +53,13 @@ in
       enable = true;
       # Pinned rather than `fabricServers.fabric` (latest): a game version
       # bump silently breaks every mod built for the old one.
-      package = pkgs.fabricServers.fabric-26_3.override { loaderVersion = "0.19.5"; };
+      # The Fabric wrapper launches with nixpkgs' default jre_headless (21)
+      # instead of the Java the game declares (25 for 26.x), so borrow the
+      # vanilla server's.
+      package = pkgs.fabricServers.fabric-26_3.override {
+        loaderVersion = "0.19.5";
+        jre_headless = pkgs.vanillaServers.vanilla-26_3.java;
+      };
       # 4 cores / 15 GiB shared with Jellyfin; enough for a mid-sized pack.
       jvmOpts = "-Xms2G -Xmx6G -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200";
 
