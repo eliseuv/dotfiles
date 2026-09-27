@@ -68,7 +68,7 @@ in
     "homepage/jellyfin" = { };
     "homepage/seerr" = { };
   };
-  sops.defaultSopsFile = ../../../secrets/wheatley.yaml;
+  sops.defaultSopsFile = ../../../../../secrets/wheatley.yaml;
 
   # Rendered root:0400; systemd reads EnvironmentFile before dropping to the
   # service's DynamicUser, so Homepage itself never needs file access.
@@ -109,8 +109,8 @@ in
     settings = {
       title = "Aperture Science · Wheatley";
       favicon = iris "#ff9a00";
-      # Pinned so dashboard-theme.css can override this palette's variables.
-      # theme is left unset: dashboard-theme.js drives the hidden toggle.
+      # Pinned so theme.css can override this palette's variables.
+      # theme is left unset: theme.js drives the hidden toggle.
       color = "zinc";
       headerStyle = "clean";
       layout = {
@@ -150,7 +150,7 @@ in
           disk = "/";
         };
       }
-      # Must stay the last widget: dashboard-theme.css themes it by position,
+      # Must stay the last widget: theme.css themes it by position,
       # since Homepage gives info widgets no id or class hook.
       {
         resources = {
@@ -242,7 +242,7 @@ in
       {
         Tools = [
           # Another host, so not built with `service`: a fixed LAN address the
-          # retarget script leaves alone (same IP as the NFS mount in nas.nix).
+          # retarget script leaves alone (same IP as the NFS mount in ../../nas.nix).
           # DSM's cert is self-signed; Homepage's monitor doesn't verify it.
           {
             "Companion Cube" = {
@@ -310,10 +310,10 @@ in
       });
       retarget();
     ''
-    + builtins.readFile ./dashboard-theme.js;
+    + builtins.readFile ./theme.js;
 
     # @import must stay first in the stylesheet, so the mask is appended.
-    customCSS = builtins.readFile ./dashboard-theme.css + ''
+    customCSS = builtins.readFile ./theme.css + ''
       :root {
         --aperture-iris: url("${iris "black"}");
         --companion-cube: url("${companionCube}");

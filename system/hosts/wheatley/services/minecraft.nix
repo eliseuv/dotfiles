@@ -160,7 +160,7 @@ in
     backupCleanupCommand = sendCommand "save-on";
   };
 
-  # Same pattern as the media share (nas.nix): never back up into the bare
+  # Same pattern as the media share (../nas.nix): never back up into the bare
   # mountpoint on the root filesystem if the NAS is down.
   systemd.services.restic-backups-minecraft.unitConfig.RequiresMountsFor = backupRoot;
 

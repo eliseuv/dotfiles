@@ -21,7 +21,7 @@
     ];
   };
 
-  # Minecraft world backups (restic repo, see minecraft.nix).
+  # Minecraft world backups (restic repo, see services/minecraft.nix).
   fileSystems."/mnt/minecraft" = {
     device = "192.168.0.35:/volume1/minecraft";
     fsType = "nfs";

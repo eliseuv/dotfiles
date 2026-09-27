@@ -3,7 +3,7 @@
 { pkgs, inputs, ... }:
 
 let
-  ledgerWeb = import ../../../pkgs/ledger-web { inherit pkgs inputs; };
+  ledgerWeb = import ../../../../../pkgs/ledger-web { inherit pkgs inputs; };
 in
 {
 

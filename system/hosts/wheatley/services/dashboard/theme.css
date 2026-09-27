@@ -3,7 +3,7 @@
  *
  * Light mode is a test chamber, dark mode is behind the scenes. Everything is
  * keyed on Homepage's own `html.dark` class rather than a media query so its
- * `dark:` utilities never disagree with this file; dashboard-theme.js keeps
+ * `dark:` utilities never disagree with this file; theme.js keeps
  * that class in sync with the OS.
  *
  * Homepage's palette is `--color-50..900` RGB triplets on `.theme-<color>`
@@ -11,7 +11,7 @@
  * `theme-*` utility at once. The selectors below are Homepage internals and may
  * need touching up after an upgrade.
  *
- * `--aperture-iris` (the logo mask) is appended from dashboard.nix.
+ * `--aperture-iris` (the logo mask) is appended from default.nix.
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap");
@@ -139,7 +139,7 @@ html.dark .information-widget-greeting span {
 }
 
 /* Companion Cube (NAS): the storage readout (the last header widget) and the
-   DSM service tile, see dashboard.nix. Both get the cube face, in pink. */
+   DSM service tile, see default.nix. Both get the cube face, in pink. */
 :root {
   --cube-pink: 200 64 132;
 }
@@ -194,7 +194,7 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usag
   mask: var(--companion-cube) center / contain no-repeat;
 }
 
-/* The OS drives light/dark now (dashboard-theme.js). */
+/* The OS drives light/dark now (theme.js). */
 #theme {
   display: none !important;
 }

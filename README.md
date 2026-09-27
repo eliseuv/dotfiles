@@ -169,7 +169,7 @@ ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-src'
 #### Automatic deploy-on-push
 
 On wheatley, pushing to `~/Services/ledger` is enough on its own —
-`system/hosts/wheatley/ledger-deploy.nix` runs the pipeline above without
+`system/hosts/wheatley/services/ledger/deploy.nix` runs the pipeline above without
 a manual `deploy-service` call:
 
 - A `post-receive` hook (installed by `system.activationScripts`, since
@@ -191,7 +191,7 @@ deploy — build, activate, `ledger-web.service` restart — already
 succeeded. Re-running `just deploy-service ledger-src` by hand, or just
 pushing again, clears it.
 
-To add this for another service, copy `ledger-deploy.nix`'s shape,
+To add this for another service, copy `services/ledger/deploy.nix`'s shape,
 swapping the repo path, `<name>-src` input, and the hostname/uid it
 already derives at runtime.
 

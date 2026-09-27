@@ -11,12 +11,12 @@
 
     # Services
     ./firewall.nix
-    ./ledger-web.nix
-    ./ledger-deploy.nix
     ./nas.nix
-    ./media-server.nix
-    ./dashboard.nix
-    ./minecraft.nix
+    ./services/ledger/web.nix
+    ./services/ledger/deploy.nix
+    ./services/media
+    ./services/dashboard
+    ./services/minecraft.nix
 
     # Tailscale
     ../../extra/tailscale.nix

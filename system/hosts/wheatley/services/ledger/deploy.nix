@@ -1,5 +1,5 @@
 # Auto-deploys ledger-web whenever a new commit is pushed to
-# ~/Services/ledger (see ledger-web.nix and pkgs/ledger-web/default.nix).
+# ~/Services/ledger (see web.nix and pkgs/ledger-web/default.nix).
 #
 # `receive.denyCurrentBranch = updateInstead` (set once, manually, on that
 # repo) already makes a push update its working tree. What's missing is

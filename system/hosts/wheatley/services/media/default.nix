@@ -3,7 +3,7 @@
 # All native NixOS services, open on the LAN and, for Seerr and Jellyfin (over
 # HTTPS), the tailnet (see firewall.nix) - Tailscale is the remote-access
 # layer, there is no reverse proxy. Downloads and library share one NFS mount
-# (nas.nix) so Sonarr/Radarr imports are hardlinks, not cross-device copies;
+# (../../nas.nix) so Sonarr/Radarr imports are hardlinks, not cross-device copies;
 # service state (SQLite) stays on local disk under /var/lib.
 { config, lib, pkgs, ... }:
 let
@@ -261,7 +261,7 @@ in
   # qBittorrent requires the form qbt_ + 28 alphanumerics; anything else is
   # silently ignored.
   sops.secrets."qbittorrent/api-key" = {
-    sopsFile = ../../../secrets/wheatley.yaml;
+    sopsFile = ../../../../../secrets/wheatley.yaml;
     owner = config.services.qbittorrent.user;
     restartUnits = [ "qbittorrent.service" "arr-sync.service" ];
   };
@@ -289,7 +289,7 @@ in
 
   services.prowlarr.enable = true;
 
-  # Pin each *arr's API key to the sops copy (declared in dashboard.nix)
+  # Pin each *arr's API key to the sops copy (declared in ../dashboard)
   # instead of the one it generated on first start, so the keys the dashboard
   # and the cross-service wiring use can't drift from the apps'.
   sops.templates = lib.genAttrs [ "sonarr.env" "radarr.env" "prowlarr.env" ] (
