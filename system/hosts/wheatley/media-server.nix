@@ -90,6 +90,23 @@ in
   services.prowlarr.enable = true;
   services.prowlarr.openFirewall = true;
 
+  # Pin each *arr's API key to the sops copy (declared in dashboard.nix)
+  # instead of the one it generated on first start, so the keys the dashboard
+  # and the cross-service wiring use can't drift from the apps'.
+  sops.templates = lib.genAttrs [ "sonarr.env" "radarr.env" "prowlarr.env" ] (
+    file:
+    let
+      service = lib.removeSuffix ".env" file;
+    in
+    {
+      content = "${lib.toUpper service}__AUTH__APIKEY=${config.sops.placeholder."homepage/${service}"}";
+      restartUnits = [ "${service}.service" ];
+    }
+  );
+  services.sonarr.environmentFiles = [ config.sops.templates."sonarr.env".path ];
+  services.radarr.environmentFiles = [ config.sops.templates."radarr.env".path ];
+  services.prowlarr.environmentFiles = [ config.sops.templates."prowlarr.env".path ];
+
   services.jellyfin.enable = true;
   services.jellyfin.openFirewall = true;
   users.users.jellyfin.extraGroups = [ "media" ];
