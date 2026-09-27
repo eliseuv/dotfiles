@@ -15,6 +15,7 @@
     ./nas.nix
     ./media-server.nix
     ./dashboard.nix
+    ./minecraft.nix
 
     # Tailscale
     ../../extra/tailscale.nix
