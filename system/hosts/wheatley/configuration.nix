@@ -12,6 +12,7 @@
     # Services
     ./ledger-web.nix
     ./ledger-deploy.nix
+    ./nas.nix
     ./media-server.nix
 
     # Tailscale

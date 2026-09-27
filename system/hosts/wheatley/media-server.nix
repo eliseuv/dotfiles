@@ -2,37 +2,48 @@
 # management) <- Prowlarr (indexers) -> Jellyfin (playback) <- Seerr (requests).
 # All native NixOS services, bound wide open on the LAN like this host's other
 # services (see ledger-web.nix) - Tailscale is the remote-access layer, there
-# is no reverse proxy. No storage mount exists on wheatley yet, so the library
-# lives under /var/lib/media on the root filesystem.
-{ ... }:
+# is no reverse proxy. Downloads and library share one NFS mount (nas.nix) so
+# Sonarr/Radarr imports are hardlinks, not cross-device copies; service state
+# (SQLite) stays on local disk under /var/lib.
+{ lib, ... }:
+let
+  mediaRoot = "/mnt/media";
+  mediaServices = [ "qbittorrent" "sonarr" "radarr" "jellyfin" ];
+in
 {
 
-  users.groups.media = { };
+  # Pinned: NFS passes numeric IDs through, so this must stay stable for
+  # ownership on the NAS to keep meaning the same group.
+  users.groups.media.gid = 982;
 
-  systemd.tmpfiles.settings."10-media-server" = {
-    "/var/lib/media/downloads"."d" = {
-      mode = "2775";
-      user = "root";
-      group = "media";
+  # Not tmpfiles: systemd-tmpfiles-setup runs before the network is up and
+  # would stall on the automount.
+  systemd.services = {
+    media-dirs = {
+      description = "Create media directories on the NAS share";
+      unitConfig.RequiresMountsFor = mediaRoot;
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+      script = ''
+        install -d -m 2775 -o root -g media \
+          ${mediaRoot}/downloads ${mediaRoot}/library/tv ${mediaRoot}/library/movies
+      '';
     };
-    "/var/lib/media/library/tv"."d" = {
-      mode = "2775";
-      user = "root";
-      group = "media";
-    };
-    "/var/lib/media/library/movies"."d" = {
-      mode = "2775";
-      user = "root";
-      group = "media";
-    };
-  };
+  }
+  # Hard dependency: if the NAS is down these must not start and write into
+  # the bare mountpoint on the root filesystem.
+  // lib.genAttrs mediaServices (_: {
+    requires = [ "media-dirs.service" ];
+    after = [ "media-dirs.service" ];
+    unitConfig.RequiresMountsFor = mediaRoot;
+  });
 
   services.qbittorrent = {
     enable = true;
     webuiPort = 8080;
     torrentingPort = 51413;
     openFirewall = true;
-    serverConfig.Preferences.Downloads.SavePath = "/var/lib/media/downloads";
+    serverConfig.Preferences.Downloads.SavePath = "${mediaRoot}/downloads";
   };
   users.users.qbittorrent.extraGroups = [ "media" ];
   # qBittorrent's openFirewall only opens the TCP side of each port.
