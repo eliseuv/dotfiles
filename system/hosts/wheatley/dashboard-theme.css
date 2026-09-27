@@ -138,6 +138,43 @@ html.dark .information-widget-greeting span {
   background: linear-gradient(90deg, rgb(var(--portal-orange)), rgb(var(--portal-blue))) !important;
 }
 
+/* Companion Cube (NAS) storage readout: the last header widget, see
+   dashboard.nix. Its drive icon is swapped for the cube face and it goes pink. */
+#widgets-wrap > :nth-last-child(1 of .widget-container) {
+  --cube-pink: 200 64 132;
+  color: rgb(var(--cube-pink));
+}
+
+html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) {
+  --cube-pink: 244 140 190;
+}
+
+#widgets-wrap > :nth-last-child(1 of .widget-container) .resource-icon {
+  display: none;
+}
+
+#widgets-wrap > :nth-last-child(1 of .widget-container) .information-widget-resource::before {
+  content: "";
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  background: rgb(var(--cube-pink));
+  -webkit-mask: var(--companion-cube) center / contain no-repeat;
+  mask: var(--companion-cube) center / contain no-repeat;
+}
+
+#widgets-wrap > :nth-last-child(1 of .widget-container) .text-theme-800 {
+  color: rgb(var(--cube-pink));
+}
+
+#widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usage > div {
+  background: linear-gradient(90deg, rgb(var(--cube-pink) / 0.7), rgb(var(--cube-pink))) !important;
+}
+
+html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usage > div {
+  box-shadow: 0 0 6px rgb(var(--cube-pink) / 0.6);
+}
+
 /* The OS drives light/dark now (dashboard-theme.js). */
 #theme {
   display: none !important;
