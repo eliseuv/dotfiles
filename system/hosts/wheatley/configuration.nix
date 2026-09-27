@@ -14,6 +14,7 @@
     ./ledger-deploy.nix
     ./nas.nix
     ./media-server.nix
+    ./dashboard.nix
 
     # Tailscale
     ../../extra/tailscale.nix
