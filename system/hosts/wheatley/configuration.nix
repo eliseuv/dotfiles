@@ -37,6 +37,14 @@
   # Hostname
   networking.hostName = "wheatley";
 
+  # The router's reservation for lanAddress is keyed on the MAC, so keep both
+  # the MAC and the DHCP client-id from drifting (randomization, DUID-based ids).
+  networking.networkmanager = {
+    wifi.macAddress = "permanent";
+    ethernet.macAddress = "permanent";
+    settings.connection."ipv4.dhcp-client-id" = "mac";
+  };
+
   # The LAN and NAS addresses are DHCP reservations on the router.
   homelab.network = {
     lanSubnet = "192.168.0.0/24";
