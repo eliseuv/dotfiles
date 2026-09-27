@@ -1,0 +1,272 @@
+/*
+ * Aperture Science theme for Homepage.
+ *
+ * Light mode is a test chamber, dark mode is behind the scenes. Everything is
+ * keyed on Homepage's own `html.dark` class rather than a media query so its
+ * `dark:` utilities never disagree with this file; dashboard-theme.js keeps
+ * that class in sync with the OS.
+ *
+ * Homepage's palette is `--color-50..900` RGB triplets on `.theme-<color>`
+ * (settings.color is pinned to zinc), so overriding those restyles every
+ * `theme-*` utility at once. The selectors below are Homepage internals and may
+ * need touching up after an upgrade.
+ *
+ * `--aperture-iris` (the logo mask) is appended from dashboard.nix.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap");
+
+:root {
+  --portal-orange: 255 154 0;
+  --portal-blue: 10 155 255;
+  --font-sign: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------- palette */
+
+html.theme-zinc:not(.dark) {
+  --color-50: 236 239 241;
+  --color-100: 255 255 255;
+  --color-200: 222 227 231;
+  --color-300: 196 204 210;
+  --color-400: 150 160 167;
+  --color-500: 92 102 110;
+  --color-600: 68 76 83;
+  --color-700: 27 31 34;
+  --color-800: 20 23 26;
+  --color-900: 10 12 14;
+  --card-bg: rgb(255 255 255);
+  --card-border: rgb(var(--color-200));
+  --block-bg: rgb(var(--color-50));
+}
+
+html.theme-zinc.dark {
+  --color-50: 255 238 206;
+  --color-100: 255 228 176;
+  --color-200: 255 199 118;
+  --color-300: 205 160 104;
+  --color-400: 150 130 100;
+  --color-500: 112 102 88;
+  --color-600: 62 64 68;
+  --color-700: 40 43 47;
+  --color-800: 17 19 21;
+  --color-900: 6 7 8;
+  --card-bg: linear-gradient(180deg, rgb(33 36 39), rgb(25 27 30));
+  --card-border: rgb(255 255 255 / 0.05);
+  --block-bg: rgb(0 0 0 / 0.35);
+}
+
+/* ------------------------------------------------------------- background */
+
+html,
+body,
+#__next {
+  font-family: var(--font-body);
+}
+
+body,
+#__next {
+  background: transparent !important;
+}
+
+/* Test chamber: off-white wall panels with seams. */
+html:not(.dark) {
+  background-color: rgb(var(--color-50));
+  background-image:
+    linear-gradient(rgb(0 0 0 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 0 0 / 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgb(255 255 255 / 0.7), transparent 60%);
+  background-size:
+    128px 128px,
+    128px 128px,
+    100% 100%;
+  background-attachment: fixed;
+}
+
+/* Behind the scenes: noisy concrete, large panel seams, vignette. */
+html.dark {
+  background-color: rgb(var(--color-800));
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgb(255 199 118 / 0.06), transparent 60%),
+    radial-gradient(ellipse at 50% 120%, rgb(0 0 0 / 0.7), transparent 70%),
+    linear-gradient(rgb(255 255 255 / 0.025) 2px, transparent 2px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.025) 2px, transparent 2px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:
+    100% 100%,
+    100% 100%,
+    256px 256px,
+    256px 256px,
+    220px 220px;
+  background-attachment: fixed;
+}
+
+/* --------------------------------------------------------------- header */
+
+.information-widget-greeting span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-sign);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.information-widget-greeting span::before {
+  content: "";
+  width: 1.9em;
+  height: 1.9em;
+  flex-shrink: 0;
+  background: currentColor;
+  -webkit-mask: var(--aperture-iris) center / contain no-repeat;
+  mask: var(--aperture-iris) center / contain no-repeat;
+}
+
+html.dark .information-widget-greeting span {
+  text-shadow: 0 0 12px rgb(255 199 118 / 0.35);
+}
+
+.information-widget-resource {
+  font-family: var(--font-mono);
+}
+
+/* Resource bars fill orange -> blue, like a portal pair. */
+.resource-usage > div {
+  background: linear-gradient(90deg, rgb(var(--portal-orange)), rgb(var(--portal-blue))) !important;
+}
+
+/* The OS drives light/dark now (dashboard-theme.js). */
+#theme {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------- groups */
+
+#layout-groups,
+#services {
+  counter-reset: chamber;
+}
+
+.services-group {
+  counter-increment: chamber;
+}
+
+.service-group-name {
+  font-family: var(--font-sign);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.service-group-name::before {
+  content: "Test Chamber " counter(chamber, decimal-leading-zero) "\00a0\00b7\00a0";
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- cards */
+
+.service-card,
+.service-card:hover {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border);
+  border-radius: 3px !important;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.05);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+html.dark .service-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 6px 16px -8px rgb(0 0 0 / 0.8);
+}
+
+/* Portal rings on hover, alternating orange and blue. */
+.service:nth-child(odd) .service-card {
+  --ring: var(--portal-orange);
+}
+.service:nth-child(even) .service-card {
+  --ring: var(--portal-blue);
+}
+
+.service-card:hover,
+html.dark .service-card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 2px rgb(var(--ring)),
+    0 0 22px -4px rgb(var(--ring) / 0.8);
+}
+
+.service-name {
+  font-family: var(--font-sign);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.service-description {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* Widget readouts. */
+.service-block {
+  background: var(--block-bg) !important;
+  border-radius: 2px !important;
+  font-family: var(--font-mono);
+}
+
+html.dark .service-block > div:first-child {
+  text-shadow: 0 0 8px rgb(255 199 118 / 0.45);
+}
+
+.service-block > div:last-child {
+  font-family: var(--font-sign);
+  letter-spacing: 0.1em;
+}
+
+/* Site monitor as a chamber indicator light: the status text colour
+   (emerald/rose from Homepage) drives a lit lamp next to it. */
+.site-monitor-status {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 0 0 0 3px !important;
+  font-family: var(--font-mono);
+}
+
+.site-monitor-status > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  letter-spacing: 0.08em;
+}
+
+.site-monitor-status > div::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 6px 1px currentColor;
+}
+
+/* --------------------------------------------------------------- footer */
+
+#footer::after {
+  content: "Aperture Science \2014  We do what we must because we can.";
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
+  font-family: var(--font-sign);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgb(var(--color-400));
+}
