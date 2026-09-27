@@ -18,7 +18,8 @@ in
   users.users.evf.extraGroups = [ "media" ];
 
   # Not tmpfiles: systemd-tmpfiles-setup runs before the network is up and
-  # would stall on the automount.
+  # would stall on the automount. The share root is included because a fresh
+  # Synology shared folder carries only a DSM ACL, which NFS exposes as 000.
   systemd.services = {
     media-dirs = {
       description = "Create media directories on the NAS share";
@@ -27,7 +28,7 @@ in
       serviceConfig.RemainAfterExit = true;
       script = ''
         install -d -m 2775 -o root -g media \
-          ${mediaRoot}/downloads ${mediaRoot}/library/tv ${mediaRoot}/library/movies
+          ${mediaRoot} ${mediaRoot}/downloads ${mediaRoot}/library/tv ${mediaRoot}/library/movies
       '';
     };
   }
