@@ -68,7 +68,6 @@ in
     "homepage/jellyfin" = { };
     "homepage/seerr" = { };
   };
-  sops.defaultSopsFile = ../../../../../secrets/wheatley.yaml;
 
   # Rendered root:0400; systemd reads EnvironmentFile before dropping to the
   # service's DynamicUser, so Homepage itself never needs file access.

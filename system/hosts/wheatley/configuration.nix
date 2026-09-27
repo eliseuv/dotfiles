@@ -26,6 +26,9 @@
 
   ];
 
+  # Host secrets; modules declare the ones they use.
+  sops.defaultSopsFile = ../../../secrets/wheatley.yaml;
+
   # Hostname
   networking.hostName = "wheatley";
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 3000 3001 ]; # ttyd, ledger-web
