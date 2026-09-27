@@ -11,11 +11,9 @@
 
   services.prowlarr.enable = true;
 
-  networking.firewall.lan.allowedTCPPorts = [
-    config.services.sonarr.settings.server.port
-    config.services.radarr.settings.server.port
-    config.services.prowlarr.settings.server.port
-  ];
+  homelab.services.sonarr.port = config.services.sonarr.settings.server.port;
+  homelab.services.radarr.port = config.services.radarr.settings.server.port;
+  homelab.services.prowlarr.port = config.services.prowlarr.settings.server.port;
 
   # Pin each *arr's API key to the sops copy (declared in ../dashboard)
   # instead of the one it generated on first start, so the keys the dashboard

@@ -1,9 +1,11 @@
-# Firewall policy, in three tiers, each declared next to its service:
-#  - LAN (networking.firewall.lan below): every service.
-#  - Tailnet (networking.firewall.interfaces.tailscale0): the subset meant for
-#    remote use. These are open on the LAN too, without re-listing them.
-#  - Everyone (networking.firewall.allowed*Ports): only what has to be public,
-#    i.e. the torrent port. No openFirewall anywhere, since that means this.
+# Firewall policy, in three tiers, chosen per service with
+# `homelab.services.<name>.expose` (homelab.nix) next to the service:
+#  - "lan": every service.
+#  - "tailnet": the subset meant for remote use. Open on the LAN too.
+#  - "public": only what has to be, i.e. the torrent port. No openFirewall
+#    anywhere, since that means this.
+# Ports that aren't a service's primary one (discovery, mDNS) go straight into
+# networking.firewall.lan below or interfaces.tailscale0.
 #
 # The LAN is matched on source address rather than interface: the LAN NIC
 # also carries globally routable IPv6 addresses, so an interface rule would
@@ -14,6 +16,10 @@
 let
   cfg = config.networking.firewall.lan;
   tailnet = config.networking.firewall.interfaces.tailscale0 or { };
+
+  registered = lib.filter (service: service.port != null) (lib.attrValues config.homelab.services);
+  tcpPorts = expose: map (service: service.port) (lib.filter (service: service.expose == expose) registered);
+  udpPorts = expose: map (service: service.port) (lib.filter (service: service.expose == expose && service.udp) registered);
 
   sources = {
     iptables = "192.168.0.0/24";
@@ -56,8 +62,19 @@ in
       # drop leaves ssh hanging until its connect timeout.
       rejectPackets = true;
 
-      interfaces.tailscale0.allowedTCPPorts = [ 22 ];
-      lan.allowedUDPPorts = [ 5353 ];
+      lan.allowedTCPPorts = tcpPorts "lan";
+      lan.allowedUDPPorts = udpPorts "lan" ++ [ 5353 ]; # mDNS
+      interfaces.tailscale0.allowedTCPPorts = tcpPorts "tailnet";
+      interfaces.tailscale0.allowedUDPPorts = udpPorts "tailnet";
+      # Forced so it also drops the 5173 (vite) that the shared
+      # system/hardware/network.nix opens to everyone; wheatley keeps that one
+      # LAN-only (services/dev.nix).
+      allowedTCPPorts = lib.mkForce (tcpPorts "public");
+      allowedUDPPorts = udpPorts "public";
+    };
+    homelab.services.ssh = {
+      port = 22;
+      expose = "tailnet";
     };
     services.openssh.openFirewall = false;
     services.avahi.openFirewall = false;

@@ -37,12 +37,12 @@ in
     restartUnits = [ "qbittorrent.service" "arr-sync.service" ];
   };
 
-  # The torrent port is the one thing open to everyone: peers must reach it.
-  # Forced so it also drops the 5173 (vite) that the shared
-  # system/hardware/network.nix opens to everyone; wheatley keeps that one
-  # LAN-only (configuration.nix).
-  networking.firewall.allowedTCPPorts = lib.mkForce [ config.services.qbittorrent.torrentingPort ];
-  networking.firewall.allowedUDPPorts = [ config.services.qbittorrent.torrentingPort ];
-  networking.firewall.lan.allowedTCPPorts = [ config.services.qbittorrent.webuiPort ];
+  homelab.services.qbittorrent.port = config.services.qbittorrent.webuiPort;
+  # The one thing open to everyone: peers must reach it.
+  homelab.services.torrent = {
+    port = config.services.qbittorrent.torrentingPort;
+    expose = "public";
+    udp = true;
+  };
 
 }

@@ -8,7 +8,8 @@ in
   services.jellyfin.enable = true;
   users.users.jellyfin.extraGroups = [ "media" ];
 
-  networking.firewall.lan.allowedTCPPorts = [ 8096 ];
+  # Fixed in Jellyfin's own network settings; the module has no option for it.
+  homelab.services.jellyfin.port = 8096;
   # Client discovery.
   networking.firewall.lan.allowedUDPPorts = [ 1900 7359 ];
 
@@ -29,7 +30,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStart = "${tailscale} serve --bg --https=${toString jellyfinTailnetPort} http://127.0.0.1:8096";
+        ExecStart = "${tailscale} serve --bg --https=${toString jellyfinTailnetPort} http://127.0.0.1:${toString config.homelab.services.jellyfin.port}";
         ExecStop = "${tailscale} serve --https=${toString jellyfinTailnetPort} off";
       };
     };

@@ -1,11 +1,17 @@
 # Runs ~/Services/ledger's web app (see pkgs/ledger-web/default.nix) as a
 # boot-time system service, backed by its own local Postgres instance.
-{ pkgs, inputs, ... }:
+{ config, pkgs, inputs, ... }:
 
 let
   ledgerWeb = import ../../../../../pkgs/ledger-web { inherit pkgs inputs; };
 in
 {
+
+  # 3000 is taken by ttyd (services/dev.nix).
+  homelab.services.ledger = {
+    port = 3001;
+    expose = "tailnet";
+  };
 
   services.postgresql = {
     enable = true;
@@ -38,9 +44,7 @@ in
       # The username must be explicit: sqlx doesn't resolve it from the
       # connecting OS user when omitted, so peer auth fails without it.
       DATABASE_URL = "postgres://ledger@localhost/ledger?host=/run/postgresql";
-      # 3000 is taken by ttyd (see wheatley's configuration.nix firewall
-      # comment).
-      PORT = "3001";
+      PORT = toString config.homelab.services.ledger.port;
       # No auth on this app — bound wide open on the LAN deliberately, per
       # request, since wheatley's network is trusted.
       BIND_ADDR = "0.0.0.0";

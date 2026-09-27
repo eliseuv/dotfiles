@@ -10,6 +10,7 @@
     ../../profiles/base.nix
 
     # Services
+    ./homelab.nix
     ./firewall.nix
     ./nas.nix
     ./services/ledger/web.nix
@@ -17,6 +18,7 @@
     ./services/media
     ./services/dashboard
     ./services/minecraft.nix
+    ./services/dev.nix
 
     # Tailscale
     ../../extra/tailscale.nix
@@ -31,8 +33,6 @@
 
   # Hostname
   networking.hostName = "wheatley";
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 3000 3001 ]; # ttyd, ledger-web
-  networking.firewall.lan.allowedTCPPorts = [ 5173 5174 1111 ]; # vite (+fallback), zola
 
   # Remove bootloader timeout
   boot.loader.timeout = 0;

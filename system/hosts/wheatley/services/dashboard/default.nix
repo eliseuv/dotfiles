@@ -328,6 +328,9 @@ in
       locations."/".proxyPass = "http://127.0.0.1:${toString homepagePort}";
     };
   };
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 80 ];
+  homelab.services.homepage = {
+    port = 80;
+    expose = "tailnet";
+  };
 
 }

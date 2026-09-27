@@ -7,6 +7,9 @@
   # keyed off system.stateVersion (24.11 on this host), not the nixpkgs
   # version - just a directory name, doesn't affect functionality.
   services.seerr.enable = true;
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ config.services.seerr.port ];
+  homelab.services.seerr = {
+    port = config.services.seerr.port;
+    expose = "tailnet";
+  };
 
 }

@@ -118,7 +118,10 @@ in
     };
   };
 
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 25565 ];
+  homelab.services.minecraft = {
+    port = config.services.minecraft-servers.servers.${serverName}.serverProperties.server-port;
+    expose = "tailnet";
+  };
 
   # Daily restic snapshots to the NAS. Autosave is paused and a full flush
   # forced first, so no region file is captured half-written; the cleanup
