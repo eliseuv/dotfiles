@@ -138,15 +138,18 @@ html.dark .information-widget-greeting span {
   background: linear-gradient(90deg, rgb(var(--portal-orange)), rgb(var(--portal-blue))) !important;
 }
 
-/* Companion Cube (NAS) storage readout: the last header widget, see
-   dashboard.nix. Its drive icon is swapped for the cube face and it goes pink. */
-#widgets-wrap > :nth-last-child(1 of .widget-container) {
+/* Companion Cube (NAS): the storage readout (the last header widget) and the
+   DSM service tile, see dashboard.nix. Both get the cube face, in pink. */
+:root {
   --cube-pink: 200 64 132;
-  color: rgb(var(--cube-pink));
 }
 
-html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) {
+html.dark {
   --cube-pink: 244 140 190;
+}
+
+#widgets-wrap > :nth-last-child(1 of .widget-container) {
+  color: rgb(var(--cube-pink));
 }
 
 #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-icon {
@@ -173,6 +176,22 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) {
 
 html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usage > div {
   box-shadow: 0 0 6px rgb(var(--cube-pink) / 0.6);
+}
+
+/* Homepage only loads icons from URLs or its CDNs, so the tile keeps
+   synology.png as a fallback and matches on it: the icon link's aria-label is
+   the configured icon name. */
+.service-icon[aria-label="synology.png"] > * {
+  display: none;
+}
+
+.service-icon[aria-label="synology.png"]::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  background: rgb(var(--cube-pink));
+  -webkit-mask: var(--companion-cube) center / contain no-repeat;
+  mask: var(--companion-cube) center / contain no-repeat;
 }
 
 /* The OS drives light/dark now (dashboard-theme.js). */
