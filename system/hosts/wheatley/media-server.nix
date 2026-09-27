@@ -15,6 +15,7 @@ in
   # Pinned: NFS passes numeric IDs through, so this must stay stable for
   # ownership on the NAS to keep meaning the same group.
   users.groups.media.gid = 982;
+  users.users.evf.extraGroups = [ "media" ];
 
   # Not tmpfiles: systemd-tmpfiles-setup runs before the network is up and
   # would stall on the automount.
