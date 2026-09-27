@@ -5,7 +5,7 @@
 #
 # Widgets query services server-side over loopback; API keys come from sops
 # (secrets/wheatley.yaml) through an env file rendered at activation.
-{ config, ... }:
+{ config, inputs, pkgs, ... }:
 let
   # Links are written against this host and rewritten client-side (customJS)
   # to whatever name the dashboard was opened with - LAN IP, Tailscale name,
@@ -48,8 +48,6 @@ in
     "homepage/prowlarr" = { };
     "homepage/jellyfin" = { };
     "homepage/seerr" = { };
-    "homepage/qbittorrent/username" = { };
-    "homepage/qbittorrent/password" = { };
   };
   sops.defaultSopsFile = ../../../secrets/wheatley.yaml;
 
@@ -62,14 +60,19 @@ in
       HOMEPAGE_VAR_PROWLARR_KEY=${config.sops.placeholder."homepage/prowlarr"}
       HOMEPAGE_VAR_JELLYFIN_KEY=${config.sops.placeholder."homepage/jellyfin"}
       HOMEPAGE_VAR_SEERR_KEY=${config.sops.placeholder."homepage/seerr"}
-      HOMEPAGE_VAR_QBITTORRENT_USERNAME=${config.sops.placeholder."homepage/qbittorrent/username"}
-      HOMEPAGE_VAR_QBITTORRENT_PASSWORD=${config.sops.placeholder."homepage/qbittorrent/password"}
+      HOMEPAGE_VAR_QBITTORRENT_KEY=${config.sops.placeholder."qbittorrent/api-key"}
     '';
     restartUnits = [ "homepage-dashboard.service" ];
   };
 
   services.homepage-dashboard = {
     enable = true;
+    # nixos-26.05 ships 1.x, whose qBittorrent widget can only log in with a
+    # username/password; API key (Bearer) support arrived in 2.x.
+    package =
+      (import inputs.nixpkgs {
+        system = pkgs.stdenv.hostPlatform.system;
+      }).homepage-dashboard;
     environmentFiles = [ config.sops.templates."homepage-dashboard.env".path ];
 
     # Host header check (DNS-rebinding guard). nginx forwards the browser's
@@ -162,8 +165,7 @@ in
               icon = "qbittorrent.png";
               widget = {
                 type = "qbittorrent";
-                username = secret "QBITTORRENT_USERNAME";
-                password = secret "QBITTORRENT_PASSWORD";
+                key = secret "QBITTORRENT_KEY";
               };
             };
           }
