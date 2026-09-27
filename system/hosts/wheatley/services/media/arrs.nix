@@ -19,6 +19,7 @@
         icon = "${service}.png";
         widget.type = service;
         widgetKey = "${service}/api-key";
+        unit = "${service}.service";
       };
     }
   ) {

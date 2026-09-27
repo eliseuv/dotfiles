@@ -25,6 +25,7 @@ in
         enableBlocks = true;
       };
       widgetKey = "homepage/jellyfin";
+      unit = "jellyfin.service";
     };
   };
   # Client discovery.

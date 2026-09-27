@@ -47,6 +47,7 @@ in
       icon = "qbittorrent.png";
       widget.type = "qbittorrent";
       widgetKey = "qbittorrent/api-key";
+      unit = "qbittorrent.service";
     };
   };
   # The one thing open to everyone: peers must reach it.

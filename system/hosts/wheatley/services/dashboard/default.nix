@@ -41,6 +41,9 @@ let
 
   tiled = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
   withKey = lib.filterAttrs (_: service: service.dashboard.widgetKey != null) tiled;
+  controlledTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (_: service: service.dashboard.unit != null) tiled
+  );
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -117,6 +120,11 @@ let
       default = null;
       description = "sops secret holding the widget's API key.";
     };
+    unit = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "systemd unit the tile's start/stop/restart buttons control (controls.nix).";
+    };
   };
 
   # Percent-encoded so it works as a data URI in both favicons and CSS url().
@@ -135,6 +143,8 @@ let
   companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='20' height='20' rx='3' fill='none' stroke='black' stroke-width='1.8'/><rect x='2' y='2' width='6' height='6' rx='2'/><rect x='16' y='2' width='6' height='6' rx='2'/><rect x='2' y='16' width='6' height='6' rx='2'/><rect x='16' y='16' width='6' height='6' rx='2'/><circle cx='12' cy='12' r='5' fill='none' stroke='black' stroke-width='1.6'/><path d='M12 14.6l-2.3-2.2a1.35 1.35 0 0 1 2.3-1.8a1.35 1.35 0 0 1 2.3 1.8z'/></svg>";
 in
 {
+
+  imports = [ ./controls.nix ];
 
   options.homelab.services = lib.mkOption {
     type = lib.types.attrsOf (
@@ -260,15 +270,22 @@ in
         });
         retarget();
       ''
-      + builtins.readFile ./theme.js;
+      + builtins.readFile ./theme.js
+      + ''
+        const svcctlTiles = ${builtins.toJSON controlledTiles};
+      ''
+      + builtins.readFile ./controls.js;
 
       # @import must stay first in the stylesheet, so the mask is appended.
-      customCSS = builtins.readFile ./theme.css + ''
-        :root {
-          --aperture-iris: url("${iris "black"}");
-          --companion-cube: url("${companionCube}");
-        }
-      '';
+      customCSS =
+        builtins.readFile ./theme.css
+        + ''
+          :root {
+            --aperture-iris: url("${iris "black"}");
+            --companion-cube: url("${companionCube}");
+          }
+        ''
+        + builtins.readFile ./controls.css;
     };
 
     services.nginx = {

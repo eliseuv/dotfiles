@@ -130,6 +130,7 @@ in
       description = "Fabric server (LAN + Tailscale)";
       icon = "minecraft.png";
       link = false;
+      unit = serverUnit;
       widget = {
         type = "minecraft";
         url = "udp://127.0.0.1:${toString config.homelab.services.minecraft.port}";

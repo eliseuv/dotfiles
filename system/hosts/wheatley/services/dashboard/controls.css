@@ -1,0 +1,53 @@
+/* Start/stop/restart bar on unit-backed tiles (controls.js). */
+
+.svcctl {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.svcctl-state {
+  flex: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--color-500));
+}
+
+.svcctl[data-state="active"] .svcctl-state {
+  color: rgb(16 185 129);
+}
+
+.svcctl[data-state="failed"] .svcctl-state {
+  color: rgb(244 63 94);
+}
+
+.svcctl button {
+  min-width: 1.6rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--block-bg);
+  color: rgb(var(--color-700));
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+html.dark .svcctl button {
+  color: rgb(var(--color-200));
+}
+
+.svcctl button:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgb(var(--portal-orange));
+}
+
+.svcctl button.svcctl-restart:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgb(var(--portal-blue));
+}
+
+.svcctl button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

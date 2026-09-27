@@ -18,6 +18,7 @@
       icon = "jellyseerr.png";
       widget.type = "seerr";
       widgetKey = "homepage/seerr";
+      unit = "seerr.service";
     };
   };
 

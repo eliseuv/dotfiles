@@ -17,6 +17,7 @@ in
       order = 2;
       description = "Ledger web app";
       icon = "mdi-cash-multiple";
+      unit = "ledger-web.service";
     };
   };
 
