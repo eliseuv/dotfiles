@@ -18,6 +18,9 @@
     # Tailscale
     ../../extra/tailscale.nix
 
+    # Secrets
+    ../../extra/sops.nix
+
   ];
 
   # Hostname
