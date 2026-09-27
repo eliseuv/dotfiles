@@ -192,6 +192,17 @@ in
       }
       {
         Tools = [
+          # Another host, so not built with `service`: a fixed LAN address the
+          # retarget script leaves alone (same IP as the NFS mount in nas.nix).
+          # DSM's cert is self-signed; Homepage's monitor doesn't verify it.
+          {
+            "Companion Cube" = {
+              href = "https://192.168.0.35:5001";
+              siteMonitor = "https://192.168.0.35:5001";
+              description = "Synology NAS (DSM)";
+              icon = "synology.png";
+            };
+          }
           {
             Ledger = service {
               port = 3001;
