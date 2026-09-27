@@ -61,6 +61,7 @@ in
     allowedHosts = builtins.concatStringsSep "," [
       linkHost
       "wheatley-1"
+      "wheatley.local"
       "wheatley.taild628c9.ts.net"
       "wheatley-1.taild628c9.ts.net"
       "192.168.0.62"
