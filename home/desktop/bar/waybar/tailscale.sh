@@ -40,11 +40,11 @@ print_status() {
                     + (if $exit then "Exit node: \($exit | @html)\n" else "" end)
                     + "Peers online: \($online | length)/\($total)"
                     + (if ($online | length) > 0 then "\n  " + ($online | join("\n  ")) else "" end)
-                    + "\n\nClick to disconnect"
+                    + "\n\nRight-click to disconnect"
                 )
             }
           elif $state == "Stopped" then
-            {text: $icon, class: "stopped", tooltip: "Tailscale off\n\nClick to connect"}
+            {text: $icon, class: "stopped", tooltip: "Tailscale off\n\nRight-click to connect"}
           elif $state == "NeedsLogin" or $state == "NeedsMachineAuth" then
             {text: $warn, class: "needs-login", tooltip: "Tailscale: \($state)\n\nClick to log in"}
           else
