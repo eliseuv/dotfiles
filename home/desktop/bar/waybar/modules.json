@@ -175,6 +175,8 @@
         "tooltip-format-wifi": "{frequency}GHz ({signalStrength}%)",
         "max-length": 50,
         "interval": 10,
+        "on-click": "~/.config/rofi/bin/networkmenu",
+        "on-click-right": "killall rofi",
     },
     "bluetooth": {
         "format": " {status}",
