@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+ddir="$HOME/.config/rofi/config"
+SCAN_SECONDS=10
+
+show_msg() {
+    rofi -theme "$ddir/askpass.rasi" -e "$1"
+}
+
+rdialog() {
+    rofi -dmenu -i -no-fixed-num-lines -p "$1" -theme "$ddir/confirm.rasi" < /dev/null
+}
+
+menu() {
+    rofi -dmenu -i -format i -p "$1" -theme "$ddir/bluetooth.rasi" "${@:2}"
+}
+
+# bluetoothctl's exit status is unreliable across versions, so success is
+# judged from its output instead
+run() {
+    local out
+    out=$(bluetoothctl "$@" 2>&1)
+    if ! grep -qi "successful\|succeeded\|removed" <<< "$out"; then
+        show_msg "Failed: $(tail -n1 <<< "$out")"
+        return 1
+    fi
+}
+
+if ! bluetoothctl show &> /dev/null; then
+    show_msg "No Bluetooth adapter"
+    exit 1
+fi
+
+if ! bluetoothctl show | grep -q "Powered: yes"; then
+    row=$(echo "󰂯  Power on" | menu "Off")
+    if [[ "$row" == "0" ]]; then
+        # Powering off (e.g. from blueman) can leave the adapter soft-blocked,
+        # which makes `power on` fail
+        rfkill unblock bluetooth
+        run power on
+    fi
+    exit 0
+fi
+
+device_icon() {
+    case "$1" in
+    audio-headset | audio-headphones) echo "󰋋" ;;
+    audio-card | audio-speaker) echo "󰓃" ;;
+    input-keyboard) echo "󰌌" ;;
+    input-mouse) echo "󰍽" ;;
+    input-gaming) echo "󰊴" ;;
+    phone) echo "󰏲" ;;
+    video-display) echo "󰔂" ;;
+    computer) echo "󰍹" ;;
+    *) echo "󰂯" ;;
+    esac
+}
+
+# Parallel arrays indexed by row, so device names are never matched back as text
+labels=("󰂲  Power off" "󰂰  Scan")
+actions=("power-off" "scan")
+macs=("" "")
+names=("" "")
+connected=("" "")
+active_rows=()
+
+paired=$(bluetoothctl devices Paired | awk '{ print $2 }')
+
+add_device() {
+    local mac=$1 is_paired=$2 info name icon label battery
+    info=$(bluetoothctl info "$mac")
+    name=$(sed -n 's/^\tAlias: //p' <<< "$info")
+    icon=$(device_icon "$(sed -n 's/^\tIcon: //p' <<< "$info")")
+    label="$icon  $name"
+
+    if grep -q "^\sConnected: yes" <<< "$info"; then
+        battery=$(sed -n 's/^\tBattery Percentage: .*(\([0-9]*\))/\1/p' <<< "$info")
+        [[ -n "$battery" ]] && label+="   󰁹 $battery%"
+        active_rows+=("${#labels[@]}")
+        connected+=("yes")
+    else
+        connected+=("")
+    fi
+    [[ "$is_paired" == "no" ]] && label+="   (pair)"
+
+    labels+=("$label")
+    actions+=("$([[ "$is_paired" == "yes" ]] && echo paired || echo new)")
+    macs+=("$mac")
+    names+=("$name")
+}
+
+for mac in $paired; do
+    add_device "$mac" yes
+done
+# Unpaired devices only show up here while (or shortly after) scanning
+for mac in $(bluetoothctl devices | awk '{ print $2 }'); do
+    grep -qx "$mac" <<< "$paired" || add_device "$mac" no
+done
+
+rofi_args=()
+if ((${#active_rows[@]} > 0)); then
+    rofi_args+=(-a "$(IFS=,; echo "${active_rows[*]}")")
+    prompt="Connected: ${#active_rows[@]}"
+else
+    prompt="On"
+fi
+
+row=$(printf '%s\n' "${labels[@]}" | menu "$prompt" "${rofi_args[@]}")
+[[ -z "$row" || "$row" -lt 0 ]] && exit 0
+
+mac=${macs[$row]}
+name=${names[$row]}
+
+case "${actions[$row]}" in
+power-off) run power off ;;
+scan)
+    notify-send -a Bluetooth "Scanning for ${SCAN_SECONDS}s…"
+    bluetoothctl --timeout "$SCAN_SECONDS" scan on > /dev/null
+    exec "$0"
+    ;;
+paired)
+    if [[ -n "${connected[$row]}" ]]; then
+        sub=$(printf '%s\n' "󰂲  Disconnect" "󰆴  Forget" | menu "$name")
+    else
+        sub=$(printf '%s\n' "󰂱  Connect" "󰆴  Forget" | menu "$name")
+    fi
+    case "$sub" in
+    0)
+        if [[ -n "${connected[$row]}" ]]; then
+            run disconnect "$mac"
+        else
+            run connect "$mac"
+        fi
+        ;;
+    1)
+        ans=$(rdialog "Forget $name? : ")
+        [[ "$ans" == "yes" || "$ans" == "y" ]] && run remove "$mac"
+        ;;
+    esac
+    ;;
+new)
+    notify-send -a Bluetooth "Pairing $name…"
+    run --timeout 30 pair "$mac" &&
+        bluetoothctl trust "$mac" > /dev/null &&
+        run connect "$mac"
+    ;;
+esac
