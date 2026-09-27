@@ -3,12 +3,12 @@ keys:
   # ssh-to-age of /etc/ssh/ssh_host_ed25519_key.pub
   - &wheatley age1rhyfer4n7lrx3640j7n5jp3kxz245q0j9034agu06ju87ve2zanse3u59q
 creation_rules:
-  - path_regex: secrets/wheatley.yaml$
+  - path_regex: secrets/wheatley\.yaml$
     key_groups:
     - age:
       - *primary
       - *wheatley
-  - path_regex: secrets.yaml$
+  - path_regex: secrets/user\.yaml$
     key_groups:
     - age:
       - *primary

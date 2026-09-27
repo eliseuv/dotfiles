@@ -45,7 +45,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
   live in their own repo (e.g. `~/Services/ledger`), pulled in via a
   `<name>-src` flake input (`flake = false`, `git+file://…`). See
   "Deploying Local Services" below.
-- `secrets.yaml`: Encrypted secrets (sops-nix, age).
+- `secrets/`: Encrypted secrets (sops-nix, age): `user.yaml` for home-manager, one file per host for system secrets.
 
 ## Usage
 
