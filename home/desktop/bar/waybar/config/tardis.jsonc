@@ -20,6 +20,7 @@
         "custom/claude-usage",
         "hyprland/language",
         "network",
+        "custom/tailscale",
         "bluetooth",
         "backlight",
         "pulseaudio",

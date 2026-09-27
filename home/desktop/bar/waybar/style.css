@@ -20,6 +20,7 @@ window#waybar {
 
 #custom-weather,
 #custom-claude-usage,
+#custom-tailscale,
 #language,
 #network,
 #bluetooth,
@@ -179,6 +180,36 @@ window#waybar {
 }
 
 #bluetooth.disabled:hover {
+    background: @critical;
+    color: @bg;
+}
+
+#custom-tailscale.stopped {
+    color: @main_dim;
+    border-color: @main_dim;
+}
+
+#custom-tailscale.stopped:hover {
+    background: @main_dim;
+    color: @bg;
+}
+
+#custom-tailscale.connected {
+    color: @active;
+    border-color: @active;
+}
+
+#custom-tailscale.connected:hover {
+    background: @active;
+    color: @bg;
+}
+
+#custom-tailscale.needs-login {
+    color: @critical;
+    border-color: @critical;
+}
+
+#custom-tailscale.needs-login:hover {
     background: @critical;
     color: @bg;
 }
