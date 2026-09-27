@@ -174,11 +174,13 @@ window#waybar {
     color: @bg;
 }
 
+#bluetooth.off,
 #bluetooth.disabled {
     color: @critical;
     border-color: @critical;
 }
 
+#bluetooth.off:hover,
 #bluetooth.disabled:hover {
     background: @critical;
     color: @bg;
