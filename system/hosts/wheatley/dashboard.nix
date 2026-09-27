@@ -232,6 +232,19 @@ in
               icon = "mdi-cash-multiple";
             };
           }
+          # Not built with `service`: no web UI to link or HTTP-monitor. The
+          # widget pings the game port itself (the scheme is ignored) and
+          # reports status, version and players.
+          {
+            Minecraft = {
+              description = "Fabric server (Tailscale only)";
+              icon = "minecraft.png";
+              widget = {
+                type = "minecraft";
+                url = "udp://127.0.0.1:${toString config.services.minecraft-servers.servers.survival.serverProperties.server-port}";
+              };
+            };
+          }
           {
             Terminal = service {
               port = 3000;
