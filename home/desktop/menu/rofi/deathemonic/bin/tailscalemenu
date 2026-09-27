@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Toggling without root requires this user to be the tailscale operator
+# (see system/extra/tailscale.nix).
+ddir="$HOME/.config/rofi/config"
+SIGNAL=10 # must match "signal" of custom/tailscale in waybar's modules.json
+
+show_msg() {
+    rofi -theme "$ddir/askpass.rasi" -e "$1"
+}
+
+menu() {
+    rofi -dmenu -i -format i -p "$1" -theme "$ddir/networkmenu.rasi" \
+        -theme-str 'textbox-prompt-colon { str: "󰖂"; }'
+}
+
+refresh_bar() {
+    pkill -RTMIN+"$SIGNAL" waybar
+}
+
+# Runs a tailscale command, surfacing its error in rofi on failure
+run() {
+    local out
+    out=$(tailscale "$@" 2>&1) || show_msg "Failed: $out"
+    refresh_bar
+}
+
+if ! status=$(tailscale status --json 2> /dev/null); then
+    show_msg "Tailscale daemon not running"
+    exit 1
+fi
+state=$(jq -r '.BackendState' <<< "$status")
+
+labels=()
+actions=()
+
+if [[ "$state" != "Running" ]]; then
+    if [[ "$state" == "NeedsLogin" || "$state" == "NeedsMachineAuth" ]]; then
+        labels+=("󰍂  Log in")
+        actions+=("login")
+    else
+        labels+=("󰖂  Connect")
+        actions+=("up")
+    fi
+    row=$(printf '%s\n' "${labels[@]}" | menu "Tailscale: $state")
+    [[ -z "$row" || "$row" -lt 0 ]] && exit 0
+    case "${actions[$row]}" in
+    # Login prints a URL that has to be opened, so it needs a terminal
+    login) kitty --hold tailscale up & ;;
+    up) run up ;;
+    esac
+    exit 0
+fi
+
+prefs=$(tailscale debug prefs)
+shields_up=$(jq -r '.ShieldsUp' <<< "$prefs")
+accept_routes=$(jq -r '.RouteAll' <<< "$prefs")
+
+on_off() {
+    [[ "$1" == "true" ]] && echo "on" || echo "off"
+}
+
+labels+=("󰅛  Disconnect" "󰒃  Shields up: $(on_off "$shields_up")" "󰑪  Accept routes: $(on_off "$accept_routes")")
+actions+=("down" "shields" "routes")
+
+# Parallel arrays indexed by row, so peer names are never matched back as text
+peer_ips=()
+peer_dns=()
+peer_names=()
+while IFS=$'\t' read -r online os name ip dns; do
+    case "$os" in
+    linux) icon="" ;;
+    windows) icon="" ;;
+    android) icon="" ;;
+    macOS | iOS) icon="" ;;
+    *) icon="󰍹" ;;
+    esac
+    [[ "$online" == "true" ]] && dot="●" || dot="○"
+    labels+=("$dot $icon  $name    $ip")
+    actions+=("peer")
+    peer_ips[${#labels[@]} - 1]=$ip
+    peer_dns[${#labels[@]} - 1]=$dns
+    peer_names[${#labels[@]} - 1]=$name
+done < <(jq -r '
+    [.Peer[]?] | sort_by((.Online | not), (.HostName | ascii_downcase))[]
+    | [.Online, .OS, .HostName, .TailscaleIPs[0], (.DNSName | rtrimstr("."))]
+    | @tsv' <<< "$status")
+
+prompt=$(jq -r '"\(.CurrentTailnet.Name) · \(.Self.TailscaleIPs[0])"' <<< "$status")
+row=$(printf '%s\n' "${labels[@]}" | menu "$prompt")
+[[ -z "$row" || "$row" -lt 0 ]] && exit 0
+
+case "${actions[$row]}" in
+down) run down ;;
+shields)
+    [[ "$shields_up" == "true" ]] && new=false || new=true
+    run set --shields-up="$new"
+    ;;
+routes)
+    [[ "$accept_routes" == "true" ]] && new=false || new=true
+    run set --accept-routes="$new"
+    ;;
+peer)
+    ip=${peer_ips[$row]}
+    dns=${peer_dns[$row]}
+    name=${peer_names[$row]}
+    sub=$(printf '%s\n' "󰆏  Copy IP ($ip)" "  SSH ($dns)" | menu "$name")
+    case "$sub" in
+    0)
+        wl-copy -n "$ip"
+        notify-send -a Tailscale "Copied $name IP" "$ip"
+        ;;
+    1) kitty ssh "$dns" & ;;
+    esac
+    ;;
+esac
