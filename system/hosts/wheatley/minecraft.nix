@@ -1,6 +1,7 @@
 # Modded (Fabric) Minecraft server via nix-minecraft. Everything - loader,
 # game version, mods - is pinned here, so a mod set change is a rebuild and
-# rolls back with the generation. World state lives in /srv/minecraft.
+# rolls back with the generation. World state lives in /srv/minecraft and is
+# backed up to the NAS with restic (see below).
 #
 # Reachable over Tailscale only: the port is opened on tailscale0 alone, not
 # in the global allowedTCPPorts list like this host's other services.
@@ -10,6 +11,10 @@
 { config, inputs, lib, pkgs, ... }:
 let
   serverName = "survival";
+  serverUnit = "minecraft-server-${serverName}.service";
+  serverDir = "${config.services.minecraft-servers.dataDir}/${serverName}";
+  stdinSocket = "/run/minecraft/${serverName}.stdin";
+  backupRoot = "/mnt/minecraft";
 
   # Mods: `nix run github:Infinidoge/nix-minecraft#nix-modrinth-prefetch -- <version id>`
   # prints the fetchurl for a Modrinth version. Keep every mod on the same
@@ -20,6 +25,14 @@ let
       sha512 = "ed6b2586d6fde11fde8472f5a527c51e99b67026e46f94d4bfd85e7e28ce5ee299173ee16ad576ceb51f39f98d30a811086a6deb1a86a524859cc16e12da109d";
     })
   ];
+
+  # The stdin FIFO is socket-activated, so writing to it while the server is
+  # stopped would start it; only talk to a server that is already running.
+  sendCommand = command: ''
+    if systemctl is-active --quiet ${serverUnit}; then
+      echo ${lib.escapeShellArg command} > ${stdinSocket}
+    fi
+  '';
 in
 {
 
@@ -29,7 +42,8 @@ in
   services.minecraft-servers = {
     enable = true;
     eula = true;
-    # A command socket instead of tmux: scriptable without attaching a session.
+    # A command socket instead of tmux, so the backup job can script
+    # save-off/save-on without attaching to a session.
     managementSystem = {
       tmux.enable = false;
       systemd-socket.enable = true;
@@ -61,5 +75,49 @@ in
   };
 
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 25565 ];
+
+  # Daily restic snapshots to the NAS. Autosave is paused and a full flush
+  # forced first, so no region file is captured half-written; the cleanup
+  # step runs even when the backup fails, so autosave is always restored.
+  sops.secrets."restic/minecraft" = { };
+
+  services.restic.backups.minecraft = {
+    repository = "${backupRoot}/restic";
+    initialize = true;
+    passwordFile = config.sops.secrets."restic/minecraft".path;
+    paths = [ serverDir ];
+    # mods is a store symlink rebuilt from this file; logs aren't worth keeping.
+    exclude = [
+      "${serverDir}/mods"
+      "${serverDir}/logs"
+      "${serverDir}/crash-reports"
+    ];
+    timerConfig = {
+      OnCalendar = "04:00";
+      Persistent = true;
+    };
+    pruneOpts = [
+      "--keep-daily 7"
+      "--keep-weekly 4"
+      "--keep-monthly 6"
+    ];
+    backupPrepareCommand = ''
+      ${sendCommand "save-off"}
+      if systemctl is-active --quiet ${serverUnit}; then
+        since=$(date '+%Y-%m-%d %H:%M:%S')
+        ${sendCommand "save-all flush"}
+        # The FIFO write returns immediately; wait for the server to confirm.
+        for _ in $(seq 120); do
+          journalctl --quiet --unit ${serverUnit} --since "$since" | grep --quiet 'Saved the game' && break
+          sleep 1
+        done
+      fi
+    '';
+    backupCleanupCommand = sendCommand "save-on";
+  };
+
+  # Same pattern as the media share (nas.nix): never back up into the bare
+  # mountpoint on the root filesystem if the NAS is down.
+  systemd.services.restic-backups-minecraft.unitConfig.RequiresMountsFor = backupRoot;
 
 }

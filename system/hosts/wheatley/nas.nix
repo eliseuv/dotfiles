@@ -21,4 +21,17 @@
     ];
   };
 
+  # Minecraft world backups (restic repo, see minecraft.nix).
+  fileSystems."/mnt/minecraft" = {
+    device = "192.168.0.35:/volume1/minecraft";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.1"
+      "_netdev"
+      "noauto"
+      "x-systemd.automount"
+      "x-systemd.mount-timeout=30"
+    ];
+  };
+
 }
