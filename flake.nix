@@ -132,7 +132,6 @@
         };
         wheatley = {
           users = [ "evf" ];
-          nixpkgs = nixpkgs-stable;
         };
         rattmann = {
           users = [ "evf" ];
