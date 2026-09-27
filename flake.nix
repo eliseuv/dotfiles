@@ -77,6 +77,12 @@
     # Catppuccin
     catppuccin.url = "github:catppuccin/nix";
 
+    # Declarative Minecraft servers (wheatley)
+    nix-minecraft = {
+      url = "github:Infinidoge/nix-minecraft";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Third-party Rust tool sources (plain source, not a flake), built
     # via rustPlatform.buildRustPackage in home/development/languages/rust-tools.nix
     lazydiff-src = {
