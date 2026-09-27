@@ -25,8 +25,9 @@ in
   boot.supportedFilesystems = [ "nfs" ];
 
   fileSystems."/mnt/media" = nfsMount "/volume1/media";
-  # Minecraft world backups (restic repo, see services/minecraft.nix).
-  fileSystems."/mnt/minecraft" = nfsMount "/volume1/minecraft";
+  # Game server data; Minecraft world backups live under minecraft/ (restic
+  # repo, see services/minecraft.nix).
+  fileSystems."/mnt/games" = nfsMount "/volume1/games";
 
   # Another host, so the tile links its fixed LAN address rather than a port
   # here. DSM's cert is self-signed; Homepage's monitor doesn't verify it.

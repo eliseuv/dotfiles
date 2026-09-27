@@ -13,7 +13,7 @@ let
   serverUnit = "minecraft-server-${serverName}.service";
   serverDir = "${config.services.minecraft-servers.dataDir}/${serverName}";
   stdinSocket = "/run/minecraft/${serverName}.stdin";
-  backupRoot = "/mnt/minecraft";
+  backupRoot = "/mnt/games/minecraft";
 
   # Mods: `nix run github:Infinidoge/nix-minecraft#nix-modrinth-prefetch -- <version id>`
   # prints the fetchurl for a Modrinth version. Keep every mod on the same
