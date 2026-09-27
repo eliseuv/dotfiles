@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+ddir="$HOME/.config/rofi/config"
+
+show_msg() {
+    rofi -theme "$ddir/askpass.rasi" -e "$1"
+}
+
+rdialog() {
+    rofi -dmenu -i -no-fixed-num-lines -p "$1" -theme "$ddir/confirm.rasi" < /dev/null
+}
+
+wifi_dev=$(nmcli -t -f DEVICE,TYPE dev | awk -F: '$2 == "wifi" { print $1; exit }')
+if [[ -z "$wifi_dev" ]]; then
+    show_msg "No WiFi device"
+    exit 1
+fi
+
+radio=$(nmcli radio wifi)
+current=$(nmcli -g GENERAL.CONNECTION dev show "$wifi_dev")
+
+# Parallel arrays: rofi returns the row index (-format i), so SSIDs are never
+# matched back as text
+labels=()
+actions=()
+ssids=()
+active_row=""
+
+if [[ "$radio" == "enabled" ]]; then
+    labels+=("󰖪  Disable WiFi" "󰑐  Rescan")
+    actions+=("radio-off" "rescan")
+    ssids+=("" "")
+
+    declare -A seen
+    # SSID goes last and escaping is off, so SSIDs containing ':' stay intact
+    # when splitting on the first three fields. Sorting by signal first means
+    # the first BSSID seen for an SSID is its strongest.
+    while IFS=: read -r in_use signal security ssid; do
+        [[ -z "$ssid" ]] && continue
+        if [[ -n "${seen[$ssid]}" ]]; then
+            [[ "$in_use" == "*" ]] && active_row=${seen[$ssid]}
+            continue
+        fi
+        seen[$ssid]=${#labels[@]}
+        [[ "$in_use" == "*" ]] && active_row=${#labels[@]}
+
+        if ((signal >= 80)); then icon="󰤨"
+        elif ((signal >= 60)); then icon="󰤥"
+        elif ((signal >= 40)); then icon="󰤢"
+        elif ((signal >= 20)); then icon="󰤟"
+        else icon="󰤯"
+        fi
+        lock=""
+        [[ -n "$security" && "$security" != "--" ]] && lock="  "
+
+        labels+=("$icon  $ssid$lock")
+        actions+=("network")
+        ssids+=("$ssid")
+    done < <(nmcli -t -e no -f IN-USE,SIGNAL,SECURITY,SSID dev wifi list ifname "$wifi_dev" --rescan no |
+        sort -t: -k2,2nr)
+else
+    labels+=("󰖩  Enable WiFi")
+    actions+=("radio-on")
+    ssids+=("")
+fi
+
+rofi_args=(-dmenu -i -format i -p "${current:-Disconnected}" -theme "$ddir/networkmenu.rasi")
+[[ -n "$active_row" ]] && rofi_args+=(-a "$active_row")
+
+row=$(printf '%s\n' "${labels[@]}" | rofi "${rofi_args[@]}")
+[[ -z "$row" || "$row" -lt 0 ]] && exit 0
+
+# Echoes the name of a saved profile for the SSID, if any
+saved_profile() {
+    local ssid=$1 type name
+    while IFS=: read -r type name; do
+        [[ "$type" == "802-11-wireless" ]] || continue
+        if [[ "$(nmcli -g 802-11-wireless.ssid con show id "$name")" == "$ssid" ]]; then
+            echo "$name"
+            return
+        fi
+    done < <(nmcli -t -e no -f TYPE,NAME con show)
+}
+
+wifi_uuids() {
+    nmcli -t -f UUID,TYPE con show | awk -F: '$2 == "802-11-wireless" { print $1 }'
+}
+
+connect_new() {
+    local ssid=$1 password=$2 before out
+    local args=(dev wifi connect "$ssid" ifname "$wifi_dev")
+    [[ -n "$password" ]] && args+=(password "$password")
+    before=$(wifi_uuids)
+    out=$(nmcli "${args[@]}" 2>&1) || {
+        # A failed connect (e.g. wrong password) still leaves a new profile
+        # behind; remove it so the network isn't treated as saved next time
+        comm -13 <(sort <<< "$before") <(wifi_uuids | sort) | xargs -r nmcli con delete uuid > /dev/null
+        show_msg "Failed: ${out##*Error: }"
+    }
+}
+
+case "${actions[$row]}" in
+radio-on) nmcli radio wifi on ;;
+radio-off) nmcli radio wifi off ;;
+rescan)
+    nmcli dev wifi list ifname "$wifi_dev" --rescan yes > /dev/null
+    exec "$0"
+    ;;
+network)
+    ssid=${ssids[$row]}
+    if [[ "$row" == "$active_row" ]]; then
+        ans=$(rdialog "Disconnect? : ")
+        [[ "$ans" == "yes" || "$ans" == "y" ]] && nmcli con down id "$current" > /dev/null
+    elif profile=$(saved_profile "$ssid") && [[ -n "$profile" ]]; then
+        out=$(nmcli con up id "$profile" 2>&1) || show_msg "Failed: ${out##*Error: }"
+    elif [[ "${labels[$row]}" == *"  " ]]; then
+        password=$(rofi -dmenu -password -p "Password" -theme "$ddir/askpass.rasi" < /dev/null)
+        [[ -n "$password" ]] && connect_new "$ssid" "$password"
+    else
+        connect_new "$ssid"
+    fi
+    ;;
+esac
