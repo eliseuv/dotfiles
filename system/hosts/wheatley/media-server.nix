@@ -53,6 +53,9 @@ in
         '')
       ];
     }
+    # FlareSolverr is an open proxy driving a headless browser, and Prowlarr
+    # is its only client.
+    { flaresolverr.environment.HOST = "127.0.0.1"; }
   ];
 
   services.qbittorrent = {
@@ -106,6 +109,11 @@ in
   services.sonarr.environmentFiles = [ config.sops.templates."sonarr.env".path ];
   services.radarr.environmentFiles = [ config.sops.templates."radarr.env".path ];
   services.prowlarr.environmentFiles = [ config.sops.templates."prowlarr.env".path ];
+
+  # Cloudflare challenge solver for Prowlarr, used by indexers tagged
+  # "flaresolverr" (see arr-sync). Bound to loopback in systemd.services
+  # above.
+  services.flaresolverr.enable = true;
 
   services.jellyfin.enable = true;
   services.jellyfin.openFirewall = true;
