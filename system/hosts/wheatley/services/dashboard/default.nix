@@ -18,7 +18,8 @@ let
   # Links are written against this host and rewritten client-side (customJS)
   # to whatever name the dashboard was opened with - LAN IP, Tailscale name,
   # etc. - so one config works from anywhere without hardcoding either.
-  linkHost = "wheatley";
+  linkHost = config.networking.hostName;
+  network = config.homelab.network;
   homepagePort = config.services.homepage-dashboard.listenPort;
 
   # Tile groups, in display order.
@@ -185,12 +186,10 @@ in
       # Host, which on :80 carries no port.
       allowedHosts = builtins.concatStringsSep "," [
         linkHost
-        "wheatley-1"
-        "wheatley.local"
-        "wheatley.taild628c9.ts.net"
-        "wheatley-1.taild628c9.ts.net"
-        "192.168.0.62"
-        "100.97.1.97"
+        "${linkHost}.local"
+        "${linkHost}.${network.tailnetDomain}"
+        network.lanAddress
+        network.tailnetAddress
       ];
 
       settings = {

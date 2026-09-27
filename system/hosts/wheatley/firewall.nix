@@ -22,7 +22,7 @@ let
   udpPorts = expose: map (service: service.port) (lib.filter (service: service.expose == expose && service.udp) registered);
 
   sources = {
-    iptables = "192.168.0.0/24";
+    iptables = config.homelab.network.lanSubnet;
     ip6tables = "fe80::/10";
   };
   accept =

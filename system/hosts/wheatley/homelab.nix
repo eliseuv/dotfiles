@@ -1,8 +1,20 @@
 # Service registry: each service declares its port and who may reach it once,
 # next to its own config. firewall.nix opens ports from it; the dashboard adds
 # a `dashboard` sub-option and builds its tiles from it (services/dashboard).
+# Also the network facts several modules need (values in configuration.nix).
 { lib, ... }:
+let
+  str = description: lib.mkOption { type = lib.types.str; inherit description; };
+in
 {
+
+  options.homelab.network = {
+    lanSubnet = str "LAN IPv4 subnet, CIDR; the firewall's LAN tier.";
+    lanAddress = str "This host's LAN address (DHCP reservation).";
+    nasAddress = str "The Synology NAS's LAN address (DHCP reservation).";
+    tailnetDomain = str "The tailnet's MagicDNS suffix.";
+    tailnetAddress = str "This host's Tailscale IPv4 address.";
+  };
 
   options.homelab.services = lib.mkOption {
     default = { };

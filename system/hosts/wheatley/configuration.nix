@@ -34,6 +34,15 @@
   # Hostname
   networking.hostName = "wheatley";
 
+  # The LAN and NAS addresses are DHCP reservations on the router.
+  homelab.network = {
+    lanSubnet = "192.168.0.0/24";
+    lanAddress = "192.168.0.62";
+    nasAddress = "192.168.0.35";
+    tailnetDomain = "taild628c9.ts.net";
+    tailnetAddress = "100.97.1.97";
+  };
+
   # Remove bootloader timeout
   boot.loader.timeout = 0;
 

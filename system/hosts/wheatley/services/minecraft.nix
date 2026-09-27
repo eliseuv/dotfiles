@@ -127,7 +127,7 @@ in
       name = "Minecraft";
       group = "Tools";
       order = 3;
-      description = "Fabric server (Tailscale only)";
+      description = "Fabric server (LAN + Tailscale)";
       icon = "minecraft.png";
       link = false;
       widget = {
