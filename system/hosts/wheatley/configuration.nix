@@ -54,6 +54,17 @@
     tailnetAddress = "100.97.1.97";
   };
 
+  # Here rather than in extra/tailscale.nix, which hosts without the
+  # homelab registry share.
+  homelab.services.tailscale.dashboard = {
+    name = "Tailscale";
+    group = "Tools";
+    order = 4;
+    description = "Tailnet admin console";
+    icon = "tailscale.png";
+    href = "https://login.tailscale.com/admin/machines";
+  };
+
   # Remove bootloader timeout
   boot.loader.timeout = 0;
 
