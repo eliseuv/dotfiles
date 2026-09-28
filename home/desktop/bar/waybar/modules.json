@@ -18,7 +18,8 @@
         "scroll-step": 5,
         "format": "{icon}  {volume}%",
         "format-muted": "   ",
-        "on-click": "wpctl set-mute @DEFAULT_SINK@ toggle",
+        "on-click": "~/.config/rofi/bin/volumemenu",
+        "on-click-right": "wpctl set-mute @DEFAULT_SINK@ toggle",
         "format-icons": {
             "default": [
                 " ",
