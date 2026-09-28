@@ -24,7 +24,7 @@ in
         version = 2;
         enableBlocks = true;
       };
-      widgetKey = "homepage/jellyfin";
+      widgetKey = "api-key/jellyfin";
       unit = "jellyfin.service";
     };
   };

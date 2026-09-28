@@ -23,7 +23,7 @@ in
   systemd.services.qbittorrent.serviceConfig.ExecStartPre = lib.mkAfter [
     (pkgs.writeShellScript "qbittorrent-inject-api-key" ''
       conf="${config.services.qbittorrent.profileDir}/qBittorrent/config/qBittorrent.conf"
-      key=$(<${config.sops.secrets."qbittorrent/api-key".path})
+      key=$(<${config.sops.secrets."api-key/qbittorrent".path})
       contents=$(<"$conf")
       printf '%s\n' "''${contents//@QBT_API_KEY@/$key}" > "$conf"
     '')
@@ -32,7 +32,7 @@ in
   # API key for the WebUI (Authorization: Bearer), used by the dashboard and
   # by Sonarr/Radarr (arr-sync.nix). qBittorrent requires the form qbt_ + 28
   # alphanumerics; anything else is silently ignored.
-  sops.secrets."qbittorrent/api-key" = {
+  sops.secrets."api-key/qbittorrent" = {
     owner = config.services.qbittorrent.user;
     restartUnits = [ "qbittorrent.service" "arr-sync.service" ];
   };
@@ -46,7 +46,7 @@ in
       description = "Download client";
       icon = "qbittorrent.png";
       widget.type = "qbittorrent";
-      widgetKey = "qbittorrent/api-key";
+      widgetKey = "api-key/qbittorrent";
       unit = "qbittorrent.service";
     };
   };

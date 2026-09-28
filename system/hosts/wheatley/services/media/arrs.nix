@@ -18,7 +18,7 @@
         group = "Media";
         icon = "${service}.png";
         widget.type = service;
-        widgetKey = "${service}/api-key";
+        widgetKey = "api-key/${service}";
         unit = "${service}.service";
       };
     }
@@ -43,14 +43,14 @@
   # Pin each *arr's API key to the sops copy instead of the one it generated on
   # first start, so the keys the dashboard and arr-sync use can't drift from
   # the apps'.
-  sops.secrets = lib.genAttrs [ "sonarr/api-key" "radarr/api-key" "prowlarr/api-key" ] (_: { });
+  sops.secrets = lib.genAttrs [ "api-key/sonarr" "api-key/radarr" "api-key/prowlarr" ] (_: { });
   sops.templates = lib.genAttrs [ "sonarr.env" "radarr.env" "prowlarr.env" ] (
     file:
     let
       service = lib.removeSuffix ".env" file;
     in
     {
-      content = "${lib.toUpper service}__AUTH__APIKEY=${config.sops.placeholder."${service}/api-key"}";
+      content = "${lib.toUpper service}__AUTH__APIKEY=${config.sops.placeholder."api-key/${service}"}";
       restartUnits = [ "${service}.service" ];
     }
   );
