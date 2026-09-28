@@ -46,36 +46,49 @@ in
 
   sops.secrets."ttyd/credential" = { };
 
-  systemd.services.ttyd = {
-    description = "ttyd web terminal";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
+  # Pinned (to the uid it already has) so the unit can name evf's user
+  # manager and runtime dir at eval time.
+  users.users.evf.uid = 1000;
 
-    environment.LD_LIBRARY_PATH = "${pkgs.libwebsockets}/lib:${pkgs.libuv}/lib";
+  systemd.services.ttyd =
+    let
+      uid = toString config.users.users.evf.uid;
+    in
+    {
+      description = "ttyd web terminal";
+      # The user manager is what creates /run/user/<uid>, which zellij's
+      # sockets and the session bus live in.
+      requires = [ "user@${uid}.service" ];
+      after = [
+        "network.target"
+        "user@${uid}.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
 
-    serviceConfig = {
-      User = "evf";
-      Group = "users";
-      WorkingDirectory = "/home/evf";
-      LoadCredential = "credential:${config.sops.secrets."ttyd/credential".path}";
-      Restart = "always";
-      ExecStart = pkgs.writeShellScript "ttyd-start.sh" ''
-        CREDENTIAL=$(<"$CREDENTIALS_DIRECTORY/credential")
-        export SHELL=${pkgs.zsh}/bin/zsh
-        # A system unit doesn't inherit the user manager's environment, so
-        # give the shell the PATH a user service would see, plus the
-        # standalone home-manager profile.
-        export PATH=/run/wrappers/bin:$HOME/.nix-profile/bin:/etc/profiles/per-user/evf/bin:/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin
-        # zellij keeps its session sockets here; resolved at runtime since
-        # evf's uid is assigned at activation. Exists because evf lingers.
-        export XDG_RUNTIME_DIR=/run/user/$(${pkgs.coreutils}/bin/id -u)
-        exec ${pkgs.ttyd}/bin/ttyd \
-          -c "$CREDENTIAL" \
-          -t 'theme=${builtins.toJSON theme}' \
-          -t 'fontFamily=IosevkaTerm Nerd Font' \
-          -p ${toString port} -W ${pkgs.zellij}/bin/zellij attach --create ttyd
-      '';
+      # Only what a login shell can't derive on its own; zsh -l builds the
+      # rest (PATH, home-manager session vars) the same way an SSH login does.
+      environment = {
+        LD_LIBRARY_PATH = "${pkgs.libwebsockets}/lib:${pkgs.libuv}/lib";
+        XDG_RUNTIME_DIR = "/run/user/${uid}";
+        DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${uid}/bus";
+      };
+
+      serviceConfig = {
+        User = "evf";
+        Group = "users";
+        WorkingDirectory = "/home/evf";
+        LoadCredential = "credential:${config.sops.secrets."ttyd/credential".path}";
+        Restart = "always";
+        ExecStart = pkgs.writeShellScript "ttyd-start.sh" ''
+          CREDENTIAL=$(<"$CREDENTIALS_DIRECTORY/credential")
+          exec ${pkgs.ttyd}/bin/ttyd \
+            -c "$CREDENTIAL" \
+            -t 'theme=${builtins.toJSON theme}' \
+            -t 'fontFamily=IosevkaTerm Nerd Font' \
+            -p ${toString port} -W \
+            ${pkgs.zsh}/bin/zsh -lc 'exec ${pkgs.zellij}/bin/zellij attach --create ttyd'
+        '';
+      };
     };
-  };
 
 }
