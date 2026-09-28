@@ -1,6 +1,6 @@
-# ttyd web terminal running herdr as evf. A system unit rather than a
+# ttyd web terminal running zellij as evf. A system unit rather than a
 # home-manager user service so it lives with the other wheatley services and
-# gets dashboard controls; the in-terminal tooling (herdr config, lrzsz,
+# gets dashboard controls; the in-terminal tooling (lrzsz,
 # sixel) stays in home/extra/ttyd.nix.
 { config, pkgs, ... }:
 let
@@ -66,14 +66,14 @@ in
         # give the shell the PATH a user service would see, plus the
         # standalone home-manager profile.
         export PATH=/run/wrappers/bin:$HOME/.nix-profile/bin:/etc/profiles/per-user/evf/bin:/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin
-        # herdr keeps its session sockets here; resolved at runtime since
+        # zellij keeps its session sockets here; resolved at runtime since
         # evf's uid is assigned at activation. Exists because evf lingers.
         export XDG_RUNTIME_DIR=/run/user/$(${pkgs.coreutils}/bin/id -u)
         exec ${pkgs.ttyd}/bin/ttyd \
           -c "$CREDENTIAL" \
           -t 'theme=${builtins.toJSON theme}' \
           -t 'fontFamily=IosevkaTerm Nerd Font' \
-          -p ${toString port} -W ${pkgs.herdr}/bin/herdr
+          -p ${toString port} -W ${pkgs.zellij}/bin/zellij
       '';
     };
   };

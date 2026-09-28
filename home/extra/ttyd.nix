@@ -2,10 +2,6 @@
 # system/hosts/wheatley/services/ttyd.nix.
 { pkgs, ... }:
 {
-  imports = [
-    ../shell/multiplexer/herdr.nix
-  ];
-
   home.packages = with pkgs; [
     zsh
     lrzsz
