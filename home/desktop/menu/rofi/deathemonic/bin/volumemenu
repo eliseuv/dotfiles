@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+ddir="$HOME/.config/rofi/config"
+
+menu() {
+    rofi -dmenu -i -format i -p "$1" -theme "$ddir/networkmenu.rasi" \
+        -theme-str 'textbox-prompt-colon { str: "󰕾"; }' "${@:2}"
+}
+
+default_id() {
+    wpctl inspect "$1" 2> /dev/null | awk 'NR == 1 { sub(",", "", $2); print $2 }'
+}
+
+is_muted() {
+    wpctl get-volume "$1" | grep -q MUTED
+}
+
+volume_pct() {
+    wpctl get-volume "$1" | awk '{ printf "%d%%", $2 * 100 }'
+}
+
+dump=$(pw-dump)
+
+# Prints "id<TAB>node.name<TAB>label" for every node of a media class
+nodes() {
+    jq -r --arg class "$1" '
+        .[] | select(.type == "PipeWire:Interface:Node" and .info.props["media.class"] == $class)
+        | .info.props
+        | [."object.id", ."node.name", (."node.nick" // ."node.description" // ."node.name")]
+        | @tsv' <<< "$dump"
+}
+
+label_of() {
+    awk -F'\t' -v id="$2" '$1 == id { print $3 }' <<< "$1"
+}
+
+sinks=$(nodes "Audio/Sink")
+sources=$(nodes "Audio/Source")
+sink_id=$(default_id @DEFAULT_AUDIO_SINK@)
+source_id=$(default_id @DEFAULT_AUDIO_SOURCE@)
+
+# Lets the user pick one of the given nodes (default marked active); echoes its
+# "id<TAB>node.name<TAB>label" line
+pick_node() {
+    local list=$1 current=$2 prompt=$3 labels=() lines=() active="" row
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        [[ "${line%%$'\t'*}" == "$current" ]] && active=${#lines[@]}
+        lines+=("$line")
+        labels+=("${line##*$'\t'}")
+    done <<< "$list"
+    ((${#lines[@]} == 0)) && return 1
+
+    local args=()
+    [[ -n "$active" ]] && args+=(-a "$active")
+    row=$(printf '%s\n' "${labels[@]}" | menu "$prompt" "${args[@]}")
+    [[ -z "$row" || "$row" -lt 0 ]] && return 1
+    echo "${lines[$row]}"
+}
+
+# Parallel arrays indexed by row, so stream names are never matched back as text
+labels=()
+actions=()
+stream_ids=()
+stream_names=()
+
+labels+=("󰓃  Output: $(label_of "$sinks" "$sink_id")")
+actions+=("output")
+labels+=("󰍬  Input: $(label_of "$sources" "$source_id")")
+actions+=("input")
+if is_muted @DEFAULT_AUDIO_SOURCE@; then
+    labels+=("󰍬  Unmute mic")
+else
+    labels+=("󰍭  Mute mic")
+fi
+actions+=("mic-mute")
+
+while IFS=$'\t' read -r id app media; do
+    [[ -z "$id" ]] && continue
+    label="󰝚  $app"
+    [[ -n "$media" && "$media" != "$app" ]] && label+=" · $media"
+    is_muted "$id" && label+="   󰖁"
+    labels+=("$label")
+    actions+=("stream")
+    stream_ids[${#labels[@]} - 1]=$id
+    stream_names[${#labels[@]} - 1]=$app
+done < <(jq -r '
+    .[] | select(.type == "PipeWire:Interface:Node" and .info.props["media.class"] == "Stream/Output/Audio")
+    | .info.props
+    | [."object.id", (."application.name" // ."node.name"), (."media.name" // "")]
+    | @tsv' <<< "$dump")
+
+if is_muted @DEFAULT_AUDIO_SINK@; then
+    prompt="Muted"
+else
+    prompt="$(volume_pct @DEFAULT_AUDIO_SINK@)"
+fi
+
+row=$(printf '%s\n' "${labels[@]}" | menu "$prompt")
+[[ -z "$row" || "$row" -lt 0 ]] && exit 0
+
+case "${actions[$row]}" in
+output)
+    picked=$(pick_node "$sinks" "$sink_id" "Output") && wpctl set-default "${picked%%$'\t'*}"
+    ;;
+input)
+    picked=$(pick_node "$sources" "$source_id" "Input") && wpctl set-default "${picked%%$'\t'*}"
+    ;;
+mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle ;;
+stream)
+    id=${stream_ids[$row]}
+    if is_muted "$id"; then mute_label="󰕾  Unmute"; else mute_label="󰖁  Mute"; fi
+    sub=$(printf '%s\n' "$mute_label" "󰓃  Move to…" | menu "${stream_names[$row]}")
+    case "$sub" in
+    0) wpctl set-mute "$id" toggle ;;
+    1)
+        # The stream's current sink is whatever its output links point at
+        current=$(jq -r --argjson id "$id" '
+            [.[] | select(.type == "PipeWire:Interface:Link" and .info["output-node-id"] == $id)
+            | .info["input-node-id"]] | first // empty' <<< "$dump")
+        picked=$(pick_node "$sinks" "$current" "Move to") || exit 0
+        picked=${picked#*$'\t'}
+        # wpctl can't move streams; setting target.object is what
+        # pipewire-pulse does for `pactl move-sink-input`, and WirePlumber
+        # relinks the stream live
+        pw-metadata "$id" target.object "${picked%%$'\t'*}" > /dev/null
+        ;;
+    esac
+    ;;
+esac
