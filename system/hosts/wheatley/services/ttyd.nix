@@ -73,7 +73,7 @@ in
           -c "$CREDENTIAL" \
           -t 'theme=${builtins.toJSON theme}' \
           -t 'fontFamily=IosevkaTerm Nerd Font' \
-          -p ${toString port} -W ${pkgs.zellij}/bin/zellij
+          -p ${toString port} -W ${pkgs.zellij}/bin/zellij attach --create ttyd
       '';
     };
   };
