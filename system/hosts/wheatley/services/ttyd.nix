@@ -46,10 +46,6 @@ in
 
   sops.secrets."ttyd/credential" = { };
 
-  # Pinned (to the uid it already has) so the unit can name evf's user
-  # manager and runtime dir at eval time.
-  users.users.evf.uid = 1000;
-
   systemd.services.ttyd =
     let
       uid = toString config.users.users.evf.uid;
