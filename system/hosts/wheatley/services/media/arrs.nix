@@ -15,7 +15,7 @@
     service: tile: {
       port = config.services.${service}.settings.server.port;
       dashboard = tile // {
-        group = "Management";
+        group = "Media";
         icon = "${service}.png";
         widget.type = service;
         widgetKey = "${service}/api-key";
@@ -25,17 +25,17 @@
   ) {
     sonarr = {
       name = "Sonarr";
-      order = 1;
+      order = 4;
       description = "TV shows";
     };
     radarr = {
       name = "Radarr";
-      order = 2;
+      order = 5;
       description = "Movies";
     };
     prowlarr = {
       name = "Prowlarr";
-      order = 3;
+      order = 6;
       description = "Indexers";
     };
   };

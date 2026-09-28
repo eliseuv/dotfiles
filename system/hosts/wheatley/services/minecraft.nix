@@ -125,8 +125,8 @@ in
     # (the scheme is ignored) and reports status, version and players.
     dashboard = {
       name = "Minecraft";
-      group = "Tools";
-      order = 3;
+      group = "Games";
+      order = 1;
       description = "Fabric server (LAN + Tailscale)";
       icon = "minecraft.png";
       link = false;

@@ -25,18 +25,15 @@ let
   # Tile groups, in display order.
   groups = [
     {
-      name = "Media";
-      columns = 3;
-    }
-    {
-      name = "Management";
-      columns = 4;
-    }
-    {
       name = "Tools";
       columns = 3;
     }
+    {
+      name = "Media";
+      columns = 3;
+    }
     { name = "Dev"; }
+    { name = "Games"; }
   ];
 
   tiled = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
