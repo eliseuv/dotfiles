@@ -7,7 +7,7 @@ let
 in
 {
 
-  # 3000 is taken by ttyd (services/dev.nix).
+  # 3000 is taken by ttyd (services/ttyd.nix).
   homelab.services.ledger = {
     port = 3001;
     expose = "tailnet";

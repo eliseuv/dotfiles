@@ -19,6 +19,7 @@
     ./services/dashboard
     ./services/minecraft.nix
     ./services/dev.nix
+    ./services/ttyd.nix
 
     # Tailscale
     ../../extra/tailscale.nix
