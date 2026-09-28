@@ -30,6 +30,17 @@ in
         ensureDBOwnership = true;
       }
     ];
+    # Lets evf's dev server (ledger's `just dev-live`) connect as `ledger`, so
+    # tables its bootstrap creates stay owned by the role the service uses.
+    # The service's own user must be mapped too: with map= set, the default
+    # same-name identity no longer applies.
+    identMap = ''
+      ledger ledger ledger
+      ledger evf    ledger
+    '';
+    authentication = ''
+      local ledger ledger peer map=ledger
+    '';
   };
 
   users.groups.ledger = { };
