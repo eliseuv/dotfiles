@@ -209,15 +209,14 @@ in
         # theme is left unset: theme.js drives the hidden toggle.
         color = "zinc";
         headerStyle = "clean";
-        layout = lib.listToAttrs (
-          map (
-            group:
-            lib.nameValuePair group.name {
-              style = "row";
-              inherit (group) columns;
-            }
-          ) (lib.filter (group: group ? columns) groups)
-        );
+        # A list, not an attrset: Homepage orders groups by layout keys, and
+        # an attrset would serialize them alphabetically.
+        layout = map (group: {
+          ${group.name} = lib.optionalAttrs (group ? columns) {
+            style = "row";
+            inherit (group) columns;
+          };
+        }) groups;
       };
 
       widgets = [
