@@ -4,9 +4,6 @@
 # have meant renumbering evf everywhere. This share's root was chowned to
 # 1000:100 from a client instead; DSM sees it as an unknown uid, with group
 # `users` (gid 100 on both sides) as its only way in.
-#
-# The share is DSM-encrypted: while it's locked on the NAS the mount fails
-# after the mount timeout, like an unreachable NAS.
 { config, lib, ... }:
 {
 
