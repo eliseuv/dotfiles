@@ -120,7 +120,6 @@
         "interval": 10,
         "return-type": "json",
         "signal": 10,
-        "on-click": "~/.config/rofi/bin/tailscalemenu",
         "on-click-right": "~/.config/waybar/scripts/tailscale.sh toggle",
     },
     "clock": {
