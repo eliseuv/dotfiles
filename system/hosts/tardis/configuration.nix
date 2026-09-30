@@ -34,6 +34,9 @@
   # Hostname
   networking.hostName = "tardis";
 
+  # Also mount the NAS over the tailnet, for use away from home
+  companionCube.tailnetAddress = "100.109.162.27";
+
   # Select default session for Display Manager
   services.displayManager.defaultSession = "hyprland-uwsm";
 
