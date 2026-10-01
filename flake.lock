@@ -18,22 +18,6 @@
         "type": "github"
       }
     },
-    "ekphos-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790183540,
-        "narHash": "sha256-HFeuVHoTwNjE041ly2ZLcfwrI2zVtOMayYuuHU7n9LM=",
-        "owner": "nostacks",
-        "repo": "ekphos",
-        "rev": "01c8cb284b193263660494bf6a421827ee124500",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nostacks",
-        "repo": "ekphos",
-        "type": "github"
-      }
-    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -128,22 +112,6 @@
         "owner": "nix-community",
         "ref": "master",
         "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "lazydiff-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783041600,
-        "narHash": "sha256-DjbUCPMqiVw+sRiOKiH7h1+Qs5RoBdm9Pjn6otrcoOg=",
-        "owner": "Ataraxy-Labs",
-        "repo": "lazydiff",
-        "rev": "bf8d6e672dd70537488e0d912c2b998707231637",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Ataraxy-Labs",
-        "repo": "lazydiff",
         "type": "github"
       }
     },
@@ -287,10 +255,8 @@
     "root": {
       "inputs": {
         "catppuccin": "catppuccin",
-        "ekphos-src": "ekphos-src",
         "fenix": "fenix",
         "home-manager": "home-manager",
-        "lazydiff-src": "lazydiff-src",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nix-index-database": "nix-index-database",
         "nix-minecraft": "nix-minecraft",
