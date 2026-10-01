@@ -119,6 +119,13 @@
         ];
       };
 
+      # Imported once here and shared via extraSpecialArgs, rather than
+      # re-imported (and re-evaluated) by every module that needs it
+      pkgs-master = import inputs.nixpkgs-master {
+        inherit system;
+        config.allowUnfree = true;
+      };
+
       # Host matrix: which users run Home Manager on each host and which
       # nixpkgs branch the system follows (unstable unless stated otherwise).
       hosts = {
@@ -155,7 +162,7 @@
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           extraSpecialArgs = {
-            inherit inputs hostName;
+            inherit inputs hostName pkgs-master;
           };
           modules = [
             ./home/hosts/${hostName}.nix
