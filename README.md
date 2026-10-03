@@ -12,40 +12,55 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 
 ## Features
 
-- **OS**: NixOS (Unstable for workstations, Stable for servers)
-- **Home Environment**: Home Manager (with split GUI and Headless setups)
+- **OS**: NixOS unstable (a host can follow stable with `my.host.channel`)
+- **Home Environment**: standalone Home Manager, driven by the same host spec as NixOS
 - **Web Terminal**: `ttyd` for browser-based terminal access on headless nodes
 - **Secrets**: [sops-nix](https://github.com/Mic92/sops-nix)
 - **Editor**: Neovim (Nightly)
 - **Helper Tools**: `nh`, `just`
-- **Other Inputs**: `spicetify-nix`, `yt-x`, `antigravity-nix`
+- **Other Inputs**: `spicetify-nix`, `yt-x`, `catppuccin`, `nix-minecraft`
 
 ## Structure
 
-- `flake.nix`: Entry point and inputs. A single `hosts` matrix declares each
-  host's users and nixpkgs branch; `nixosConfigurations` and
-  `homeConfigurations` are generated from it.
-- `Justfile`: Command runner for common tasks.
-- `system/`: System-level configuration.
-  - `profiles/`: Composable system profiles (`base.nix` for every machine,
-    `desktop.nix` for graphical ones).
-  - `hosts/<host>/`: Per-host `configuration.nix` + `hardware.nix`; imports
-    profiles and keeps only host-specific settings.
-  - `hardware/`, `desktop/`, `environment/`, `extra/`: Individual modules.
-- `home/`: User-level configuration (standalone Home Manager).
-  - `profiles/`: Composable home profiles (`core.nix` CLI environment,
-    `gui.nix` graphical basics, `apps.nix` full workstation apps,
-    `hyprland.nix`/`i3.nix` desktops, `gaming.nix`).
-  - `hosts/<host>.nix`: What runs on each host; imports profiles plus
-    host-specific modules (monitors, syncthing folders, overrides).
-  - `users/<user>.nix`: Per-user identity (git name/email).
-  - Remaining directories are individual program modules, imported by
-    profiles or host files.
+Every host is a directory under `hosts/`, and what it runs is set by `my.*`
+options in its spec rather than by import lists. All modules are imported
+everywhere and switch themselves on from those options.
+
+- `flake.nix`: Inputs; outputs come from `lib/`.
+- `lib/default.nix`: Builds `nixosConfigurations` and `homeConfigurations`
+  (`<user>@<host>` for each of the host's `my.host.users`) from `hosts/`.
+- `hosts/<host>/`:
+  - `default.nix`: The host spec. Sets only `my.*` options, and is read by
+    both the NixOS and the Home Manager evaluation, so a feature is enabled
+    once for both (e.g. `my.desktop.hyprland.enable` turns on the session and
+    the user's Hyprland config).
+  - `hardware.nix`: Generated hardware configuration.
+  - `system.nix`, `home.nix` (optional): Host-specific settings with no
+    option, e.g. extra disks.
+  - wheatley's `services/` holds its homelab services.
+- `users/<user>.nix`: Who each user is (`my.users.<user>`: git identity,
+  uid). Accounts are created on the hosts that list them.
+- `modules/shared/`: Declarations of every `my.*` option, part of both
+  evaluations. Read them for what a host can set.
+- `modules/nixos/`, `modules/home/`: NixOS and Home Manager modules, grouped
+  by feature (`core/` is always on, `desktop/`, `apps/`, `homelab/`, ...).
+  Every `.nix` file is imported; helpers that aren't modules are named
+  `_*.nix`.
 - `pkgs/<name>/default.nix`: Packaging for local homebrew projects that
   live in their own repo (e.g. `~/Services/ledger`), fetched from the
   commit pinned in `pkgs/<name>/pin.json`. See "Deploying Local Services"
   below.
 - `secrets/`: Encrypted secrets (sops-nix, age): `user.yaml` for home-manager, one file per host for system secrets.
+
+### Adding things
+
+- **A host**: create `hosts/<host>/` with `hardware.nix` and a
+  `default.nix` spec; `nixosConfigurations.<host>` appears on its own.
+- **A feature**: declare its option in `modules/shared/`, then add modules
+  under `modules/nixos/` and/or `modules/home/` wrapped in
+  `config = lib.mkIf <option> { ... }`.
+- **Checking a refactor**: `just eval-all` prints every configuration's
+  derivation; outputs that should not change must print the same.
 
 ## Usage
 
@@ -172,7 +187,7 @@ ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-web'
 #### Automatic deploy-on-push
 
 On wheatley, pushing to `~/Services/ledger` is enough on its own —
-`system/hosts/wheatley/services/ledger/deploy.nix` runs the pipeline above without
+`hosts/wheatley/services/ledger/deploy.nix` runs the pipeline above without
 a manual `deploy-service` call:
 
 - A `post-receive` hook (installed by `system.activationScripts`, since
@@ -187,7 +202,7 @@ a manual `deploy-service` call:
 The `evf` steps need to push/tag over SSH; they use `evf`'s
 `gpg-agent`-backed SSH auth socket, which — because `evf` has
 `loginctl linger` enabled — stays up with no session logged in. That
-key's passphrase cache (`home/auth/gpg.nix`, 12h TTL) can still go cold
+key's passphrase cache (`modules/home/core/auth/gpg.nix`, 12h TTL) can still go cold
 with nothing around to unlock it; if so, the tag/push step fails
 (`systemctl status ledger-deploy` will show it) even though the actual
 deploy — build, activate, `ledger-web.service` restart — already
