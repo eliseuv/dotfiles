@@ -25,7 +25,15 @@ commit-gen:
         --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
     git push --follow-tags
 
-gc keep='4':
+# Prompt for sudo up front and keep the timestamp fresh for as long as this
+# `just` process lives, so the elevation inside `nh os switch` and `gc` (which
+# can land well past sudo's 5 min timeout on a long build) doesn't prompt again.
+[private]
+sudo-keepalive:
+    @sudo -v
+    @while kill -0 $PPID 2>/dev/null; do sudo -n -v; sleep 60; done &
+
+gc keep='4': sudo-keepalive
     nh clean all --keep {{keep}} --no-gcroots
 
 # Print the derivation path of every system and home configuration. A
@@ -59,14 +67,14 @@ home-switch:
 
 after-switch: commit-gen home-switch gc
 
-system-test: && home-switch
+system-test: sudo-keepalive && home-switch
     nh os test .
 
-system-switch: && after-switch
+system-switch: sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os switch .
 
-system-boot: && after-switch
+system-boot: sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os boot .
 
