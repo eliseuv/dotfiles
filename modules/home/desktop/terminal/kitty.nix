@@ -4,6 +4,10 @@
   pkgs,
   ...
 }:
+let
+  # Tiling sessions draw no window decorations; GNOME expects the client to
+  decorated = config.my.desktop.defaultSession == "gnome";
+in
 {
 
   config = lib.mkIf config.my.desktop.enable {
@@ -31,7 +35,7 @@
       settings = {
         scrollback_lines = 10000;
         scrollback_pager_history_size = 64;
-        hide_window_decorations = "yes";
+        hide_window_decorations = if decorated then "no" else "yes";
         allow_remote_control = "socket-only";
         listen_on = "unix:/tmp/kitty";
       };

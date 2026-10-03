@@ -4,6 +4,10 @@
   pkgs,
   ...
 }:
+let
+  # Tiling sessions draw no window decorations; GNOME expects the client to
+  decorated = config.my.desktop.defaultSession == "gnome";
+in
 {
 
   config = lib.mkIf config.my.desktop.enable {
@@ -22,7 +26,7 @@
         font-feature = "+calt, +liga, +dlig";
         cursor-style = "block";
         mouse-hide-while-typing = true;
-        window-decoration = "none";
+        window-decoration = if decorated then "auto" else "none";
         scrollback-limit = 100000000; # ~100mb per terminal
         keybind = [
           # Remove default fullscreen bind
