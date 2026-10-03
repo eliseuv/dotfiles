@@ -33,7 +33,7 @@
 
   # Configure GDM monitors
   environment.etc."xdg/monitors.xml" = {
-    source = ../../system/desktop/display-manager/gdm/monitors/chell.xml;
+    source = ./monitors.xml;
     mode = "0644";
   };
 
