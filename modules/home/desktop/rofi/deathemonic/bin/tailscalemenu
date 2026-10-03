@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Toggling without root requires this user to be the tailscale operator
-# (see system/extra/tailscale.nix).
+# (see modules/nixos/services/tailscale.nix).
 ddir="$HOME/.config/rofi/config"
 SIGNAL=10 # must match "signal" of custom/tailscale in waybar's modules.json
 

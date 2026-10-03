@@ -2,7 +2,7 @@
 
 # Usage: tailscale.sh [status|toggle]
 # Toggling without root requires this user to be the tailscale operator
-# (see system/extra/tailscale.nix).
+# (see modules/nixos/services/tailscale.nix).
 
 ICON="󰖂"
 ICON_WARN="󰖂 "
