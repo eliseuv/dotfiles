@@ -16,10 +16,17 @@
       sops
     ];
 
+    programs.password-store = {
+      enable = true;
+      settings = {
+        PASSWORD_STORE_DIR = "$XDG_DATA_HOME/password-store";
+      };
+    };
+
     sops = {
       age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
 
-      defaultSopsFile = ../../../secrets/user.yaml;
+      defaultSopsFile = ../../secrets/user.yaml;
       defaultSopsFormat = "yaml";
 
       secrets = {

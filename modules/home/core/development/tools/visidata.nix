@@ -1,8 +1,0 @@
-{ ... }:
-{
-
-  programs.visidata = {
-    enable = true;
-  };
-
-}

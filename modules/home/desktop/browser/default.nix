@@ -1,7 +1,28 @@
-{ config, lib, ... }:
+# Browsers other than Firefox (firefox/), which is the default one.
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
   config = lib.mkIf config.my.desktop.enable {
+
+    home.packages = with pkgs; [ brave ];
+
+    programs.chromium = {
+      enable = true;
+      extensions = [
+        { id = "ddkjiahejlhfcafbddmgiahcphecmpfh"; } # uBlock Origin Lite
+        { id = "pkehgijcmpdhfbdbbnkijodmdjhbjlgp"; } # Privacy Badger
+        { id = "mlomiejdfkolichcflejclcbmpeaniij"; } # Ghostery
+      ];
+      # Chromium's native-Wayland Ozone backend hard-disables Vulkan
+      # (ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc), which takes
+      # WebGPU down with it. Force X11 (via XWayland) so Vulkan/WebGPU work.
+      commandLineArgs = [ "--ozone-platform=x11" ];
+    };
 
     # Default browser
     my.home.defaultApps = lib.genAttrs [

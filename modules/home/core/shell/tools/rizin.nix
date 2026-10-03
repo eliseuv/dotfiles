@@ -1,8 +1,0 @@
-{ ... }:
-{
-
-  programs.rizin = {
-    enable = true;
-  };
-
-}

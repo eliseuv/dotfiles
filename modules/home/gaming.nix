@@ -8,6 +8,9 @@
 
   config = lib.mkIf config.my.gaming.enable {
 
+    # Minecraft
+    programs.prismlauncher.enable = true;
+
     programs.retroarch = {
       enable = true;
       settings = {

@@ -16,7 +16,13 @@
       # GIMP - GNU Image Manipulation Program
       gimp
 
+      # Simple X Image Viewer
+      sxiv
+
     ];
+
+    # feh - fast and light image viewer
+    programs.feh.enable = true;
 
     my.home.defaultApps = {
       "image/jpeg" = [ "feh.desktop" ];

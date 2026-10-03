@@ -1,3 +1,5 @@
+# Dark GTK/Qt/X resources; Catppuccin for the programs it themes is in
+# catppuccin.nix.
 { config, lib, ... }:
 {
 
@@ -24,6 +26,15 @@
           gtk-application-prefer-dark-theme = 1;
         };
       };
+    };
+
+    qt = {
+      enable = true;
+      style.name = "adwaita-dark";
+    };
+
+    xresources.properties = {
+      "XTerm*selectToClipboard" = true;
     };
 
   };

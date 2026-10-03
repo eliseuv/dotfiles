@@ -14,6 +14,20 @@
       defaultEditor = true;
     };
 
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
+
   };
+
+  environment.systemPackages = with pkgs; [
+
+    # Compilers
+    clang
+    gcc
+    gfortran
+
+  ];
 
 }

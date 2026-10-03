@@ -1,5 +1,12 @@
-{ pkgs, config, ... }:
 {
+  config,
+  inputs,
+  pkgs,
+  ...
+}:
+{
+
+  imports = [ inputs.nix-index-database.homeModules.nix-index ];
 
   home.packages = with pkgs; [
 
@@ -10,6 +17,10 @@
     testdisk
 
   ];
+
+  # Run anything from nixpkgs with `, <command>`; fuzzy package search
+  programs.nix-index-database.comma.enable = true;
+  programs.nix-search-tv.enable = true;
 
   # Disabled: `just update-home`/`update-system` already update, switch and
   # gc on a regular manual cadence, so the automatic switch/expire/gc timers

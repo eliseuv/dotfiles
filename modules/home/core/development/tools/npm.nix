@@ -1,6 +1,0 @@
-{ ... }:
-{
-  programs.npm = {
-    enable = true;
-  };
-}
