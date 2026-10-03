@@ -17,8 +17,7 @@ in
       enable = true;
 
       font = {
-        name = "IosevkaTerm Nerd Font";
-        package = pkgs.nerd-fonts.iosevka-term;
+        inherit (config.my.theme.monoFont) name package;
         size = 9.5;
       };
 

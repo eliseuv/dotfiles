@@ -18,7 +18,7 @@
       openssl
       libwebsockets
       libuv
-      nerd-fonts.iosevka-term
+      config.my.theme.monoFont.package
     ];
 
     fonts.fontconfig.enable = true;

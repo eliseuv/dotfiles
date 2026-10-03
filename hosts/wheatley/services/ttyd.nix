@@ -81,7 +81,7 @@ in
           exec ${pkgs.ttyd}/bin/ttyd \
             -c "$CREDENTIAL" \
             -t 'theme=${builtins.toJSON theme}' \
-            -t 'fontFamily=IosevkaTerm Nerd Font' \
+            -t 'fontFamily=${config.my.theme.monoFont.name}' \
             -p ${toString port} -W \
             ${pkgs.zsh}/bin/zsh -lc 'exec ${pkgs.zellij}/bin/zellij attach --create ttyd'
         '';

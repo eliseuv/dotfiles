@@ -16,14 +16,14 @@
 #   - tmuxinator-cwd / smug (session-template launchers): no Zellij
 #     equivalent. Zellij's own bundled session-manager plugin (reachable via
 #     "w" then "s" below) and its native layouts cover similar ground.
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
 
   programs.zellij = {
     enable = true;
 
     settings = {
-      theme = "catppuccin-mocha";
+      theme = "catppuccin-${config.my.theme.flavor}";
       default_mode = "normal";
       default_layout = "tmux";
       scroll_buffer_size = 10000;

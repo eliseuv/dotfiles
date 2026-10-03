@@ -17,7 +17,7 @@
       hunspell
 
       # Main font
-      nerd-fonts.iosevka-term
+      config.my.theme.monoFont.package
       # Variable pitch font
       alegreya
       # Serif font

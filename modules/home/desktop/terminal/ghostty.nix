@@ -12,7 +12,7 @@ in
 
   config = lib.mkIf config.my.desktop.enable {
 
-    home.packages = with pkgs; [ nerd-fonts.iosevka-term ];
+    home.packages = [ config.my.theme.monoFont.package ];
 
     programs.ghostty = {
       enable = true;
@@ -21,7 +21,7 @@ in
       installVimSyntax = true;
       settings = {
         theme = "TokyoNight";
-        font-family = "IosevkaTerm Nerd Font";
+        font-family = config.my.theme.monoFont.name;
         font-size = 9;
         font-feature = "+calt, +liga, +dlig";
         cursor-style = "block";

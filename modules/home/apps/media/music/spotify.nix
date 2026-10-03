@@ -29,7 +29,7 @@
 
         ];
         theme = spicePkgs.themes.catppuccin;
-        colorScheme = "mocha";
+        colorScheme = config.my.theme.flavor;
       };
 
   };

@@ -15,8 +15,7 @@
     catppuccin = {
       enable = true;
       autoEnable = false;
-      flavor = "mocha";
-      accent = "mauve";
+      inherit (config.my.theme) flavor accent;
     };
 
   };

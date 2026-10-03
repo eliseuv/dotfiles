@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 let
   tmuxinator-cwd = pkgs.writeShellScript "tmuxinator-cwd" ''
     set -euo pipefail
@@ -131,7 +131,7 @@ in
       {
         plugin = tmuxPlugins.catppuccin;
         extraConfig = ''
-          set -g @catppuccin_flavor "mocha"
+          set -g @catppuccin_flavor "${config.my.theme.flavor}"
           set -g @catppuccin_window_status_style "rounded"
 
           set -g status-right-length 100
