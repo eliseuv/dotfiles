@@ -26,7 +26,7 @@
 # build/activate/service-restart already succeeded.
 { config, pkgs, ... }:
 let
-  dotfilesPath = config.dotfiles.path;
+  dotfilesPath = config.my.dotfiles.path;
   ledgerRepo = "/home/evf/Services/ledger";
   triggerDir = "/run/ledger-deploy";
   triggerFile = "${triggerDir}/trigger";

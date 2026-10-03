@@ -3,36 +3,30 @@
 
   imports = [
 
-    # Hardware
-    ./hardware.nix
-
     # Profiles
-    ../../profiles/base.nix
-    ../../profiles/desktop.nix
+    ../../system/profiles/base.nix
+    ../../system/profiles/desktop.nix
 
     # Bluetooth
-    ../../hardware/bluetooth.nix
+    ../../system/hardware/bluetooth.nix
 
     # Display manager
-    ../../desktop/display-manager/gdm/default.nix
+    ../../system/desktop/display-manager/gdm/default.nix
 
     # Window manager
-    ../../desktop/window-manager/hyprland.nix
-    ../../desktop/window-manager/gnome.nix
+    ../../system/desktop/window-manager/hyprland.nix
+    ../../system/desktop/window-manager/gnome.nix
 
     # Boot graphics
-    ../../extra/plymouth.nix
+    ../../system/extra/plymouth.nix
 
     # Tailscale
-    ../../extra/tailscale.nix
+    ../../system/extra/tailscale.nix
 
     # NAS home folder
-    ../../extra/companion-cube.nix
+    ../../system/extra/companion-cube.nix
 
   ];
-
-  # Hostname
-  networking.hostName = "tardis";
 
   # Also mount the NAS over the tailnet, for use away from home
   companionCube.tailnetAddress = "100.109.162.27";
@@ -50,7 +44,5 @@
     brightnessctl
 
   ];
-
-  system.stateVersion = "24.11";
 
 }

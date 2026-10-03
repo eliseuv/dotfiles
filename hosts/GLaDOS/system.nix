@@ -3,43 +3,37 @@
 
   imports = [
 
-    # Hardware
-    ./hardware.nix
-
     # Profiles
-    ../../profiles/base.nix
-    ../../profiles/desktop.nix
+    ../../system/profiles/base.nix
+    ../../system/profiles/desktop.nix
 
     # Display manager
-    ../../desktop/display-manager/gdm/default.nix
+    ../../system/desktop/display-manager/gdm/default.nix
 
     # Window manager
-    ../../desktop/window-manager/hyprland.nix
-    ../../desktop/window-manager/gnome.nix
+    ../../system/desktop/window-manager/hyprland.nix
+    ../../system/desktop/window-manager/gnome.nix
 
     # NVidia graphics
-    ../../hardware/nvidia.nix
+    ../../system/hardware/nvidia.nix
 
     # Virtualization
-    ../../extra/virtual-machines.nix
+    ../../system/extra/virtual-machines.nix
 
     # Containers
-    ../../extra/docker.nix
-    ../../extra/podman.nix
+    ../../system/extra/docker.nix
+    ../../system/extra/podman.nix
 
     # Games
-    ../../extra/steam.nix
+    ../../system/extra/steam.nix
 
     # Tailscale
-    ../../extra/tailscale.nix
+    ../../system/extra/tailscale.nix
 
     # NAS home folder
-    ../../extra/companion-cube.nix
+    ../../system/extra/companion-cube.nix
 
   ];
-
-  # Hostname
-  networking.hostName = "GLaDOS";
 
   # Select default session for Display Manager
   services.displayManager.defaultSession = "hyprland-uwsm";
@@ -63,10 +57,8 @@
 
   # Configure GDM monitors
   environment.etc."xdg/monitors.xml" = {
-    source = ../../desktop/display-manager/gdm/monitors/GLaDOS.xml;
+    source = ../../system/desktop/display-manager/gdm/monitors/GLaDOS.xml;
     mode = "0644";
   };
-
-  system.stateVersion = "24.11";
 
 }

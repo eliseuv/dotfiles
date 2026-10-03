@@ -93,16 +93,9 @@
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      nixpkgs-stable,
-      home-manager,
-      ...
-    }@inputs:
+    { nixpkgs, ... }@inputs:
     let
       system = "x86_64-linux";
-      lib = nixpkgs.lib;
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
@@ -118,55 +111,7 @@
         config.allowUnfree = true;
       };
 
-      # Host matrix: which users run Home Manager on each host and which
-      # nixpkgs branch the system follows (unstable unless stated otherwise).
-      hosts = {
-        GLaDOS = {
-          users = [ "evf" ];
-        };
-        tardis = {
-          users = [ "evf" ];
-        };
-        wheatley = {
-          users = [ "evf" ];
-        };
-        rattmann = {
-          users = [ "evf" ];
-        };
-        chell = {
-          users = [
-            "evf"
-            "dani"
-          ];
-        };
-      };
-
-      mkSystem =
-        hostName: host:
-        (host.nixpkgs or nixpkgs).lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [ ./system/hosts/${hostName}/configuration.nix ];
-        };
-
-      mkHome =
-        user: hostName:
-        home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          extraSpecialArgs = {
-            inherit inputs hostName pkgs-master;
-          };
-          modules = [
-            ./home/hosts/${hostName}.nix
-            ./home/users/${user}.nix
-            {
-              home = {
-                username = user;
-                homeDirectory = "/home/${user}";
-              };
-            }
-          ];
-        };
+      hosts = import ./lib { inherit inputs system pkgs pkgs-master; };
     in
     {
 
@@ -179,19 +124,7 @@
           ledger-web-ui = ledgerWeb.webUi;
         };
 
-      nixosConfigurations = builtins.mapAttrs mkSystem hosts;
-
-      homeConfigurations = lib.listToAttrs (
-        lib.concatLists (
-          lib.mapAttrsToList (
-            hostName: host:
-            map (user: {
-              name = "${user}@${hostName}";
-              value = mkHome user hostName;
-            }) host.users
-          ) hosts
-        )
-      );
+      inherit (hosts) nixosConfigurations homeConfigurations;
 
     };
 

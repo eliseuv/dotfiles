@@ -1,10 +1,12 @@
 {
+  config,
   pkgs,
   lib,
-  hostName,
   ...
 }:
 let
+
+  hostName = config.my.host.name;
 
   # One layout shared by every host so bars can't drift apart; hosts only
   # differ in hardware-specific modules and in their outputs.

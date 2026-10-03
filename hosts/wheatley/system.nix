@@ -3,11 +3,8 @@
 
   imports = [
 
-    # Hardware
-    ./hardware.nix
-
     # Profiles
-    ../../profiles/base.nix
+    ../../system/profiles/base.nix
 
     # Services
     ./homelab.nix
@@ -22,21 +19,18 @@
     ./services/ttyd.nix
 
     # Tailscale
-    ../../extra/tailscale.nix
+    ../../system/extra/tailscale.nix
 
     # NAS home folder
-    ../../extra/companion-cube.nix
+    ../../system/extra/companion-cube.nix
 
     # Secrets
-    ../../extra/sops.nix
+    ../../system/extra/sops.nix
 
   ];
 
   # Host secrets; modules declare the ones they use.
-  sops.defaultSopsFile = ../../../secrets/wheatley.yaml;
-
-  # Hostname
-  networking.hostName = "wheatley";
+  sops.defaultSopsFile = ../../secrets/wheatley.yaml;
 
   # The router's reservation for lanAddress is keyed on the MAC, so keep both
   # the MAC and the DHCP client-id from drifting (randomization, DUID-based ids).
@@ -74,8 +68,5 @@
     HandleLidSwitch = "ignore";
     HandleLidSwitchDocked = "ignore";
   };
-
-  # State version
-  system.stateVersion = "24.11";
 
 }

@@ -1,10 +1,7 @@
-{ ... }:
+{ config, ... }:
 {
 
   imports = [
-
-    # Options
-    ../modules/dotfiles.nix
 
     # Shell environment
     ../shell/default.nix
@@ -33,6 +30,6 @@
   ];
 
   programs.home-manager.enable = true;
-  home.stateVersion = "24.11";
+  home.stateVersion = config.my.host.stateVersion;
 
 }

@@ -17,7 +17,7 @@ in
   # the Justfile's eval-all).
   options.homelab.ledger.package = lib.mkOption {
     type = lib.types.attrsOf lib.types.package;
-    default = import ../../../../../pkgs/ledger-web { inherit pkgs; };
+    default = import ../../../../pkgs/ledger-web { inherit pkgs; };
     description = "ledger-web build outputs: `bin` and `webUi`.";
   };
 

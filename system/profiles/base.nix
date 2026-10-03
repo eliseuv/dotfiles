@@ -1,10 +1,7 @@
-{ ... }:
+{ config, ... }:
 {
 
   imports = [
-
-    # Options
-    ../modules/dotfiles.nix
 
     # Bootloader
     ../hardware/bootloader.nix
@@ -26,5 +23,9 @@
   # Also set in flake.nix for standalone Home Manager: each nixpkgs
   # evaluation (NixOS here, home-manager there) needs the flag once
   nixpkgs.config.allowUnfree = true;
+
+  networking.hostName = config.my.host.name;
+
+  system.stateVersion = config.my.host.stateVersion;
 
 }

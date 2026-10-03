@@ -1,27 +1,26 @@
-{ pkgs, ... }:
+{ config, lib, ... }:
 {
 
-  users.users = {
-
-    evf = {
+  users.users = lib.genAttrs config.my.host.users (
+    name:
+    let
+      user = config.my.users.${name};
+    in
+    {
       isNormalUser = true;
-      # Pinned (to the uid it already has) so units can name evf's user
-      # manager and runtime dir at eval time (see wheatley's services/ttyd.nix).
-      uid = 1000;
-      description = "evf";
+      inherit (user) description;
       extraGroups = [
         "wheel"
         "networkmanager"
         "libvirtd"
         "dotfiles"
       ];
-      linger = true;
-      packages = with pkgs; [ ];
-    };
+    }
+    // lib.optionalAttrs (user.uid != null) { inherit (user) uid; }
+    // lib.optionalAttrs user.linger { linger = true; }
+  );
 
-  };
-
-  users.groups.dotfiles = {};
+  users.groups.dotfiles = { };
 
   nix.settings.trusted-users = [
     "root"

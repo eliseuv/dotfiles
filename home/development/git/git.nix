@@ -1,13 +1,25 @@
-{ config, ... }:
+{ config, lib, ... }:
+let
+  user = config.my.users.${config.home.username};
+  dotfilesPath = config.my.dotfiles.path;
+in
 {
 
   programs.git = {
 
     enable = true;
 
-    # User identity is set per user in home/users/<user>.nix
-
     settings = {
+
+      user = {
+        inherit (user.git) name email;
+      };
+
+      # A repository owned by another user (e.g. one shared from /etc) is
+      # refused unless listed here
+      safe = lib.mkIf (!lib.hasPrefix "${config.home.homeDirectory}/" dotfilesPath) {
+        directory = [ dotfilesPath ];
+      };
 
       core = {
         editor = "nvim";
@@ -25,7 +37,7 @@
 
     maintenance = {
       enable = true;
-      repositories = [ config.dotfiles.path ];
+      repositories = [ dotfilesPath ];
     };
 
     signing.format = "openpgp";

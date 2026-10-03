@@ -38,7 +38,7 @@
 
   home.sessionVariables = {
     # Config files path
-    DOTFILES = config.dotfiles.path;
+    DOTFILES = config.my.dotfiles.path;
   };
 
   # Aliases

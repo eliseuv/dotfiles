@@ -4,23 +4,23 @@
   imports = [
 
     # Profiles
-    ../profiles/core.nix
+    ../../home/profiles/core.nix
 
     # Secrets
-    ../auth/password-store.nix
-    ../auth/sops.nix
+    ../../home/auth/password-store.nix
+    ../../home/auth/sops.nix
 
     # Web terminal
-    ../extra/ttyd.nix
+    ../../home/extra/ttyd.nix
 
     # Claude Code Remote Control
-    ../extra/claude-remote-control.nix
+    ../../home/extra/claude-remote-control.nix
 
     # Notes vault
-    ../documents/notes.nix
+    ../../home/documents/notes.nix
 
     # Host specific
-    ../services/syncthing/folders/wheatley.nix
+    ../../home/services/syncthing/folders/wheatley.nix
 
   ];
 
