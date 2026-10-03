@@ -34,12 +34,4 @@
     recursive = true;
   };
 
-  # # Copy themes
-  # home.file = {
-  #   ".config/rofi/themes" = {
-  #     source = ./themes;
-  #     recursive = true;
-  #   };
-  # };
-
 }

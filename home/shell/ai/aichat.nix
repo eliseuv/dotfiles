@@ -1,8 +1,0 @@
-{ ... }:
-{
-
-  programs.aichat = {
-    enable = true;
-  };
-
-}
