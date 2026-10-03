@@ -51,6 +51,81 @@ let
     (bind [ "Ctrl Shift l" ] [ (bare "GoToNextTab") ])
     (bind [ "Ctrl a" ] [ (action "Write" [ 96 ]) ])
   ];
+
+  # zjstatus (github.com/dj95/zjstatus) replaces zellij:tab-bar so tabs,
+  # mode and session/host/time info render in one Catppuccin Mocha bar.
+  # First launch after this changes: approve the pane's RunCommands
+  # permission prompt (press "y") so the hostname widget can run.
+  statusBar = {
+    pane = {
+      _props = {
+        size = 1;
+        borderless = true;
+      };
+      plugin = {
+        _props.location = "file:${pkgs.zellijPlugins.zjstatus}";
+
+        color_base = "#1e1e2e";
+        color_mantle = "#181825";
+        color_text = "#cdd6f4";
+        color_overlay0 = "#6c7086";
+        color_overlay2 = "#9399b2";
+        color_lavender = "#b4befe";
+        color_blue = "#89b4fa";
+        color_peach = "#fab387";
+        color_yellow = "#f9e2af";
+        color_green = "#a6e3a1";
+        color_teal = "#94e2d5";
+        color_maroon = "#eba0ac";
+        color_red = "#f38ba8";
+
+        format_left = "{mode} #[fg=$lavender,bg=$mantle,bold]{session} ";
+        format_center = "{tabs}";
+        format_right = "{command_hostname}{datetime}";
+        format_space = "#[bg=$mantle]";
+
+        border_enabled = "false";
+
+        mode_normal = "#[fg=$base,bg=$blue,bold] NORMAL ";
+        mode_locked = "#[fg=$base,bg=$red,bold] LOCKED ";
+        mode_resize = "#[fg=$base,bg=$yellow,bold] RESIZE ";
+        mode_scroll = "#[fg=$base,bg=$green,bold] SCROLL ";
+        mode_enter_search = "#[fg=$base,bg=$teal,bold] SEARCH ";
+        mode_search = "#[fg=$base,bg=$teal,bold] SEARCH ";
+        mode_rename_tab = "#[fg=$base,bg=$maroon,bold] RENAME ";
+        mode_tmux = "#[fg=$base,bg=$peach,bold] TMUX ";
+        mode_default_to_mode = "normal";
+
+        tab_normal = "#[fg=$overlay0,bg=$mantle] {index} {name} ";
+        tab_active = "#[fg=$base,bg=$lavender,bold] {index} {name} ";
+        tab_separator = "#[fg=$overlay0,bg=$mantle]│";
+
+        command_hostname_command = "hostname";
+        command_hostname_format = "#[fg=$overlay2,bg=$mantle] {stdout} ";
+        command_hostname_interval = "0";
+        command_hostname_rendermode = "static";
+
+        datetime = "#[fg=$text,bg=$mantle,bold] {format} ";
+        datetime_format = "%Y-%m-%d %H:%M";
+        datetime_timezone = "America/Sao_Paulo";
+      };
+    };
+  };
+
+  # ToggleFloatingPanes cannot size the pane it reveals (new floating panes
+  # default to 50%), so each tab declares its own hidden 90% floating pane.
+  floatingPanes.floating_panes.pane._props = {
+    x = "5%";
+    y = "5%";
+    width = "90%";
+    height = "90%";
+  };
+
+  tabBody = [
+    statusBar
+    { pane = { }; }
+    floatingPanes
+  ];
 in
 {
 
@@ -68,72 +143,21 @@ in
       pane_frame_style = "titles";
     };
 
-    # zjstatus (github.com/dj95/zjstatus) replaces zellij:tab-bar so tabs,
-    # mode and session/host/time info render in one Catppuccin Mocha bar.
-    # First launch after this changes: approve the pane's RunCommands
-    # permission prompt (press "y") so the hostname widget can run.
+    # No default_tab_template: it would override the tab's hide_floating_panes,
+    # so the launch tab and later tabs (new_tab_template) share one body.
     layouts.tmux.layout._children = [
       {
-        default_tab_template._children = [
-          {
-            pane = {
-              _props = {
-                size = 1;
-                borderless = true;
-              };
-              plugin = {
-                _props.location = "file:${pkgs.zellijPlugins.zjstatus}";
-
-                color_base = "#1e1e2e";
-                color_mantle = "#181825";
-                color_text = "#cdd6f4";
-                color_overlay0 = "#6c7086";
-                color_overlay2 = "#9399b2";
-                color_lavender = "#b4befe";
-                color_blue = "#89b4fa";
-                color_peach = "#fab387";
-                color_yellow = "#f9e2af";
-                color_green = "#a6e3a1";
-                color_teal = "#94e2d5";
-                color_maroon = "#eba0ac";
-                color_red = "#f38ba8";
-
-                format_left = "{mode} #[fg=$lavender,bg=$mantle,bold]{session} ";
-                format_center = "{tabs}";
-                format_right = "{command_hostname}{datetime}";
-                format_space = "#[bg=$mantle]";
-
-                border_enabled = "false";
-
-                mode_normal = "#[fg=$base,bg=$blue,bold] NORMAL ";
-                mode_locked = "#[fg=$base,bg=$red,bold] LOCKED ";
-                mode_resize = "#[fg=$base,bg=$yellow,bold] RESIZE ";
-                mode_scroll = "#[fg=$base,bg=$green,bold] SCROLL ";
-                mode_enter_search = "#[fg=$base,bg=$teal,bold] SEARCH ";
-                mode_search = "#[fg=$base,bg=$teal,bold] SEARCH ";
-                mode_rename_tab = "#[fg=$base,bg=$maroon,bold] RENAME ";
-                mode_tmux = "#[fg=$base,bg=$peach,bold] TMUX ";
-                mode_default_to_mode = "normal";
-
-                tab_normal = "#[fg=$overlay0,bg=$mantle] {index} {name} ";
-                tab_active = "#[fg=$base,bg=$lavender,bold] {index} {name} ";
-                tab_separator = "#[fg=$overlay0,bg=$mantle]│";
-
-                command_hostname_command = "hostname";
-                command_hostname_format = "#[fg=$overlay2,bg=$mantle] {stdout} ";
-                command_hostname_interval = "0";
-                command_hostname_rendermode = "static";
-
-                datetime = "#[fg=$text,bg=$mantle,bold] {format} ";
-                datetime_format = "%Y-%m-%d %H:%M";
-                datetime_timezone = "America/Sao_Paulo";
-              };
-            };
-          }
-          { children = { }; }
-        ];
+        tab = {
+          _props.hide_floating_panes = true;
+          _children = tabBody;
+        };
       }
-      { pane = { }; }
+      {
+        new_tab_template = {
+          _props.hide_floating_panes = true;
+          _children = tabBody;
+        };
+      }
     ];
 
     # Only Normal mode clears Zellij's defaults outright, so ordinary
