@@ -4,29 +4,55 @@
 # so it would have meant renumbering evf everywhere. This share's root was chowned to
 # 1000:100 from a client instead; DSM sees it as an unknown uid, with group
 # `users` (gid 100 on both sides) as its only way in.
-{ config, lib, ... }:
+#
+# Mounted on demand with `nas mount [lan|tailnet]` rather than from fstab:
+# systemd-fstab-generator stats every fstab mount point when a switch re-execs
+# PID 1, and if that switch has also stopped NetworkManager, the stat on the
+# live NFS mount blocks until the generator times out and PID 1 freezes.
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.my.services.nas;
 
-  # Hosts roam off either network: soft with a short timeout turns an
-  # unreachable NAS into I/O errors instead of processes hung in D state, at
-  # the cost of possibly losing a write interrupted mid-flight. The idle
-  # timeout unmounts it so suspend/resume on another network finds it gone.
-  driveMount = address: extraOptions: {
-    device = "${address}:/volume1/drive";
-    fsType = "nfs";
-    options = [
-      "nfsvers=4.1"
-      "soft"
-      "timeo=50"
-      "retrans=2"
-      "_netdev"
-      "noauto"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=600"
-      "x-systemd.mount-timeout=10"
-    ]
-    ++ extraOptions;
+  mountPoint = "/mnt/comp-cube";
+
+  nas = pkgs.writeShellApplication {
+    name = "nas";
+    text = ''
+      usage() {
+        echo "usage: nas mount [lan|tailnet] | nas umount" >&2
+        exit 1
+      }
+
+      case "''${1:-}" in
+        mount)
+          case "''${2:-lan}" in
+            lan) address=${lib.escapeShellArg cfg.address} ;;
+            tailnet) address=${lib.escapeShellArg (toString cfg.tailnetAddress)} ;;
+            *) usage ;;
+          esac
+          if [ -z "$address" ]; then
+            echo "nas: no tailnet address configured for this host" >&2
+            exit 1
+          fi
+          sudo mkdir -p ${mountPoint}
+          # Hosts roam off either network: soft with a short timeout turns an
+          # unreachable NAS into I/O errors instead of processes hung in D
+          # state, at the cost of possibly losing a write interrupted
+          # mid-flight.
+          sudo mount -t nfs -o nfsvers=4.1,soft,timeo=50,retrans=2 \
+            "$address:/volume1/drive" ${mountPoint}
+          ;;
+        umount)
+          sudo umount ${mountPoint}
+          ;;
+        *) usage ;;
+      esac
+    '';
   };
 in
 {
@@ -35,14 +61,7 @@ in
 
     boot.supportedFilesystems = [ "nfs" ];
 
-    fileSystems."/mnt/comp-cube" = driveMount cfg.address [ ];
-
-    # A second mount point rather than switching the first one's source by
-    # network: keeps full LAN speed at home and no dependency on tailscale
-    # being up, at the cost of picking the path by hand.
-    fileSystems."/mnt/comp-cube-remote" = lib.mkIf (cfg.tailnetAddress != null) (
-      driveMount cfg.tailnetAddress [ "x-systemd.after=tailscaled.service" ]
-    );
+    environment.systemPackages = [ nas ];
 
   };
 

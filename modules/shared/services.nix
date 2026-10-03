@@ -11,7 +11,7 @@
 
       # CompanionCube, the Synology NAS
       nas = {
-        enable = lib.mkEnableOption "the NAS's personal share over NFS";
+        enable = lib.mkEnableOption "the NAS's personal share over NFS, mounted on demand with `nas mount`";
         address = lib.mkOption {
           type = lib.types.str;
           default = "192.168.0.35";
@@ -21,8 +21,8 @@
           type = lib.types.nullOr lib.types.str;
           default = null;
           description = ''
-            The NAS's tailnet address. When set, the share is also mounted over
-            the tailnet at /mnt/comp-cube-remote, for use away from the LAN.
+            The NAS's tailnet address. When set, `nas mount tailnet` mounts the
+            share over the tailnet, for use away from the LAN.
           '';
         };
       };
