@@ -1,4 +1,4 @@
-{ config, ... }:
+{ lib, ... }:
 {
 
   services.pueue = {
@@ -8,7 +8,7 @@
         dark_mode = true;
       };
       daemon = {
-        default_parallel_tasks = { GLaDOS = 4; }.${config.my.host.name} or 2;
+        default_parallel_tasks = lib.mkDefault 2;
       };
     };
   };
