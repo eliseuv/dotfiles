@@ -27,7 +27,8 @@
 { config, pkgs, ... }:
 let
   dotfilesPath = config.my.dotfiles.path;
-  ledgerRepo = "/home/evf/Services/ledger";
+  user = config.my.host.primaryUser;
+  ledgerRepo = "${config.users.users.${user}.home}/Services/ledger";
   triggerDir = "/run/ledger-deploy";
   triggerFile = "${triggerDir}/trigger";
 
@@ -41,23 +42,23 @@ let
 
     # Resolved at runtime: NixOS assigns a normal user's uid at
     # activation, not statically at eval time.
-    sshAuthSock="/run/user/$(${pkgs.coreutils}/bin/id -u evf)/gnupg/S.gpg-agent.ssh"
+    sshAuthSock="/run/user/$(${pkgs.coreutils}/bin/id -u ${user})/gnupg/S.gpg-agent.ssh"
 
     /run/wrappers/bin/su -s /bin/sh -c \
       "cd ${dotfilesPath} && SSH_AUTH_SOCK=$sshAuthSock ${pkgs.just}/bin/just pin-service ledger-web || true" \
-      evf
+      ${user}
 
     cd ${dotfilesPath} && ${pkgs.nh}/bin/nh os switch .
 
     /run/wrappers/bin/su -s /bin/sh -c \
       "cd ${dotfilesPath} && SSH_AUTH_SOCK=$sshAuthSock ${pkgs.just}/bin/just after-switch" \
-      evf
+      ${user}
   '';
 in
 {
 
   systemd.tmpfiles.rules = [
-    "d ${triggerDir} 0755 evf users -"
+    "d ${triggerDir} 0755 ${user} users -"
   ];
 
   system.activationScripts.ledgerDeployHook = ''

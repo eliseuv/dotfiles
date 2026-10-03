@@ -1,36 +1,15 @@
-{ config, pkgs, ... }:
+{ config, ... }:
 {
 
   imports = [
-
-    # Profiles
-    ../../system/profiles/base.nix
-
-    # Services
-    ./homelab.nix
-    ./firewall.nix
     ./nas.nix
     ./services/ledger/web.nix
     ./services/ledger/deploy.nix
     ./services/media
-    ./services/dashboard
     ./services/minecraft.nix
     ./services/dev.nix
     ./services/ttyd.nix
-
-    # Tailscale
-    ../../system/extra/tailscale.nix
-
-    # NAS home folder
-    ../../system/extra/companion-cube.nix
-
-    # Secrets
-    ../../system/extra/sops.nix
-
   ];
-
-  # Host secrets; modules declare the ones they use.
-  sops.defaultSopsFile = ../../secrets/wheatley.yaml;
 
   # The router's reservation for lanAddress is keyed on the MAC, so keep both
   # the MAC and the DHCP client-id from drifting (randomization, DUID-based ids).
@@ -44,12 +23,12 @@
   homelab.network = {
     lanSubnet = "192.168.0.0/24";
     lanAddress = "192.168.0.62";
-    nasAddress = config.companionCube.address;
+    nasAddress = config.my.services.nas.address;
     tailnetDomain = "taild628c9.ts.net";
     tailnetAddress = "100.97.1.97";
   };
 
-  # Here rather than in extra/tailscale.nix, which hosts without the
+  # Here rather than in the tailscale module, which hosts without the
   # homelab registry share.
   homelab.services.tailscale.dashboard = {
     name = "Tailscale";

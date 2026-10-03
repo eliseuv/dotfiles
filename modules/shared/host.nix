@@ -11,6 +11,16 @@
       description = "Host name. Set by the flake from the hosts/ directory name.";
     };
 
+    type = lib.mkOption {
+      type = lib.types.enum [
+        "workstation"
+        "laptop"
+        "server"
+      ];
+      default = "workstation";
+      description = "Form factor; laptops get bluetooth, a boot splash and backlight control by default.";
+    };
+
     channel = lib.mkOption {
       type = lib.types.enum [
         "unstable"

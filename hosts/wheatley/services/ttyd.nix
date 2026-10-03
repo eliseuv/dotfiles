@@ -48,7 +48,8 @@ in
 
   systemd.services.ttyd =
     let
-      uid = toString config.users.users.evf.uid;
+      user = config.users.users.${config.my.host.primaryUser};
+      uid = toString user.uid;
     in
     {
       description = "ttyd web terminal";
@@ -70,9 +71,9 @@ in
       };
 
       serviceConfig = {
-        User = "evf";
+        User = user.name;
         Group = "users";
-        WorkingDirectory = "/home/evf";
+        WorkingDirectory = user.home;
         LoadCredential = "credential:${config.sops.secrets."ttyd/credential".path}";
         Restart = "always";
         ExecStart = pkgs.writeShellScript "ttyd-start.sh" ''

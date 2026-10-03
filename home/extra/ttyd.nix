@@ -1,5 +1,5 @@
 # User-side tooling for the ttyd web terminal; the service itself is
-# system/hosts/wheatley/services/ttyd.nix.
+# hosts/wheatley/services/ttyd.nix.
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
