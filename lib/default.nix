@@ -69,15 +69,18 @@ let
     inputs.home-manager.lib.homeManagerConfiguration {
       inherit pkgs;
       extraSpecialArgs = { inherit inputs pkgs-master; };
-      modules = sharedModules hostName ++ [
-        ../hosts/${hostName}/home.nix
-        {
-          home = {
-            username = user;
-            homeDirectory = "/home/${user}";
-          };
-        }
-      ];
+      modules =
+        sharedModules hostName
+        ++ importTree ../modules/home
+        ++ ifExists ../hosts/${hostName}/home.nix
+        ++ [
+          {
+            home = {
+              username = user;
+              homeDirectory = "/home/${user}";
+            };
+          }
+        ];
     };
 in
 {

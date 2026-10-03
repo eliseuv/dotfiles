@@ -22,7 +22,7 @@ in
 {
   # Builds the whole `ledger` cargo workspace (ledger-core, ledger-tui,
   # ledger-web) from a single Cargo.lock, matching the pattern in
-  # home/development/languages/rust-tools.nix. Only bin/ledger-web is
+  # modules/home/core/development/languages/rust-tools.nix. Only bin/ledger-web is
   # actually wired up as a service; the rest are unused byproducts.
   bin = pkgs.rustPlatform.buildRustPackage {
     pname = "ledger-web";

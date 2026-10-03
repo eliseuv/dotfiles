@@ -20,7 +20,7 @@
 # Steps 1 and 3 run as evf via `su` (root needs no password to switch
 # user) with SSH_AUTH_SOCK pointed at evf's gpg-agent ssh-support socket,
 # which stays alive headless because evf has `loginctl linger` enabled.
-# Caveat: that key's passphrase cache (12h TTL, see home/auth/gpg.nix)
+# Caveat: that key's passphrase cache (12h TTL, see modules/home/core/auth/gpg.nix)
 # can go cold with no session to unlock it, in which case step 3's push
 # fails (visible via `systemctl status ledger-deploy`) even though the
 # build/activate/service-restart already succeeded.

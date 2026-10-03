@@ -1,8 +1,0 @@
-{ ... }:
-{
-
-  programs.pandoc = {
-    enable = true;
-  };
-
-}

@@ -9,7 +9,15 @@
     nas.enable = true;
   };
 
-  my.secrets.system.enable = true;
+  my.secrets = {
+    system.enable = true;
+    user.enable = true;
+  };
+
+  my.home = {
+    notes.enable = true;
+    remoteAccess.enable = true;
+  };
 
   my.homelab.enable = true;
 

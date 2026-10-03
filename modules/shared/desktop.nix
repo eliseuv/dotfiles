@@ -44,6 +44,35 @@ in
       description = "GNOME monitors.xml for GDM's own monitor layout.";
     };
 
+    monitors = lib.mkOption {
+      default = [ ];
+      description = "Monitor layout, for the compositor; empty for its automatic one.";
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            output = lib.mkOption { type = lib.types.str; };
+            mode = lib.mkOption {
+              type = lib.types.str;
+              example = "1920x1080@60";
+            };
+            position = lib.mkOption {
+              type = lib.types.str;
+              example = "0x0";
+            };
+            scale = lib.mkOption {
+              type = lib.types.number;
+              default = 1.0;
+            };
+            transform = lib.mkOption {
+              type = lib.types.nullOr lib.types.int;
+              default = null;
+              description = "Rotation/flip, in Hyprland's 0-7 encoding.";
+            };
+          };
+        }
+      );
+    };
+
     bootSplash.enable = lib.mkOption {
       type = lib.types.bool;
       default = config.my.host.type == "laptop";

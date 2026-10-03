@@ -24,4 +24,10 @@
 
   my.gaming.enable = true;
 
+  my.home = {
+    apps.enable = true;
+    cloudSync.enable = true;
+    firefox.customUI = false;
+  };
+
 }

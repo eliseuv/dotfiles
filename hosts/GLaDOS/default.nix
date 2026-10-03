@@ -6,6 +6,24 @@
     hyprland.enable = true;
     gnome.enable = true;
     gdmMonitors = ./monitors.xml;
+    monitors = [
+      {
+        output = "DP-1";
+        mode = "1920x1080@60.0";
+        position = "0x1080";
+        transform = 1;
+      }
+      {
+        output = "DP-3";
+        mode = "2560x1080@74.99";
+        position = "440x0";
+      }
+      {
+        output = "HDMI-A-1";
+        mode = "1920x1080@239.76";
+        position = "1080x1080";
+      }
+    ];
   };
 
   my.hardware.nvidia.enable = true;
@@ -18,5 +36,13 @@
   };
 
   my.gaming.enable = true;
+
+  my.secrets.user.enable = true;
+
+  my.home = {
+    apps.enable = true;
+    notes.enable = true;
+    cloudSync.enable = true;
+  };
 
 }

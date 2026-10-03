@@ -1,7 +1,7 @@
 # ttyd web terminal running zellij as evf. A system unit rather than a
 # home-manager user service so it lives with the other wheatley services and
 # gets dashboard controls; the in-terminal tooling (lrzsz,
-# sixel) stays in home/extra/ttyd.nix.
+# sixel) stays in modules/home/remote/ttyd.nix.
 { config, pkgs, ... }:
 let
   port = 3000;

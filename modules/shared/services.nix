@@ -33,7 +33,10 @@
 
     homelab.enable = lib.mkEnableOption "the homelab service registry, its firewall policy and dashboard";
 
-    secrets.system.enable = lib.mkEnableOption "sops-nix host secrets, from secrets/<host>.yaml";
+    secrets = {
+      system.enable = lib.mkEnableOption "sops-nix host secrets, from secrets/<host>.yaml";
+      user.enable = lib.mkEnableOption "sops-nix user secrets (secrets/user.yaml) and the password store";
+    };
 
   };
 

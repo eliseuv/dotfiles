@@ -110,7 +110,7 @@ deploy-service pkg:
     {{just_executable()}} system-switch
 
 # Fetch a Claude Code release manifest (default: latest) for the
-# manifestOverride escape hatch in home/shell/ai/claude.nix. git-adds it
+# manifestOverride escape hatch in modules/home/core/shell/ai/claude.nix. git-adds it
 # because flakes can't see untracked files.
 pin-claude-code version='':
     #!/usr/bin/env bash
@@ -118,7 +118,7 @@ pin-claude-code version='':
     base="https://downloads.claude.ai/claude-code-releases"
     version="{{version}}"
     [ -n "$version" ] || version="$(curl -fsSL "$base/latest")"
-    out="home/shell/ai/claude-code-manifest.json"
+    out="modules/home/core/shell/ai/claude-code-manifest.json"
     curl -fsSL "$base/$version/manifest.zst.json" --output "$out"
     git add "$out"
     echo "pin-claude-code: wrote $version to $out; set manifestOverride = ./claude-code-manifest.json"
