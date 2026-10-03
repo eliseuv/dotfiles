@@ -28,6 +28,28 @@ commit-gen:
 gc keep='4':
     nh clean all --keep {{keep}} --no-gcroots
 
+# Print the derivation path of every system and home configuration. A
+# structure-only refactor should leave this output unchanged; diff it
+# against a snapshot taken before the change.
+# ledger-web is stubbed out: its source is fetched from a repo that only
+# exists on wheatley (see README's "Deploying Local Services"), so without
+# the stub wheatley can't be evaluated anywhere else.
+eval-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    nix eval --json .#nixosConfigurations --apply '
+      builtins.mapAttrs (_: c:
+        let
+          stub = { bin = c.pkgs.emptyDirectory; webUi = c.pkgs.emptyDirectory; };
+          stubbed =
+            if c.options ? homelab.ledger.package then
+              c.extendModules { modules = [ { homelab.ledger.package = c.pkgs.lib.mkForce stub; } ]; }
+            else
+              c;
+        in
+        stubbed.config.system.build.toplevel.drvPath)' | jq -S .
+    nix eval --json .#homeConfigurations --apply 'builtins.mapAttrs (_: c: c.activationPackage.drvPath)' | jq -S .
+
 vpn:
     sudo tailscale up
     tailscale status
