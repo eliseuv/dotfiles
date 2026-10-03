@@ -68,10 +68,23 @@ in
               default = null;
               description = "Rotation/flip, in Hyprland's 0-7 encoding.";
             };
+            bar = lib.mkOption {
+              type = lib.types.nullOr (
+                lib.types.enum [
+                  "main"
+                  "secondary"
+                  "minimal"
+                ]
+              );
+              default = null;
+              description = "Waybar layout on this monitor; main has the launcher and power menu.";
+            };
           };
         }
       );
     };
+
+    waybar.homeDisk = lib.mkEnableOption "a Waybar disk readout for a separate /home partition";
 
     bootSplash.enable = lib.mkOption {
       type = lib.types.bool;

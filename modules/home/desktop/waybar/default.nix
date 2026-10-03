@@ -6,12 +6,10 @@
 }:
 let
 
-  hostName = config.my.host.name;
-
   # One layout shared by every host so bars can't drift apart; hosts only
   # differ in hardware-specific modules and in their outputs.
-  hasHomePartition = hostName == "GLaDOS";
-  hasBluetooth = hostName == "tardis";
+  hasHomePartition = config.my.desktop.waybar.homeDisk;
+  hasBluetooth = config.my.hardware.bluetooth.enable;
 
   mainBar = {
     layer = "top";
@@ -71,15 +69,29 @@ let
     ];
   };
 
+  layouts = {
+    main = mainBar;
+    secondary = secondaryBar;
+    minimal = minimalBar;
+  };
+  rank =
+    bar:
+    lib.lists.findFirstIndex (layout: layout == bar) null [
+      "main"
+      "secondary"
+      "minimal"
+    ];
+
+  # One bar per monitor that names a layout, primary first; with none named,
+  # a single main bar on whatever output waybar picks
+  barMonitors = lib.sort (a: b: rank a.bar < rank b.bar) (
+    lib.filter (monitor: monitor.bar != null) config.my.desktop.monitors
+  );
   bars =
-    {
-      GLaDOS = [
-        (mainBar // { output = "HDMI-A-1"; })
-        (secondaryBar // { output = "DP-3"; })
-        (minimalBar // { output = "DP-1"; })
-      ];
-    }
-    .${hostName} or [ mainBar ];
+    if barMonitors == [ ] then
+      [ mainBar ]
+    else
+      map (monitor: layouts.${monitor.bar} // { inherit (monitor) output; }) barMonitors;
 
 in
 {
