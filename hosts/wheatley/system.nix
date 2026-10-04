@@ -32,8 +32,8 @@
   # homelab registry share.
   homelab.services.tailscale.dashboard = {
     name = "Tailscale";
-    group = "Tools";
-    order = 4;
+    group = "Hosts";
+    order = 2;
     description = "Tailnet admin console";
     icon = "tailscale.png";
     href = "https://login.tailscale.com/admin/machines";
@@ -44,8 +44,8 @@
   # placeholder the dashboard theme draws over with her head.
   homelab.services.glados.dashboard = {
     name = "GLaDOS";
-    group = "Tools";
-    order = 3;
+    group = "Hosts";
+    order = 0;
     description = "Genetic Lifeform and Disk Operating System";
     icon = "mdi-robot-industrial";
     link = false;

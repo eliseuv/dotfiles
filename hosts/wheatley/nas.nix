@@ -54,7 +54,7 @@ in
   # here. DSM's cert is self-signed; Homepage's monitor doesn't verify it.
   homelab.services.companion-cube.dashboard = {
     name = "Companion Cube";
-    group = "Tools";
+    group = "Hosts";
     order = 1;
     description = "Synology NAS (DSM)";
     # Drawn over with the cube face; the dashboard theme CSS matches this name.
