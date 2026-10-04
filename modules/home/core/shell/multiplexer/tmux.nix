@@ -150,6 +150,13 @@ in
       # Fix Neovim colors
       set -sg terminal-overrides ",*:RGB"
 
+      # Image rendering: let kitty graphics escapes reach the outer terminal.
+      # "on" rather than "all" so hidden panes can't leave stray images.
+      set -g allow-passthrough on
+      # Expose the outer terminal's identity so apps can detect graphics support
+      set -ga update-environment TERM
+      set -ga update-environment TERM_PROGRAM
+
       # Cleaner panes separator
       set -g pane-border-lines simple
 
