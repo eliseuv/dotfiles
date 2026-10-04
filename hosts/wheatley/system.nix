@@ -9,6 +9,7 @@
     ./services/minecraft.nix
     ./services/dev.nix
     ./services/ttyd.nix
+    ./services/pluto.nix
   ];
 
   # Keep the MAC and the DHCP client-id from drifting (randomization,

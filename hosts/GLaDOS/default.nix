@@ -46,6 +46,14 @@
       enable = true;
       basePath = "/glados/terminal";
     };
+    # Likewise proxied by wheatley (hosts/wheatley/services/pluto.nix), which
+    # starts and stops it from the dashboard over the remote-control login.
+    pluto = {
+      enable = true;
+      basePath = "/glados/pluto/";
+      bindAddress = "0.0.0.0";
+    };
+    remoteUnits = [ "pluto.service" ];
   };
 
   my.gaming.enable = true;
