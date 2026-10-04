@@ -11,7 +11,7 @@
 
     cloudSync.enable = lib.mkEnableOption "rclone and its sync services";
 
-    remoteAccess.enable = lib.mkEnableOption "ttyd terminal tooling and the Claude Code remote-control service";
+    remoteAccess.enable = lib.mkEnableOption "ttyd terminal tooling and the Claude Code and Codex remote-control services";
 
     firefox.customUI = lib.mkOption {
       type = lib.types.bool;
