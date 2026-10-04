@@ -139,12 +139,6 @@ in
     JULIA_NUM_THREADS = "auto";
   };
 
-  # Port pinned so the glados-pluto SSH tunnel has a fixed target; Pluto would
-  # otherwise silently move to the next free port.
-  home.shellAliases = {
-    pluto-run = "julia --eval 'using Pluto; Pluto.run(launch_browser=false, port=1234)'";
-  };
-
   # Pluto notebook server, started on demand (no WantedBy). Lingering keeps it
   # alive with no session logged in, so notebooks survive dropped connections.
   systemd.user.services.pluto = {
