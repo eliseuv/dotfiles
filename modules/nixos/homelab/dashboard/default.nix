@@ -80,6 +80,10 @@ let
     }
     // lib.optionalAttrs (tileCfg.href != null) {
       inherit (tileCfg) href;
+    }
+    # Homepage monitors server-side, where a path on this dashboard means
+    # nothing.
+    // lib.optionalAttrs (tileCfg.href != null && !lib.hasPrefix "/" tileCfg.href) {
       siteMonitor = tileCfg.href;
     }
     // lib.optionalAttrs (tileCfg.href == null && linked) {
@@ -130,7 +134,7 @@ let
     href = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Explicit link and monitor URL, for things not on this host.";
+      description = "Explicit link and monitor URL, for things not on this host; a path (served by this dashboard's nginx) gets its login and no monitor.";
     };
     widget = lib.mkOption {
       type = lib.types.nullOr (lib.types.attrsOf lib.types.anything);
@@ -146,6 +150,11 @@ let
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "systemd unit the tile's start/stop/restart buttons control (controls.nix).";
+    };
+    unitHost = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host (as in hosts/) `unit` lives on, controlled over SSH; it must list the unit in `my.services.remoteUnits` (controls.nix). Null for this host.";
     };
     wake = lib.mkOption {
       type = lib.types.nullOr lib.types.str;

@@ -1,8 +1,10 @@
 """svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON TAILSCALE_JSON [SSH_KEY]:
 start/stop/restart a fixed set of systemd units for the dashboard's tile
 buttons (controls.nix).
-UNITS_JSON maps tile names to units; nothing else can be touched, and polkit
-enforces the same list. WAKE_JSON maps tile names to {mac, host, poweroff} for
+UNITS_JSON maps tile names to {unit, hosts, user}; nothing else can be
+touched. With `hosts` empty the unit is here, and polkit enforces the same
+list; otherwise it's on another host, driven through the SSH login below,
+whose forced command enforces its own list. WAKE_JSON maps tile names to {mac, host, poweroff} for
 tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
 SSH_KEY, which the host pins to its remote-control forced command.
@@ -39,10 +41,13 @@ ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
 
 
+local_units = {name: target["unit"] for name, target in units.items() if not target["hosts"]}
+remote_units = {name: target for name, target in units.items() if target["hosts"]}
+
 # Tile name -> hosts to ping for up/down, up if any answers: wake tiles, and
-# remote reboot and switch tiles that aren't also wake tiles.
+# remote reboot, switch, tailscale and unit tiles that aren't also wake tiles.
 probed = {name: [target["host"]] for name, target in wakeable.items()}
-for targets in (rebootable, switchable, tailscalable):
+for targets in (rebootable, switchable, tailscalable, remote_units):
     for name, target in targets.items():
         if target["hosts"] and name not in probed:
             probed[name] = target["hosts"]
@@ -60,6 +65,12 @@ remote_switch = {
 
 # Tile name -> "on"/"off"/"unknown" for Tailscale tiles, from watch_tailscale().
 tailscale_state = {name: "unknown" for name in tailscalable}
+
+
+# Tile name -> `systemctl is-active` output for remote unit tiles, from
+# watch_unit(); its event wakes the watcher early after an action.
+remote_unit_state = {name: "unknown" for name in remote_units}
+remote_unit_poke = {name: threading.Event() for name in remote_units}
 
 
 # Tile name -> round-trip time in ms of the last answered ping, None while down.
@@ -205,6 +216,26 @@ def watch_tailscale(name):
         time.sleep(30)
 
 
+def watch_unit(name):
+    # One login per poll, so only while the host answers pings: often while
+    # the unit is changing state (Pluto takes minutes to start), rarely once
+    # it's settled. It can also be started there by hand.
+    target = remote_units[name]
+    while True:
+        if reachable.get(name) == "up":
+            try:
+                result = remote_any(target["hosts"], f"status {target['unit']}", target["user"])
+                if result.returncode == 0 and result.stdout.strip():
+                    remote_unit_state[name] = result.stdout.strip()
+            except subprocess.TimeoutExpired:
+                pass
+        else:
+            remote_unit_state[name] = "unknown"
+        settling = remote_unit_state[name] in ("activating", "deactivating", "reloading")
+        remote_unit_poke[name].wait(5 if settling else 30)
+        remote_unit_poke[name].clear()
+
+
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body=None):
         data = json.dumps(body).encode() if body is not None else b""
@@ -260,16 +291,22 @@ class Handler(BaseHTTPRequestHandler):
         if local:
             state = local_switch_state()
             switch.update((name, state) for name in local)
-        if units:
-            names = list(units)
+        if local_units:
+            names = list(local_units)
             # One state per line, in argument order; non-zero exit when any
             # unit is inactive, which is not an error here.
             result = subprocess.run(
-                ["systemctl", "is-active", *(units[name] for name in names)],
+                ["systemctl", "is-active", *(local_units[name] for name in names)],
                 capture_output=True,
                 text=True,
             )
             states.update(zip(names, result.stdout.split()))
+        # A remote unit's state while its host is up; "down" otherwise.
+        states.update(
+            (name, state)
+            for name, state in remote_unit_state.items()
+            if reachable.get(name) == "up"
+        )
         self.reply(
             200, {"tiles": states, "switch": switch, "tailscale": tailscale_state, "ping": latency}
         )
@@ -317,10 +354,17 @@ class Handler(BaseHTTPRequestHandler):
             return
         if action not in ACTIONS or name not in units:
             return self.reply(404)
+        if name in remote_units:
+            target = remote_units[name]
+            if self.host_action(target, f"{action} {target['unit']}", None):
+                # The watcher confirms it, but the page wants it sooner.
+                remote_unit_state[name] = "deactivating" if action == "stop" else "activating"
+                remote_unit_poke[name].set()
+            return
         # --no-block: slow stops (Minecraft saving the world) would otherwise
         # hold the request open; the page polls the state instead.
         result = subprocess.run(
-            ["systemctl", "--no-block", action, units[name]],
+            ["systemctl", "--no-block", action, local_units[name]],
             capture_output=True,
             text=True,
         )
@@ -339,4 +383,6 @@ if ssh_key:
         threading.Thread(target=watch_switch, args=(name, False), daemon=True).start()
     for name in tailscalable:
         threading.Thread(target=watch_tailscale, args=(name,), daemon=True).start()
+    for name in remote_units:
+        threading.Thread(target=watch_unit, args=(name,), daemon=True).start()
 ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

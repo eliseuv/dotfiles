@@ -1,5 +1,7 @@
 # Start/stop/restart buttons on dashboard tiles whose registry entry names a
-# systemd unit (`homelab.services.<name>.dashboard.unit`). svcctl.py serves
+# systemd unit (`homelab.services.<name>.dashboard.unit`); with `unitHost` the
+# unit is on that host, driven through the same SSH login as power-off below,
+# which the host limits to its `my.services.remoteUnits`. svcctl.py serves
 # the API on loopback behind the dashboard's nginx, so it shares the
 # dashboard's reach (LAN + tailnet). nginx puts every action (any non-GET)
 # behind basic auth; reading the status stays open, like the dashboard. Over
@@ -36,10 +38,21 @@ let
   controlled = lib.filterAttrs (
     _: service: service.dashboard != null && service.dashboard.unit != null
   ) config.homelab.services;
-  # Tile name -> unit; the API addresses units by the name on the tile.
+  # Tile name -> {unit, hosts}; the API addresses units by the name on the
+  # tile. `hosts` is empty for units on this host.
   units = lib.mapAttrs' (
-    _: service: lib.nameValuePair service.dashboard.name service.dashboard.unit
+    _: service:
+    lib.nameValuePair service.dashboard.name {
+      inherit (service.dashboard) unit;
+      hosts = lib.optionals (service.dashboard.unitHost != null) (
+        sshTargets service service.dashboard.unitHost
+      );
+      user = service.dashboard.sshUser;
+    }
   ) controlled;
+  localUnits = lib.mapAttrsToList (_: target: target.unit) (
+    lib.filterAttrs (_: target: target.hosts == [ ]) units
+  );
   unitsFile = pkgs.writeText "svcctl-units.json" (builtins.toJSON units);
 
   wakeTiles = lib.filterAttrs (
@@ -98,11 +111,13 @@ let
 
   tailscaleFile = pkgs.writeText "svcctl-tailscale.json" (builtins.toJSON (hostActions "tailscale"));
 
-  # Dashboard paths of tile terminals, which get the actions' login.
-  terminalPaths = lib.filter (lib.hasPrefix "/") (
-    lib.mapAttrsToList (_: service: service.dashboard.terminal) (
-      lib.filterAttrs (_: service: service.dashboard.terminal != null) tiles
-    )
+  # Dashboard paths of tile terminals and links (e.g. a proxied Pluto), which
+  # get the actions' login.
+  loginPaths = lib.filter (path: path != null && lib.hasPrefix "/" path) (
+    lib.concatMap (service: [
+      service.dashboard.terminal
+      service.dashboard.href
+    ]) (lib.attrValues tiles)
   );
   basicAuth = ''
     auth_basic "Aperture Science";
@@ -116,7 +131,9 @@ let
   sshKey = "svcctl/poweroff-ssh-key";
   needsKey =
     lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
-    || !lib.all isLocal (targetHosts "reboot" ++ targetHosts "switch" ++ targetHosts "tailscale");
+    || !lib.all isLocal (
+      targetHosts "reboot" ++ targetHosts "switch" ++ targetHosts "tailscale" ++ targetHosts "unitHost"
+    );
 in
 {
 
@@ -131,6 +148,10 @@ in
         assertion = !service.dashboard.poweroff || service.dashboard.wake != null;
         message = "homelab.services.${name}.dashboard.poweroff needs dashboard.wake";
       }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
+      ++ lib.mapAttrsToList (name: service: {
+        assertion = service.dashboard.unit != null;
+        message = "homelab.services.${name}.dashboard.unitHost needs dashboard.unit";
+      }) (lib.filterAttrs (_: service: service.dashboard.unitHost != null) tiles)
       ++ lib.mapAttrsToList (name: service: {
         assertion = !isLocal service.dashboard.tailscale;
         message = "homelab.services.${name}.dashboard.tailscale: ${service.dashboard.tailscale} is this host; the button only toggles other hosts";
@@ -157,7 +178,7 @@ in
     security.polkit.extraConfig = ''
       polkit.addRule(function (action, subject) {
         if (action.id == "org.freedesktop.systemd1.manage-units" && subject.user == "svcctl") {
-          var units = ${builtins.toJSON (lib.attrValues units)};
+          var units = ${builtins.toJSON localUnits};
           var verbs = ["start", "stop", "restart"];
           if (units.indexOf(action.lookup("unit")) >= 0 && verbs.indexOf(action.lookup("verb")) >= 0) {
             return polkit.Result.YES;
@@ -260,9 +281,10 @@ in
       };
       "@svcctl-logged-in".return = "302 /";
     }
-    # Merged into the locations hosts declare for their terminals, which
-    # bring their own proxyPass. Same realm, so the browser reuses one login.
-    // lib.genAttrs terminalPaths (_: {
+    # Merged into the locations hosts declare for their terminals and
+    # proxied links, which bring their own proxyPass. Same realm, so the
+    # browser reuses one login.
+    // lib.genAttrs loginPaths (_: {
       extraConfig = basicAuth;
     });
 
