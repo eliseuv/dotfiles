@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 {
 
   networking.networkmanager.enable = true;
@@ -28,14 +28,26 @@
   services.avahi = {
     enable = true;
 
-    # mDNS NSS plug-in for IPv4 allows applications to resolve names in the .local domain by transparently querying the Avahi daemon
-    nssmdns4 = true;
+    # The mDNS NSS plug-in is wired up by hand below instead.
+    nssmdns4 = false;
 
     publish = {
       enable = true;
       addresses = true;
     };
   };
+
+  # mDNS NSS plug-in, so applications resolve .local names through Avahi.
+  # `nssmdns4 = true` would use mdns4_minimal, which can't read mdns.allow
+  # and so, before every lookup, probes unicast DNS for a `local` SOA; home
+  # routers can take seconds to NXDOMAIN that. The full module with an allow
+  # file trusts the listed domains and skips the probe.
+  system.nssModules = [ pkgs.nssmdns ];
+  system.nssDatabases.hosts = lib.mkBefore [ "mdns4 [NOTFOUND=return]" ];
+  environment.etc."mdns.allow".text = ''
+    .local.
+    .local
+  '';
 
   # Enable the OpenSSH daemon.
   services.openssh = {
