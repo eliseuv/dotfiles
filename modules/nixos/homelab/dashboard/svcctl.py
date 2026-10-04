@@ -1,4 +1,4 @@
-"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON [SSH_KEY]:
+"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON TAILSCALE_JSON [SSH_KEY]:
 start/stop/restart a fixed set of systemd units for the dashboard's tile
 buttons (controls.nix).
 UNITS_JSON maps tile names to units; nothing else can be touched, and polkit
@@ -9,7 +9,8 @@ SSH_KEY, which the host pins to its remote-control forced command.
 REBOOT_JSON and SWITCH_JSON map tile names to {hosts} for hosts that can be
 rebooted, or whose dotfiles-switch.service can be started: here when `hosts`
 is empty, otherwise through the same SSH login, trying each name in turn until
-one connects."""
+one connects. TAILSCALE_JSON likewise maps tiles to {hosts} whose Tailscale can
+be turned on and off, always through that login."""
 
 import json
 import socket
@@ -29,7 +30,9 @@ with open(sys.argv[4]) as file:
     rebootable = json.load(file)
 with open(sys.argv[5]) as file:
     switchable = json.load(file)
-ssh_key = sys.argv[6] if len(sys.argv) > 6 else None
+with open(sys.argv[6]) as file:
+    tailscalable = json.load(file)
+ssh_key = sys.argv[7] if len(sys.argv) > 7 else None
 
 ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
@@ -38,7 +41,7 @@ SWITCH_UNIT = "dotfiles-switch.service"
 # Tile name -> hosts to ping for up/down, up if any answers: wake tiles, and
 # remote reboot and switch tiles that aren't also wake tiles.
 probed = {name: [target["host"]] for name, target in wakeable.items()}
-for targets in (rebootable, switchable):
+for targets in (rebootable, switchable, tailscalable):
     for name, target in targets.items():
         if target["hosts"] and name not in probed:
             probed[name] = target["hosts"]
@@ -52,6 +55,10 @@ reachable = {name: "unknown" for name in probed}
 remote_switch = {
     name: "unknown" for name, target in switchable.items() if target["hosts"]
 }
+
+
+# Tile name -> "on"/"off"/"unknown" for Tailscale tiles, from watch_tailscale().
+tailscale_state = {name: "unknown" for name in tailscalable}
 
 
 def ping(host):
@@ -161,6 +168,32 @@ def watch_switch(name, until_done):
         time.sleep(10)
 
 
+def tailscale_backend(status_output):
+    try:
+        backend = json.loads(status_output)["BackendState"]
+    except (ValueError, KeyError, TypeError):
+        return "unknown"
+    # Anything but Running (Stopped, NeedsLogin, ...) is off as far as the
+    # button goes.
+    return "on" if backend == "Running" else "off"
+
+
+def watch_tailscale(name):
+    # One login per poll, so only while the host answers pings; it can also be
+    # toggled from its own desktop, which this is the only way to notice.
+    while True:
+        if reachable.get(name) == "up":
+            try:
+                result = remote_any(tailscalable[name]["hosts"], "tailscale-status")
+                if result.returncode == 0:
+                    tailscale_state[name] = tailscale_backend(result.stdout)
+            except subprocess.TimeoutExpired:
+                pass
+        else:
+            tailscale_state[name] = "unknown"
+        time.sleep(30)
+
+
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body=None):
         data = json.dumps(body).encode() if body is not None else b""
@@ -225,7 +258,9 @@ class Handler(BaseHTTPRequestHandler):
                 text=True,
             )
             states.update(zip(names, result.stdout.split()))
-        self.reply(200, {"tiles": states, "switch": switch})
+        self.reply(
+            200, {"tiles": states, "switch": switch, "tailscale": tailscale_state}
+        )
 
     def do_POST(self):
         if not self.guarded():
@@ -263,6 +298,11 @@ class Handler(BaseHTTPRequestHandler):
                 remote_switch[name] = "switching"
                 threading.Thread(target=watch_switch, args=(name, True), daemon=True).start()
             return
+        if action in ("tailscale-on", "tailscale-off") and name in tailscalable:
+            if self.host_action(tailscalable[name]["hosts"], action, None):
+                # The next poll confirms it, but the page wants it sooner.
+                tailscale_state[name] = "on" if action == "tailscale-on" else "off"
+            return
         if action not in ACTIONS or name not in units:
             return self.reply(404)
         # --no-block: slow stops (Minecraft saving the world) would otherwise
@@ -285,4 +325,6 @@ for name, hosts in probed.items():
 if ssh_key:
     for name in remote_switch:
         threading.Thread(target=watch_switch, args=(name, False), daemon=True).start()
+    for name in tailscalable:
+        threading.Thread(target=watch_tailscale, args=(name,), daemon=True).start()
 ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

@@ -19,7 +19,11 @@
 # dotfiles-switch.service (services/dotfiles-switch.nix): directly when it's
 # this host, otherwise through the same SSH login as power-off, over the
 # tailnet so laptops can be switched away from home, falling back to mDNS.
-# Buttons combine: one tile can wake, power off, reboot and switch.
+# Tiles with `dashboard.tailscale` get a button that turns that host's
+# Tailscale on or off, over the same SSH login (the other host must be on the
+# LAN to be reached again once it's off). It shows on/off, read over SSH.
+# Buttons combine: one tile can wake, power off, reboot, switch and toggle
+# Tailscale.
 {
   config,
   lib,
@@ -85,6 +89,8 @@ let
   switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON (hostActions "switch"));
   canSwitchHere = lib.any isLocal (targetHosts "switch");
 
+  tailscaleFile = pkgs.writeText "svcctl-tailscale.json" (builtins.toJSON (hostActions "tailscale"));
+
   # Dashboard paths of tile terminals, which get the actions' login.
   terminalPaths = lib.filter (lib.hasPrefix "/") (
     lib.mapAttrsToList (_: service: service.dashboard.terminal) (
@@ -103,7 +109,7 @@ let
   sshKey = "svcctl/poweroff-ssh-key";
   needsKey =
     lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
-    || !lib.all isLocal (targetHosts "reboot" ++ targetHosts "switch");
+    || !lib.all isLocal (targetHosts "reboot" ++ targetHosts "switch" ++ targetHosts "tailscale");
 in
 {
 
@@ -118,6 +124,10 @@ in
         assertion = !service.dashboard.poweroff || service.dashboard.wake != null;
         message = "homelab.services.${name}.dashboard.poweroff needs dashboard.wake";
       }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
+      ++ lib.mapAttrsToList (name: service: {
+        assertion = !isLocal service.dashboard.tailscale;
+        message = "homelab.services.${name}.dashboard.tailscale: ${service.dashboard.tailscale} is this host; the button only toggles other hosts";
+      }) (lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiles)
       ++ lib.optional canSwitchHere {
         assertion = config.my.services.dotfilesSwitch.enable;
         message = "a dashboard.switch tile targets this host, which needs my.services.dotfilesSwitch.enable";
@@ -193,6 +203,7 @@ in
             "${wakeFile}"
             "${rebootFile}"
             "${switchFile}"
+            "${tailscaleFile}"
           ]
           ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
         );

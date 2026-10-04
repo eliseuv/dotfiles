@@ -87,3 +87,8 @@ html.dark .svcctl a {
   border-color: rgb(244 63 94);
   color: rgb(244 63 94);
 }
+
+/* Lit while Tailscale is on, dim while it's off. */
+.svcctl[data-tailscale="on"] button.svcctl-tailscale {
+  color: rgb(16 185 129);
+}

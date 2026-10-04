@@ -1,9 +1,10 @@
 // Start/stop/restart buttons on tiles backed by a systemd unit; host tiles
 // get, in this order and as configured: terminal, switch (pull the dotfiles
-// and switch to them), restart, and on/off, one button that wakes the host
+// and switch to them), tailscale (on/off), restart, and on/off, one button
+// that wakes the host
 // while it's down and powers it off while it's up (controls.nix).
-// `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`
-// (tile names), `svcctlRebootTiles` (tile name -> whether it's this host) and
+// `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
+// `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host) and
 // `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
 // default.nix.
 (() => {
@@ -12,6 +13,8 @@
   let states = {};
   // Tile name -> "idle"/"switching"/"failed" for switch tiles.
   let switchStates = {};
+  // Tile name -> "on"/"off"/"unknown" for tailscale tiles.
+  let tailscaleStates = {};
   // Tile name -> when its wake was sent; shown as "waking" until the host
   // answers pings or the window lapses (a cold boot takes a while).
   const wakeSent = {};
@@ -37,6 +40,7 @@
       .then((next) => {
         states = next.tiles;
         switchStates = next.switch;
+        tailscaleStates = next.tailscale;
         if (apiWentDown) {
           for (const name in rebootSent) if (svcctlRebootTiles[name]) delete rebootSent[name];
         }
@@ -71,6 +75,12 @@
       )
     )
       return;
+    if (action === "tailscale") {
+      const turnOff = tailscaleStates[name] === "on";
+      if (turnOff && !confirm(`Turn Tailscale off on ${name}? Only the LAN can turn it back on.`))
+        return;
+      action = turnOff ? "tailscale-off" : "tailscale-on";
+    }
     if (action === "switch" && !confirm(`Pull origin/master on ${name} and switch to it?`)) return;
     call("POST", `/${action}/${encodeURIComponent(name)}`)
       .then(() => {
@@ -87,6 +97,10 @@
         if (action === "reboot") {
           rebootSent[name] = { at: Date.now(), sawDown: false };
           if (svcctlRebootTiles[name]) apiWentDown = false;
+          return render();
+        }
+        if (action.startsWith("tailscale-")) {
+          tailscaleStates[name] = action === "tailscale-on" ? "on" : "off";
           return render();
         }
         settle();
@@ -145,6 +159,7 @@
     }
     if (kinds.terminal) bar.append(terminalLink(name));
     if (kinds.switch) bar.append(button(name, "switch", "⤓"));
+    if (kinds.tailscale) bar.append(button(name, "tailscale", "⛓"));
     if (kinds.reboot) bar.append(button(name, "reboot", "↻"));
     if (kinds.wake) bar.append(button(name, "power", "⏻"));
     return bar;
@@ -176,6 +191,7 @@
         reboot: name in svcctlRebootTiles,
         switch: svcctlSwitchTiles.includes(name),
         terminal: name in svcctlTerminals,
+        tailscale: svcctlTailscaleTiles.includes(name),
       };
       if (!Object.values(kinds).some(Boolean)) continue;
       const card = tile.firstElementChild;
@@ -187,7 +203,13 @@
       }
       const state = displayState(name);
       const switchState = kinds.switch ? switchStates[name] || "unknown" : "";
-      if (bar.dataset.state === state && (bar.dataset.switch || "") === switchState) continue;
+      const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
+      if (
+        bar.dataset.state === state &&
+        (bar.dataset.switch || "") === switchState &&
+        (bar.dataset.tailscale || "") === tailscaleState
+      )
+        continue;
       bar.dataset.state = state;
       bar.querySelector(".svcctl-state").textContent = state;
       if (kinds.unit) {
@@ -207,6 +229,13 @@
           state === "shutting-down" ||
           state === "rebooting";
         power.title = up ? `Power off ${name}` : `Wake ${name}`;
+      }
+      if (kinds.tailscale) {
+        bar.dataset.tailscale = tailscaleState;
+        const element = bar.querySelector(".svcctl-tailscale");
+        element.disabled = state !== "up" || tailscaleState === "unknown";
+        element.title =
+          tailscaleState === "on" ? `Turn Tailscale off on ${name}` : `Turn Tailscale on on ${name}`;
       }
       if (kinds.reboot) bar.querySelector(".svcctl-reboot").disabled = state !== "up";
       if (kinds.switch) {

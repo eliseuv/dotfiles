@@ -63,6 +63,9 @@ let
   switchTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.switch != null) tiled
   );
+  tailscaleTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiled
+  );
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -168,6 +171,11 @@ let
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Host (as in hosts/) whose dotfiles-switch.service the tile's switch button starts (controls.nix).";
+    };
+    tailscale = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host (as in hosts/) whose Tailscale the tile's tailscale button turns on and off, over SSH; the host needs `my.services.remoteTailscale` (controls.nix).";
     };
   };
 
@@ -327,6 +335,7 @@ in
         const svcctlTerminals = ${builtins.toJSON terminalTiles};
         const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
         const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
+        const svcctlTailscaleTiles = ${builtins.toJSON tailscaleTiles};
       ''
       + builtins.readFile ./controls.js;
 
