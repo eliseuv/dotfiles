@@ -71,6 +71,18 @@
     '';
   };
 
+  # Reboot button for wheatley itself; ties GLaDOS's order and sorts after
+  # her by name.
+  homelab.services.wheatley.dashboard = {
+    name = "Wheatley";
+    group = "Hosts";
+    order = 0;
+    description = "Headless server; hosts this dashboard";
+    icon = "mdi-server";
+    link = false;
+    reboot = true;
+  };
+
   # Remove bootloader timeout
   boot.loader.timeout = 0;
 
