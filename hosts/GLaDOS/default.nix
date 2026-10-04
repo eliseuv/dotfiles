@@ -37,6 +37,7 @@
     nas.enable = true;
     containers.enable = true;
     virtualisation.enable = true;
+    remotePowerOff.enable = true;
   };
 
   my.gaming.enable = true;

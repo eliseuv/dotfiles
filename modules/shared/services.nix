@@ -8,6 +8,7 @@
       tailscale.enable = lib.mkEnableOption "Tailscale";
       containers.enable = lib.mkEnableOption "Docker (rootless) and Podman";
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
+      remotePowerOff.enable = lib.mkEnableOption "power-off over SSH from the homelab dashboard";
 
       # CompanionCube, the Synology NAS
       nas = {
