@@ -1,4 +1,11 @@
 { ... }:
+let
+  plutoForward = {
+    bind.port = 1234;
+    host.address = "127.0.0.1";
+    host.port = 1234;
+  };
+in
 {
 
   programs.ssh = {
@@ -67,6 +74,25 @@
         hostname = "GLaDOS.local";
         user = "evf";
         proxyJump = "wheatley";
+      };
+      # GLaDOS directly, when on its LAN without tailscale
+      "glados-lan" = {
+        hostname = "GLaDOS.local";
+        user = "evf";
+      };
+      # Pluto tunnels (`ssh -N glados-pluto`). Separate hosts so a regular
+      # `ssh glados` doesn't try to bind the port. Same local port as remote
+      # so the URL Pluto prints, secret included, opens as-is.
+      "glados-pluto" = {
+        hostname = "GLaDOS.local";
+        user = "evf";
+        proxyJump = "wheatley";
+        LocalForward = [ plutoForward ];
+      };
+      "glados-lan-pluto" = {
+        hostname = "GLaDOS.local";
+        user = "evf";
+        LocalForward = [ plutoForward ];
       };
     };
   };
