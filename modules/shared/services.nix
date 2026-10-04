@@ -10,6 +10,7 @@
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
       remotePowerOff.enable = lib.mkEnableOption "power-off and reboot over SSH from the homelab dashboard";
       dotfilesSwitch.enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, for the homelab dashboard";
+      remoteTailscale.enable = lib.mkEnableOption "turning Tailscale on and off over SSH from the homelab dashboard (needs my.services.tailscale)";
 
       ttyd = {
         enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); it has no login of its own, so it belongs behind the homelab dashboard's nginx";

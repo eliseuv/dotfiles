@@ -1,5 +1,6 @@
 # Lets the homelab dashboard (svcctl on wheatley, dashboard/controls.nix)
-# power this host off, reboot it and switch it to the latest dotfiles. svcctl
+# power this host off, reboot it, switch it to the latest dotfiles and turn
+# Tailscale on and off. svcctl
 # logs in over SSH as a dedicated user whose only key is pinned to one forced
 # command, so the key can't open a shell, forward anything or run anything
 # else, whatever the client asks for. The forced command reads the requested
@@ -23,6 +24,16 @@ let
   shutdown = "${config.systemd.package}/bin/shutdown";
   systemctl = "${config.systemd.package}/bin/systemctl";
   switchUnit = "dotfiles-switch.service";
+  enabled =
+    services.remotePowerOff.enable || services.dotfilesSwitch.enable || services.remoteTailscale.enable;
+  tailscale = lib.getExe config.services.tailscale.package;
+  # The tailscale CLI only obeys its operator, the primary user (see
+  # services/tailscale.nix), so these root units run it on remote-control's
+  # behalf; polkit lets that user start them and nothing else.
+  tailscaleUnits = {
+    up = "remote-tailscale-up.service";
+    down = "remote-tailscale-down.service";
+  };
 
   dispatch = pkgs.writeShellScript "remote-control" ''
     case "''${SSH_ORIGINAL_COMMAND:-}" in
@@ -34,6 +45,11 @@ let
       switch) exec ${systemctl} start --no-block ${switchUnit} ;;
       switch-status) exec ${systemctl} show --property=ActiveState,Result --value ${switchUnit} ;;
     ''}
+    ${lib.optionalString services.remoteTailscale.enable ''
+      tailscale-on) exec ${systemctl} start --no-block ${tailscaleUnits.up} ;;
+      tailscale-off) exec ${systemctl} start --no-block ${tailscaleUnits.down} ;;
+      tailscale-status) exec ${tailscale} status --json --peers=false ;;
+    ''}
     *)
       echo "remote-control: refused: ''${SSH_ORIGINAL_COMMAND:-<none>}" >&2
       exit 1
@@ -43,7 +59,7 @@ let
 in
 {
 
-  config = lib.mkIf (services.remotePowerOff.enable || services.dotfilesSwitch.enable) {
+  config = lib.mkIf enabled {
 
     # sshd runs the forced command through the login shell, so this user needs
     # a real one; `restrict` and the forced command are what keep it inert.
@@ -84,7 +100,38 @@ in
             return polkit.Result.YES;
           }
         });
+      ''
+      + lib.optionalString services.remoteTailscale.enable ''
+        polkit.addRule(function (action, subject) {
+          if (
+            action.id == "org.freedesktop.systemd1.manage-units" &&
+            subject.user == "${user}" &&
+            ${builtins.toJSON (lib.attrValues tailscaleUnits)}.indexOf(action.lookup("unit")) >= 0 &&
+            action.lookup("verb") == "start"
+          ) {
+            return polkit.Result.YES;
+          }
+        });
       '';
+
+    systemd.services = lib.mkIf services.remoteTailscale.enable (
+      lib.mapAttrs' (
+        verb: unit:
+        lib.nameValuePair (lib.removeSuffix ".service" unit) {
+          description = "Turn Tailscale ${if verb == "up" then "on" else "off"} for the dashboard";
+          serviceConfig = {
+            Type = "oneshot";
+            # Bounded so a node that needs a login can't hang the unit.
+            ExecStart = "${tailscale} ${verb}" + lib.optionalString (verb == "up") " --timeout=20s";
+          };
+        }
+      ) tailscaleUnits
+    );
+
+    assertions = lib.optional services.remoteTailscale.enable {
+      assertion = services.tailscale.enable;
+      message = "my.services.remoteTailscale needs my.services.tailscale";
+    };
 
   };
 
