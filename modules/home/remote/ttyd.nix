@@ -1,5 +1,5 @@
 # User-side tooling for the ttyd web terminal; the service itself is
-# hosts/wheatley/services/ttyd.nix.
+# modules/nixos/services/ttyd.nix.
 {
   config,
   lib,

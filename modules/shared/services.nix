@@ -10,6 +10,19 @@
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
       remotePowerOff.enable = lib.mkEnableOption "power-off over SSH from the homelab dashboard";
 
+      ttyd = {
+        enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); needs `ttyd/credential` in the host's sops file";
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 3000;
+        };
+        basePath = lib.mkOption {
+          type = lib.types.str;
+          default = "/";
+          description = "URL path ttyd serves under, for when it sits behind a reverse proxy at a subpath.";
+        };
+      };
+
       # CompanionCube, the Synology NAS
       nas = {
         enable = lib.mkEnableOption "the NAS's personal share over NFS, mounted on demand with `nas mount`";
