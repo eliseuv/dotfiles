@@ -96,7 +96,7 @@ def send_magic_packet(mac):
         sock.sendto(payload, ("255.255.255.255", 9))
 
 
-def remote(host, verb):
+def remote(host, verb, user="remote-control"):
     # The host's authorized_keys forces its remote-control command, which
     # only takes the verb from here. known_hosts comes from the system file
     # only; svcctl has no home to keep one in. -F /dev/null skips the system
@@ -112,7 +112,7 @@ def remote(host, verb):
             "-o", "ConnectTimeout=5",
             "-o", "StrictHostKeyChecking=yes",
             "-o", "UserKnownHostsFile=/dev/null",
-            f"remote-control@{host}",
+            f"{user}@{host}",
             verb,
         ],
         capture_output=True,
@@ -121,14 +121,14 @@ def remote(host, verb):
     )
 
 
-def remote_any(hosts, verb):
+def remote_any(hosts, verb, user="remote-control"):
     # ssh exits 255 when it can't connect (or log in), anything else is the
     # forced command's own exit; only the former moves on to the next name.
     # Raises the last TimeoutExpired if every name timed out.
     result = timeout = None
     for host in hosts:
         try:
-            result = remote(host, verb)
+            result = remote(host, verb, user)
         except subprocess.TimeoutExpired as error:
             timeout = error
             continue
@@ -167,7 +167,7 @@ def watch_switch(name, until_done):
     hosts = switchable[name]["hosts"]
     while True:
         try:
-            result = remote_any(hosts, "switch-status")
+            result = remote_any(hosts, "switch-status", switchable[name]["user"])
             if result.returncode == 0:
                 remote_switch[name] = switch_state(result.stdout)
         except subprocess.TimeoutExpired:
@@ -193,7 +193,9 @@ def watch_tailscale(name):
     while True:
         if reachable.get(name) == "up":
             try:
-                result = remote_any(tailscalable[name]["hosts"], "tailscale-status")
+                result = remote_any(
+                    tailscalable[name]["hosts"], "tailscale-status", tailscalable[name]["user"]
+                )
                 if result.returncode == 0:
                     tailscale_state[name] = tailscale_backend(result.stdout)
             except subprocess.TimeoutExpired:
@@ -221,16 +223,17 @@ class Handler(BaseHTTPRequestHandler):
             return False
         return True
 
-    def host_action(self, hosts, verb, local_command):
-        # Runs `local_command` here when `hosts` is empty, else `verb` over SSH
-        # on the first of `hosts` that connects. Replies, and says whether it
-        # worked.
+    def host_action(self, target, verb, local_command):
+        # Runs `local_command` here when the target's `hosts` is empty, else
+        # `verb` over SSH on the first of them that connects. Replies, and says
+        # whether it worked.
+        hosts = target["hosts"]
         if hosts and not ssh_key:
             self.reply(404)
             return False
         try:
             if hosts:
-                result = remote_any(hosts, verb)
+                result = remote_any(hosts, verb, target["user"])
             else:
                 result = subprocess.run(local_command, capture_output=True, text=True)
         except subprocess.TimeoutExpired:
@@ -283,7 +286,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(202, {"ok": True})
         if action == "poweroff" and wakeable.get(name, {}).get("poweroff") and ssh_key:
             try:
-                result = remote(wakeable[name]["host"], "poweroff")
+                result = remote(wakeable[name]["host"], "poweroff", wakeable[name]["user"])
             except subprocess.TimeoutExpired:
                 return self.reply(504, {"error": "ssh timed out"})
             if result.returncode != 0:
@@ -293,7 +296,7 @@ class Handler(BaseHTTPRequestHandler):
             # --no-block so the reply makes it back through nginx before
             # shutdown stops it; polkit allows ignoring inhibitors.
             self.host_action(
-                rebootable[name]["hosts"],
+                rebootable[name],
                 "reboot",
                 ["systemctl", "--no-block", "--check-inhibitors=no", "reboot"],
             )
@@ -301,14 +304,14 @@ class Handler(BaseHTTPRequestHandler):
         if action == "switch" and name in switchable:
             hosts = switchable[name]["hosts"]
             started = self.host_action(
-                hosts, "switch", ["systemctl", "--no-block", "start", SWITCH_UNIT]
+                switchable[name], "switch", ["systemctl", "--no-block", "start", SWITCH_UNIT]
             )
             if started and hosts:
                 remote_switch[name] = "switching"
                 threading.Thread(target=watch_switch, args=(name, True), daemon=True).start()
             return
         if action in ("tailscale-on", "tailscale-off") and name in tailscalable:
-            if self.host_action(tailscalable[name]["hosts"], action, None):
+            if self.host_action(tailscalable[name], action, None):
                 # The next poll confirms it, but the page wants it sooner.
                 tailscale_state[name] = "on" if action == "tailscale-on" else "off"
             return

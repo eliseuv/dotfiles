@@ -172,6 +172,16 @@ let
       default = null;
       description = "Host (as in hosts/) whose dotfiles-switch.service the tile's switch button starts (controls.nix).";
     };
+    address = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Address svcctl pings and SSHes to for this host's buttons, instead of the `<host>.local` and tailnet names derived from the host name; for machines outside hosts/ (controls.nix).";
+    };
+    sshUser = lib.mkOption {
+      type = lib.types.str;
+      default = "remote-control";
+      description = "User svcctl logs in as for this host's buttons; the default is the forced-command user of services/remote-control.nix (controls.nix).";
+    };
     tailscale = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;

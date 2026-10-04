@@ -66,7 +66,7 @@
     if (action === "stop" && !confirm(`Stop ${name}?`)) return;
     if (
       action === "poweroff" &&
-      !confirm(`Power off ${name}? It shuts down in a minute; \`shutdown -c\` there cancels.`)
+      !confirm(`Power off ${name}? GLaDOS shuts down in a minute (\`shutdown -c\` there cancels); others at once.`)
     )
       return;
     if (

@@ -60,6 +60,18 @@ in
     # Drawn over with the cube face; the dashboard theme CSS matches this name.
     icon = "synology.png";
     href = "https://${nasAddress}:5001";
+    # Wake, restart, power off and Tailscale buttons, over SSH as evf to DSM
+    # (see the forced command in the comment below); no terminal or switch.
+    wake = "CompanionCube";
+    poweroff = true;
+    reboot = "CompanionCube";
+    tailscale = "CompanionCube";
+    address = nasAddress;
+    sshUser = "evf";
   };
+  # svcctl's SSH to DSM checks this key (taken with ssh-keyscan on first
+  # setup; confirm it in DSM's Terminal & SNMP settings if in doubt).
+  programs.ssh.knownHosts.${nasAddress}.publicKey =
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINOviZlK40AoSmdUEQO3yLdzEW4ClhrjFWoEw9MHn8EA";
 
 }

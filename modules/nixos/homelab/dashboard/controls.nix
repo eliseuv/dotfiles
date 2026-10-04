@@ -53,7 +53,8 @@ let
     in
     lib.nameValuePair service.dashboard.name {
       mac = config.my.wakeOnLan.hosts.${host};
-      host = "${host}.local";
+      host = if service.dashboard.address != null then service.dashboard.address else "${host}.local";
+      user = service.dashboard.sshUser;
       inherit (service.dashboard) poweroff;
     }
   ) wakeTiles;
@@ -64,17 +65,23 @@ let
   # MagicDNS name, then its mDNS one for when Tailscale is down on it but it's
   # on the LAN.
   sshTargets =
-    host:
-    lib.optionals (!isLocal host) [
-      "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
-      "${lib.toLower host}.local"
-    ];
+    service: host:
+    if service.dashboard.address != null then
+      [ service.dashboard.address ]
+    else
+      lib.optionals (!isLocal host) [
+        "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
+        "${lib.toLower host}.local"
+      ];
   # Tile name -> {hosts} for tiles whose `option` names a host.
   hostActions =
     option:
     lib.mapAttrs' (
       _: service:
-      lib.nameValuePair service.dashboard.name { hosts = sshTargets service.dashboard.${option}; }
+      lib.nameValuePair service.dashboard.name {
+        hosts = sshTargets service service.dashboard.${option};
+        user = service.dashboard.sshUser;
+      }
     ) (lib.filterAttrs (_: service: service.dashboard.${option} != null) tiles);
   tiles = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
   targetHosts =

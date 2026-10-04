@@ -12,6 +12,8 @@
       type = lib.types.attrsOf lib.types.str;
       default = {
         GLaDOS = "b4:2e:99:6e:1a:1e";
+        # The Synology NAS: not a host here, but wakeable all the same.
+        CompanionCube = "90:09:d0:00:27:19";
         wheatley = "20:47:47:08:7c:bd";
       };
       description = "Host name (as in hosts/) -> MAC of the wired NIC that listens for the magic packet.";
