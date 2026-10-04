@@ -35,6 +35,83 @@ let
     done
     exit 1
   '';
+  # Start (or reattach to) the Pluto service on a host, tunnel to it and open
+  # it in the browser. The tunnel uses the same local port as the remote one,
+  # so a clash (e.g. a local Pluto) fails fast instead of opening the wrong
+  # server. Closing the tunnel leaves the server and its notebooks running.
+  pluto-connect = pkgs.writeShellApplication {
+    name = "pluto-connect";
+    runtimeInputs = with pkgs; [
+      openssh
+      xdg-utils
+      curl
+    ];
+    text = ''
+      usage() {
+        echo "Usage: pluto-connect [--stop] [host]   (host defaults to glados; 'localhost' skips SSH)"
+      }
+
+      stop=false
+      case "''${1:-}" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      --stop)
+        stop=true
+        shift
+        ;;
+      esac
+      [ $# -le 1 ] || {
+        usage >&2
+        exit 2
+      }
+      host="''${1:-glados}"
+      port=${toString plutoPort}
+
+      on_host() {
+        if [ "$host" = localhost ]; then
+          sh -c "$1"
+        else
+          # $1 is the remote command line itself
+          # shellcheck disable=SC2029
+          ssh "$host" "$1"
+        fi
+      }
+
+      if $stop; then
+        on_host 'systemctl --user stop pluto'
+        exit 0
+      fi
+
+      echo "Starting Pluto on $host (the first start precompiles and can take minutes)..." >&2
+      # Single quotes: the state dir is resolved on the host
+      # shellcheck disable=SC2016
+      secret=$(on_host 'systemctl --user start pluto && cat "''${XDG_STATE_HOME:-$HOME/.local/state}/pluto/secret"')
+      url="http://localhost:$port/?secret=$secret"
+
+      if [ "$host" != localhost ]; then
+        ssh -N -o ExitOnForwardFailure=yes -L "$port:127.0.0.1:$port" "$host" &
+        tunnel=$!
+        trap 'kill "$tunnel" 2>/dev/null || true' EXIT
+        until curl -sf "http://127.0.0.1:$port/ping" >/dev/null; do
+          kill -0 "$tunnel" 2>/dev/null || {
+            echo "SSH tunnel to $host failed (is local port $port in use?)" >&2
+            exit 1
+          }
+          sleep 0.5
+        done
+      fi
+
+      echo "$url"
+      xdg-open "$url" >/dev/null 2>&1 || true
+
+      if [ "$host" != localhost ]; then
+        echo "Tunnel open; Ctrl-C closes it, the server keeps running (stop it with: pluto-connect --stop $host)" >&2
+        wait "$tunnel"
+      fi
+    '';
+  };
 in
 {
 
@@ -44,6 +121,8 @@ in
     # Environment management scripts
     julia-env-update
     julia-env-gc
+
+    pluto-connect
 
   ];
 
