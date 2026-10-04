@@ -8,7 +8,7 @@
       tailscale.enable = lib.mkEnableOption "Tailscale";
       containers.enable = lib.mkEnableOption "Docker (rootless) and Podman";
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
-      remotePowerOff.enable = lib.mkEnableOption "power-off over SSH from the homelab dashboard";
+      remotePowerOff.enable = lib.mkEnableOption "power-off and reboot over SSH from the homelab dashboard";
       dotfilesSwitch.enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, for the homelab dashboard";
 
       ttyd = {
