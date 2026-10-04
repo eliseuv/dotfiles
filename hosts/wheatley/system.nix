@@ -11,8 +11,8 @@
     ./services/ttyd.nix
   ];
 
-  # The router's reservation for lanAddress is keyed on the MAC, so keep both
-  # the MAC and the DHCP client-id from drifting (randomization, DUID-based ids).
+  # Keep the MAC and the DHCP client-id from drifting (randomization,
+  # DUID-based ids), so the router keeps handing out the same lease.
   networking.networkmanager = {
     wifi.macAddress = "permanent";
     ethernet.macAddress = "permanent";
