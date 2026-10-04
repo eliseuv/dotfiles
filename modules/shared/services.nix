@@ -30,6 +30,24 @@
         };
       };
 
+      pluto = {
+        enable = lib.mkEnableOption "the Pluto notebook server (as the primary user), started on demand; its secret is the `pluto/secret` sops secret";
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 1234;
+        };
+        basePath = lib.mkOption {
+          type = lib.types.str;
+          default = "/";
+          description = "URL path Pluto serves under (its `base_url`), for when it sits behind a reverse proxy at a subpath; starts and ends with `/`.";
+        };
+        bindAddress = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Address Pluto listens on; anything but loopback needs a firewall rule admitting only its proxy.";
+        };
+      };
+
       # CompanionCube, the Synology NAS
       nas = {
         enable = lib.mkEnableOption "the NAS's personal share over NFS, mounted on demand with `nas mount`";
