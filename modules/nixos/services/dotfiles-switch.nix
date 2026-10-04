@@ -41,6 +41,8 @@ let
   # What `nh os switch` does once it has built.
   activate = pkgs.writeShellScript "dotfiles-switch-activate" ''
     set -euo pipefail
+    # `+` keeps the unit's environment, user's HOME included; nix-env warns.
+    export HOME=/root
     system=$(readlink -f ${systemLink})
     nix-env --profile /nix/var/nix/profiles/system --set "$system"
     exec "$system/bin/switch-to-configuration" switch
@@ -56,6 +58,8 @@ in
       restartIfChanged = false;
       path = [
         config.nix.package
+        # `sh` for just's recipes.
+        pkgs.bash
         pkgs.coreutils
         pkgs.git
         pkgs.nh
