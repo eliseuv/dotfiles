@@ -251,7 +251,17 @@ li.service[data-name="GLaDOS"]:has(.svcctl[data-state="waking"]) .service-icon::
   25%, 50%, 85% { opacity: 0.35; }
 }
 
-/* Her words for the wake bar's up/down/waking. */
+li.service[data-name="GLaDOS"]:has(.svcctl[data-state="shutting-down"]) .service-icon::before {
+  --eye: rgb(var(--glados-yellow));
+  animation: glados-fade 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes glados-fade {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
+}
+
+/* Her words for the wake bar's up/down/waking/shutting-down. */
 li.service[data-name="GLaDOS"] .svcctl-state {
   font-size: 0;
 }
@@ -268,6 +278,11 @@ li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-state::after {
 
 li.service[data-name="GLaDOS"] .svcctl[data-state="waking"] .svcctl-state::after {
   content: "Reactivating\2026";
+  color: rgb(var(--glados-yellow));
+}
+
+li.service[data-name="GLaDOS"] .svcctl[data-state="shutting-down"] .svcctl-state::after {
+  content: "Deactivating\2026";
   color: rgb(var(--glados-yellow));
 }
 
