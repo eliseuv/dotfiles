@@ -1,7 +1,6 @@
-# CompanionCube (Synology) shares over NFS. Addressed by IP rather than
-# companioncube.local: mDNS resolution at mount time is one more thing that can
-# fail, and the Synology export rule is IP-based anyway, so both addresses need
-# DHCP reservations regardless.
+# CompanionCube (Synology) shares over NFS. Addressed by its mDNS name, since
+# the router has no fixed addresses; the Synology export rule must therefore
+# allow the LAN subnet rather than single hosts.
 { config, pkgs, ... }:
 let
   nasAddress = config.homelab.network.nasAddress;
@@ -28,7 +27,8 @@ in
   # network-online.target can be reached before the route to the LAN is
   # installed, so the first NFS mount attempt at boot fails with "Network is
   # unreachable" and every unit requiring the mount fails with it. Mounts
-  # can't retry, so gate them on the route actually existing.
+  # can't retry, so gate them on the NAS's mDNS name resolving, which needs
+  # that route.
   systemd.services.nas-route = {
     description = "Wait for a route to the NAS";
     after = [ "network-online.target" ];
@@ -39,7 +39,7 @@ in
       TimeoutStartSec = 60;
     };
     script = ''
-      until ${pkgs.iproute2}/bin/ip route get ${nasAddress} >/dev/null 2>&1; do
+      until ${pkgs.glibc.bin}/bin/getent ahostsv4 ${nasAddress} >/dev/null 2>&1; do
         sleep 1
       done
     '';
@@ -50,7 +50,7 @@ in
   # repo, see services/minecraft.nix).
   fileSystems."/mnt/games" = nfsMount "/volume1/games";
 
-  # Another host, so the tile links its fixed LAN address rather than a port
+  # Another host, so the tile links its LAN name rather than a port
   # here. DSM's cert is self-signed; Homepage's monitor doesn't verify it.
   homelab.services.companion-cube.dashboard = {
     name = "Companion Cube";

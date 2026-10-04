@@ -13,7 +13,7 @@ in
   options.homelab.network = {
     lanSubnet = str "LAN IPv4 subnet, CIDR; the firewall's LAN tier.";
     lanAddress = str "This host's LAN address (DHCP reservation).";
-    nasAddress = str "The Synology NAS's LAN address (DHCP reservation).";
+    nasAddress = str "The Synology NAS's LAN name, resolved over mDNS.";
     tailnetDomain = str "The tailnet's MagicDNS suffix.";
     tailnetAddress = str "This host's Tailscale IPv4 address.";
   };

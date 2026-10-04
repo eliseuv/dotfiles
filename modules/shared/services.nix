@@ -35,8 +35,8 @@
         enable = lib.mkEnableOption "the NAS's personal share over NFS, mounted on demand with `nas mount`";
         address = lib.mkOption {
           type = lib.types.str;
-          default = "192.168.0.35";
-          description = "The NAS's LAN address (DHCP reservation).";
+          default = "companioncube.local";
+          description = "The NAS's LAN name, resolved over mDNS (the router hands out no fixed addresses).";
         };
         tailnetAddress = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
