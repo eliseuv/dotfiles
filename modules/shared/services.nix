@@ -12,7 +12,7 @@
       dotfilesSwitch.enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, for the homelab dashboard";
 
       ttyd = {
-        enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); needs `ttyd/credential` in the host's sops file";
+        enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); it has no login of its own, so it belongs behind the homelab dashboard's nginx";
         port = lib.mkOption {
           type = lib.types.port;
           default = 3000;
@@ -21,6 +21,11 @@
           type = lib.types.str;
           default = "/";
           description = "URL path ttyd serves under, for when it sits behind a reverse proxy at a subpath.";
+        };
+        interface = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Network interface ttyd binds to (`lo` when its proxy is on the same host); null for all.";
         };
       };
 

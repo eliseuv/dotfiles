@@ -1,21 +1,27 @@
-# Dashboard tile and firewall entry for the ttyd web terminal; the unit itself
-# is modules/nixos/services/ttyd.nix.
+# The ttyd web terminal, served under the dashboard's nginx at
+# /wheatley/terminal/ behind its login, and opened from Wheatley's host tile
+# (system.nix); the unit itself is modules/nixos/services/ttyd.nix. Bound to
+# loopback so nginx is the only way in.
 { config, ... }:
+let
+  cfg = config.my.services.ttyd;
+in
 {
 
-  my.services.ttyd.enable = true;
+  my.services.ttyd = {
+    enable = true;
+    basePath = "/wheatley/terminal";
+    interface = "lo";
+  };
 
-  homelab.services.terminal = {
-    inherit (config.my.services.ttyd) port;
-    expose = "tailnet";
-    dashboard = {
-      name = "Terminal";
-      group = "Dev";
-      order = 1;
-      description = "ttyd web terminal";
-      icon = "mdi-console";
-      unit = "ttyd.service";
-    };
+  # Long read timeout so an idle terminal's websocket isn't cut after nginx's
+  # default 60s.
+  services.nginx.virtualHosts.dashboard.locations."${cfg.basePath}/" = {
+    proxyPass = "http://127.0.0.1:${toString cfg.port}";
+    proxyWebsockets = true;
+    extraConfig = ''
+      proxy_read_timeout 1d;
+    '';
   };
 
 }

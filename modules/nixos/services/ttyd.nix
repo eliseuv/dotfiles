@@ -1,7 +1,12 @@
 # ttyd web terminal running zellij as the primary user. A system unit rather
-# than a home-manager user service so the dashboard can control it (wheatley's
-# services/ttyd.nix) and sops can hand it its credential; the in-terminal
-# tooling (lrzsz, sixel) stays in modules/home/remote/ttyd.nix.
+# than a home-manager user service so it runs without a login session; the
+# in-terminal tooling (lrzsz, sixel) stays in modules/home/remote/ttyd.nix.
+#
+# No login of its own: every instance sits behind wheatley's dashboard nginx,
+# which asks for the dashboard password (dashboard/controls.nix), so one
+# password covers the dashboard's actions and every terminal. Keep ttyd off
+# anything else that can reach it: `interface = "lo"` on wheatley, a firewall
+# rule admitting only wheatley elsewhere.
 {
   config,
   lib,
@@ -38,8 +43,6 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    sops.secrets."ttyd/credential" = { };
-
     systemd.services.ttyd =
       let
         user = config.users.users.${config.my.host.primaryUser};
@@ -68,17 +71,14 @@ in
           User = user.name;
           Group = "users";
           WorkingDirectory = user.home;
-          LoadCredential = "credential:${config.sops.secrets."ttyd/credential".path}";
           Restart = "always";
           ExecStart = pkgs.writeShellScript "ttyd-start.sh" ''
-            CREDENTIAL=$(<"$CREDENTIALS_DIRECTORY/credential")
             exec ${pkgs.ttyd}/bin/ttyd \
-              -c "$CREDENTIAL" \
               -t 'theme=${builtins.toJSON theme}' \
               -t 'fontFamily=${config.my.theme.monoFont.name}' \
               -p ${toString cfg.port} -W${
                 lib.optionalString (cfg.basePath != "/") " -b ${lib.escapeShellArg cfg.basePath}"
-              } \
+              }${lib.optionalString (cfg.interface != null) " -i ${lib.escapeShellArg cfg.interface}"} \
               ${pkgs.zsh}/bin/zsh -lc 'exec ${pkgs.zellij}/bin/zellij attach --create ttyd'
           '';
         };
