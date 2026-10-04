@@ -21,6 +21,20 @@ let
   julia-env-gc = pkgs.writeShellScriptBin "julia-env-gc" ''
     ${lib.getExe pkgs.julia-bin} --eval "using Pkg; Pkg.gc()" && ${pkgs.libnotify}/bin/notify-send "Julia" "Environment cleanup completed" || ${pkgs.libnotify}/bin/notify-send "Julia" "Environment cleanup failed" -u critical
   '';
+
+  # Pluto server. Fixed port so an SSH tunnel has a known target.
+  plutoPort = 1234;
+  # The first start precompiles Pluto, which can take minutes
+  plutoStartTimeoutSec = 300;
+  # Blocks `systemctl --user start pluto` until Pluto answers, so callers can
+  # use it as soon as the start returns.
+  pluto-wait-ready = pkgs.writeShellScript "pluto-wait-ready" ''
+    for _ in $(seq ${toString plutoStartTimeoutSec}); do
+      ${lib.getExe pkgs.curl} -sf http://127.0.0.1:${toString plutoPort}/ping >/dev/null && exit 0
+      sleep 1
+    done
+    exit 1
+  '';
 in
 {
 
@@ -50,6 +64,22 @@ in
   # otherwise silently move to the next free port.
   home.shellAliases = {
     pluto-run = "julia --eval 'using Pluto; Pluto.run(launch_browser=false, port=1234)'";
+  };
+
+  # Pluto notebook server, started on demand (no WantedBy). Lingering keeps it
+  # alive with no session logged in, so notebooks survive dropped connections.
+  systemd.user.services.pluto = {
+    Unit.Description = "Pluto notebook server";
+    Service = {
+      # Login shell for the same environment as an SSH session (PATH,
+      # home-manager session vars, GPU libraries)
+      ExecStart = "${pkgs.zsh}/bin/zsh -lc 'exec julia ${./julia/pluto-server.jl} ${toString plutoPort}'";
+      ExecStartPost = "${pluto-wait-ready}";
+      TimeoutStartSec = plutoStartTimeoutSec + 30;
+      # Pluto's file picker is relative to the working directory
+      WorkingDirectory = "%h";
+      Restart = "on-failure";
+    };
   };
 
   # Julia environment update
