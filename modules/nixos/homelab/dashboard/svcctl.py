@@ -5,11 +5,11 @@ UNITS_JSON maps tile names to units; nothing else can be touched, and polkit
 enforces the same list. WAKE_JSON maps tile names to {mac, host, poweroff} for
 tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
-SSH_KEY, which the host pins to its remote-control forced command. REBOOT_JSON
-lists tiles for this host itself, which reboot it. SWITCH_JSON maps tile names
-to {hosts} for hosts whose dotfiles-switch.service can be started: here when
-`hosts` is empty, otherwise through the same SSH login, trying each name in
-turn until one connects."""
+SSH_KEY, which the host pins to its remote-control forced command.
+REBOOT_JSON and SWITCH_JSON map tile names to {hosts} for hosts that can be
+rebooted, or whose dotfiles-switch.service can be started: here when `hosts`
+is empty, otherwise through the same SSH login, trying each name in turn until
+one connects."""
 
 import json
 import socket
@@ -36,11 +36,12 @@ SWITCH_UNIT = "dotfiles-switch.service"
 
 
 # Tile name -> hosts to ping for up/down, up if any answers: wake tiles, and
-# remote switch tiles that aren't also wake tiles.
+# remote reboot and switch tiles that aren't also wake tiles.
 probed = {name: [target["host"]] for name, target in wakeable.items()}
-for name, target in switchable.items():
-    if target["hosts"] and name not in probed:
-        probed[name] = target["hosts"]
+for targets in (rebootable, switchable):
+    for name, target in targets.items():
+        if target["hosts"] and name not in probed:
+            probed[name] = target["hosts"]
 
 # Tile name -> "up"/"down", kept fresh by probe() rather than pinged per
 # request: a sleeping host's mDNS lookup alone takes ~9s to fail.
@@ -178,6 +179,27 @@ class Handler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def host_action(self, hosts, verb, local_command):
+        # Runs `local_command` here when `hosts` is empty, else `verb` over SSH
+        # on the first of `hosts` that connects. Replies, and says whether it
+        # worked.
+        if hosts and not ssh_key:
+            self.reply(404)
+            return False
+        try:
+            if hosts:
+                result = remote_any(hosts, verb)
+            else:
+                result = subprocess.run(local_command, capture_output=True, text=True)
+        except subprocess.TimeoutExpired:
+            self.reply(504, {"error": "ssh timed out"})
+            return False
+        if result.returncode != 0:
+            self.reply(500, {"error": result.stderr.strip()})
+            return False
+        self.reply(202, {"ok": True})
+        return True
+
     def do_GET(self):
         if not self.guarded():
             return
@@ -185,7 +207,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(404)
         states = dict(reachable)
         # This host is up for as long as it's answering.
-        states.update((name, "up") for name in rebootable)
+        states.update(
+            (name, "up") for name, target in rebootable.items() if not target["hosts"]
+        )
         switch = dict(remote_switch)
         local = [name for name, target in switchable.items() if not target["hosts"]]
         if local:
@@ -224,35 +248,21 @@ class Handler(BaseHTTPRequestHandler):
         if action == "reboot" and name in rebootable:
             # --no-block so the reply makes it back through nginx before
             # shutdown stops it; polkit allows ignoring inhibitors.
-            result = subprocess.run(
+            self.host_action(
+                rebootable[name]["hosts"],
+                "reboot",
                 ["systemctl", "--no-block", "--check-inhibitors=no", "reboot"],
-                capture_output=True,
-                text=True,
             )
-            if result.returncode != 0:
-                return self.reply(500, {"error": result.stderr.strip()})
-            return self.reply(202, {"ok": True})
+            return
         if action == "switch" and name in switchable:
             hosts = switchable[name]["hosts"]
-            if hosts and not ssh_key:
-                return self.reply(404)
-            try:
-                if hosts:
-                    result = remote_any(hosts, "switch")
-                else:
-                    result = subprocess.run(
-                        ["systemctl", "--no-block", "start", SWITCH_UNIT],
-                        capture_output=True,
-                        text=True,
-                    )
-            except subprocess.TimeoutExpired:
-                return self.reply(504, {"error": "ssh timed out"})
-            if result.returncode != 0:
-                return self.reply(500, {"error": result.stderr.strip()})
-            if hosts:
+            started = self.host_action(
+                hosts, "switch", ["systemctl", "--no-block", "start", SWITCH_UNIT]
+            )
+            if started and hosts:
                 remote_switch[name] = "switching"
                 threading.Thread(target=watch_switch, args=(name, True), daemon=True).start()
-            return self.reply(202, {"ok": True})
+            return
         if action not in ACTIONS or name not in units:
             return self.reply(404)
         # --no-block: slow stops (Minecraft saving the world) would otherwise

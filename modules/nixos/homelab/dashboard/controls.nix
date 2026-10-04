@@ -12,8 +12,9 @@
 # get a power-off button, which logs in to the host over SSH with a key the
 # host pins to a forced command that only takes a few fixed verbs, `poweroff`
 # among them (services/remote-control.nix).
-# Tiles with `dashboard.reboot` stand for this host itself and get a reboot
-# button, which reboots it at once; polkit lets svcctl do that and no more.
+# Tiles with `dashboard.reboot` get a restart button, which reboots that host
+# at once: this one directly (polkit lets svcctl do that and no more), any
+# other through the same SSH login as power-off.
 # Tiles with `dashboard.switch` get a button that starts that host's
 # dotfiles-switch.service (services/dotfiles-switch.nix): directly when it's
 # this host, otherwise through the same SSH login as power-off, over the
@@ -54,34 +55,46 @@ let
   ) wakeTiles;
   wakeFile = pkgs.writeText "svcctl-wake.json" (builtins.toJSON wakeable);
 
-  rebootTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (
-      _: service: service.dashboard != null && service.dashboard.reboot
-    ) config.homelab.services
-  );
-  rebootFile = pkgs.writeText "svcctl-reboot.json" (builtins.toJSON rebootTiles);
-  canReboot = rebootTiles != [ ];
-
-  switchTiles = lib.filterAttrs (
-    _: service: service.dashboard != null && service.dashboard.switch != null
-  ) config.homelab.services;
   isLocal = host: host == config.my.host.name;
-  # Tile name -> {hosts}: empty for this host, else its MagicDNS name, then
-  # its mDNS one for when Tailscale is down on it but it's on the LAN.
-  switchable = lib.mapAttrs' (
-    _: service:
-    let
-      host = lib.toLower service.dashboard.switch;
-    in
-    lib.nameValuePair service.dashboard.name {
-      hosts = lib.optionals (!isLocal service.dashboard.switch) [
-        "${host}.${config.homelab.network.tailnetDomain}"
-        "${host}.local"
-      ];
-    }
-  ) switchTiles;
-  switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON switchable);
-  canSwitchHere = lib.any (service: isLocal service.dashboard.switch) (lib.attrValues switchTiles);
+  # Names svcctl tries in turn to SSH to a host: none for this one, else its
+  # MagicDNS name, then its mDNS one for when Tailscale is down on it but it's
+  # on the LAN.
+  sshTargets =
+    host:
+    lib.optionals (!isLocal host) [
+      "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
+      "${lib.toLower host}.local"
+    ];
+  # Tile name -> {hosts} for tiles whose `option` names a host.
+  hostActions =
+    option:
+    lib.mapAttrs' (
+      _: service:
+      lib.nameValuePair service.dashboard.name { hosts = sshTargets service.dashboard.${option}; }
+    ) (lib.filterAttrs (_: service: service.dashboard.${option} != null) tiles);
+  tiles = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
+  targetHosts =
+    option:
+    lib.mapAttrsToList (_: service: service.dashboard.${option}) (
+      lib.filterAttrs (_: service: service.dashboard.${option} != null) tiles
+    );
+
+  rebootFile = pkgs.writeText "svcctl-reboot.json" (builtins.toJSON (hostActions "reboot"));
+  canRebootHere = lib.any isLocal (targetHosts "reboot");
+
+  switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON (hostActions "switch"));
+  canSwitchHere = lib.any isLocal (targetHosts "switch");
+
+  # Dashboard paths of tile terminals, which get the actions' login.
+  terminalPaths = lib.filter (lib.hasPrefix "/") (
+    lib.mapAttrsToList (_: service: service.dashboard.terminal) (
+      lib.filterAttrs (_: service: service.dashboard.terminal != null) tiles
+    )
+  );
+  basicAuth = ''
+    auth_basic "Aperture Science";
+    auth_basic_user_file ${config.sops.secrets.${htpasswd}.path};
+  '';
 
   # One `user:hash` line (`openssl passwd -6`).
   htpasswd = "svcctl/htpasswd";
@@ -90,7 +103,7 @@ let
   sshKey = "svcctl/poweroff-ssh-key";
   needsKey =
     lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
-    || lib.any (service: !isLocal service.dashboard.switch) (lib.attrValues switchTiles);
+    || !lib.all isLocal (targetHosts "reboot" ++ targetHosts "switch");
 in
 {
 
@@ -104,10 +117,6 @@ in
       ++ lib.mapAttrsToList (name: service: {
         assertion = !service.dashboard.poweroff || service.dashboard.wake != null;
         message = "homelab.services.${name}.dashboard.poweroff needs dashboard.wake";
-      }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
-      ++ lib.mapAttrsToList (name: service: {
-        assertion = service.dashboard.terminal == null || service.dashboard.wake != null;
-        message = "homelab.services.${name}.dashboard.terminal needs dashboard.wake";
       }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
       ++ lib.optional canSwitchHere {
         assertion = config.my.services.dotfilesSwitch.enable;
@@ -153,7 +162,7 @@ in
     ''
     # Same three actions as remote-control.nix grants for power-off, for the
     # same reasons: someone is usually logged in, and sessions hold inhibitors.
-    + lib.optionalString canReboot ''
+    + lib.optionalString canRebootHere ''
       polkit.addRule(function (action, subject) {
         var actions = [
           "org.freedesktop.login1.reboot",
@@ -209,16 +218,22 @@ in
       };
     };
 
-    services.nginx.virtualHosts.dashboard.locations."/api/svc/" = {
-      proxyPass = "http://127.0.0.1:${toString port}";
-      # The browser asks once, on the first action, and resends it after.
-      extraConfig = ''
-        limit_except GET {
-          auth_basic "Aperture Science";
-          auth_basic_user_file ${config.sops.secrets.${htpasswd}.path};
-        }
-      '';
-    };
+    services.nginx.virtualHosts.dashboard.locations = {
+      "/api/svc/" = {
+        proxyPass = "http://127.0.0.1:${toString port}";
+        # The browser asks once, on the first action, and resends it after.
+        extraConfig = ''
+          limit_except GET {
+            ${basicAuth}
+          }
+        '';
+      };
+    }
+    # Merged into the locations hosts declare for their terminals, which
+    # bring their own proxyPass. Same realm, so the browser reuses one login.
+    // lib.genAttrs terminalPaths (_: {
+      extraConfig = basicAuth;
+    });
 
   };
 

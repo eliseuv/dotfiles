@@ -39,9 +39,9 @@
     href = "https://login.tailscale.com/admin/machines";
   };
 
-  # Wake, power-off, terminal and switch buttons for GLaDOS, which has no
+  # Terminal, switch, restart and on/off buttons for GLaDOS, which has no
   # services of its own here; wheatley is the always-on LAN host that can send
-  # her the packet.
+  # her the wake packet.
   # The icon is a placeholder the dashboard theme draws over with her head.
   homelab.services.glados.dashboard = {
     name = "GLaDOS";
@@ -54,6 +54,7 @@
     poweroff = true;
     terminal = "/glados/terminal/";
     switch = "GLaDOS";
+    reboot = "GLaDOS";
   };
   # For the dashboard's power-off (over mDNS) and switch (over the tailnet),
   # which SSH to her with strict host key checking.
@@ -75,7 +76,8 @@
     '';
   };
 
-  # Reboot button for wheatley itself; ties GLaDOS's order and sorts after
+  # Terminal, switch and restart buttons for wheatley himself; no on/off, as
+  # nothing here could turn him back on. Ties GLaDOS's order and sorts after
   # her by name. The icon is a placeholder the dashboard theme draws over
   # with his core.
   homelab.services.wheatley.dashboard = {
@@ -85,8 +87,9 @@
     description = "Headless server; hosts this dashboard";
     icon = "mdi-server";
     link = false;
-    reboot = true;
+    reboot = "wheatley";
     switch = "wheatley";
+    terminal = "/wheatley/terminal/";
   };
 
   # Remove bootloader timeout

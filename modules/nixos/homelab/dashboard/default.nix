@@ -55,9 +55,11 @@ let
   terminalTiles = lib.mapAttrs' (
     _: service: lib.nameValuePair service.dashboard.name service.dashboard.terminal
   ) (lib.filterAttrs (_: service: service.dashboard.terminal != null) tiled);
-  rebootTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.reboot) tiled
-  );
+  # Tile name -> whether it reboots this host, the one serving the page.
+  rebootTiles = lib.mapAttrs' (
+    _: service:
+    lib.nameValuePair service.dashboard.name (service.dashboard.reboot == config.my.host.name)
+  ) (lib.filterAttrs (_: service: service.dashboard.reboot != null) tiled);
   switchTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.switch != null) tiled
   );
@@ -150,17 +152,17 @@ let
     poweroff = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Add a power-off button to a `wake` tile; the host needs `my.services.remotePowerOff` (controls.nix).";
+      description = "Let a `wake` tile's on/off button also power the host off; the host needs `my.services.remotePowerOff` (controls.nix).";
     };
     terminal = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Web terminal URL for a `wake` tile's terminal button, live while the host is up (controls.js); a path is served by this dashboard's nginx.";
+      description = "Web terminal URL for the tile's terminal button, live while the host is up (controls.js); a path is served by this dashboard's nginx, behind its login.";
     };
     reboot = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Reboot button for this host, the one serving the dashboard (controls.nix).";
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host (as in hosts/) the tile's restart button reboots: this one directly, any other over SSH, which needs `my.services.remotePowerOff` there (controls.nix).";
     };
     switch = lib.mkOption {
       type = lib.types.nullOr lib.types.str;

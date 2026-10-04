@@ -241,7 +241,8 @@ li.service[data-name="GLaDOS"] .service-icon::before {
   mask: var(--glados) center / contain no-repeat;
 }
 
-li.service[data-name="GLaDOS"]:has(.svcctl[data-state="waking"]) .service-icon::before {
+li.service[data-name="GLaDOS"]:has(.svcctl[data-state="waking"]) .service-icon::before,
+li.service[data-name="GLaDOS"]:has(.svcctl[data-state="rebooting"]) .service-icon::before {
   --eye: rgb(var(--glados-yellow));
   animation: glados-boot 1.6s steps(1) infinite;
 }
@@ -261,7 +262,7 @@ li.service[data-name="GLaDOS"]:has(.svcctl[data-state="shutting-down"]) .service
   to { opacity: 0.35; }
 }
 
-/* Her words for the wake bar's up/down/waking/shutting-down. */
+/* Her words for the bar's up/down/waking/shutting-down/rebooting. */
 li.service[data-name="GLaDOS"] .svcctl-state {
   font-size: 0;
 }
@@ -283,6 +284,11 @@ li.service[data-name="GLaDOS"] .svcctl[data-state="waking"] .svcctl-state::after
 
 li.service[data-name="GLaDOS"] .svcctl[data-state="shutting-down"] .svcctl-state::after {
   content: "Deactivating\2026";
+  color: rgb(var(--glados-yellow));
+}
+
+li.service[data-name="GLaDOS"] .svcctl[data-state="rebooting"] .svcctl-state::after {
+  content: "Rebooting\2026";
   color: rgb(var(--glados-yellow));
 }
 
@@ -385,8 +391,27 @@ li.service[data-name="Wheatley"] .svcctl[data-state="rebooting"] .svcctl-state::
   color: rgb(var(--wheatley-blue));
 }
 
-li.service[data-name="Wheatley"] .svcctl button:hover:not(:disabled) {
+li.service[data-name="Wheatley"] .svcctl button:hover:not(:disabled),
+li.service[data-name="Wheatley"] .svcctl a:hover:not([aria-disabled="true"]) {
   box-shadow: 0 0 0 1px rgb(var(--wheatley-blue));
+}
+
+/* His terminal, lit in his optic's blue like GLaDOS's is in her yellow. */
+li.service[data-name="Wheatley"] .svcctl-terminal {
+  font-weight: 600;
+}
+
+li.service[data-name="Wheatley"] .svcctl[data-state="up"] .svcctl-terminal {
+  border-color: rgb(var(--wheatley-blue) / 0.6);
+  color: rgb(var(--wheatley-blue));
+  text-shadow: 0 0 6px rgb(var(--wheatley-blue) / 0.55);
+}
+
+li.service[data-name="Wheatley"] .svcctl[data-state="up"] .svcctl-terminal:hover {
+  background: rgb(var(--wheatley-blue) / 0.12);
+  box-shadow:
+    0 0 0 1px rgb(var(--wheatley-blue)),
+    0 0 10px -2px rgb(var(--wheatley-blue) / 0.8);
 }
 
 /* The OS drives light/dark now (theme.js). */

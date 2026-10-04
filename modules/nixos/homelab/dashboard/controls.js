@@ -1,10 +1,10 @@
-// Start/stop/restart buttons on tiles backed by a systemd unit, and a wake
-// button on tiles for another machine, plus power-off and terminal buttons on
-// some of those, a reboot button on the tile for this host, and a switch button
-// on tiles for hosts that can pull and switch to the dotfiles (controls.nix).
-// A tile gets every bar it's listed for. `svcctlTiles`, `svcctlWakeTiles`,
-// `svcctlPoweroffTiles`, `svcctlRebootTiles`, `svcctlSwitchTiles` (tile names)
-// and `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
+// Start/stop/restart buttons on tiles backed by a systemd unit; host tiles
+// get, in this order and as configured: terminal, switch (pull the dotfiles
+// and switch to them), restart, and on/off, one button that wakes the host
+// while it's down and powers it off while it's up (controls.nix).
+// `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`
+// (tile names), `svcctlRebootTiles` (tile name -> whether it's this host) and
+// `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
 // default.nix.
 (() => {
   const api = "/api/svc";
@@ -20,8 +20,9 @@
   // (`shutdown +1`) before it even starts.
   const poweroffSent = {};
   const poweroffWindow = 180 * 1000;
-  // This host serves the page, so "rebooting" lasts until the API has gone
-  // away and answered again, or the window lapses.
+  // Tile name -> {at, sawDown}: "rebooting" until the host has gone away and
+  // come back, or the window lapses. Another host's pings show that; this
+  // host serves the page, so for it the API going away and answering again.
   const rebootSent = {};
   const rebootWindow = 300 * 1000;
   let apiWentDown = false;
@@ -36,7 +37,9 @@
       .then((next) => {
         states = next.tiles;
         switchStates = next.switch;
-        if (apiWentDown) for (const name in rebootSent) delete rebootSent[name];
+        if (apiWentDown) {
+          for (const name in rebootSent) if (svcctlRebootTiles[name]) delete rebootSent[name];
+        }
         apiWentDown = false;
         render();
       })
@@ -52,13 +55,22 @@
     [60, 75, 90, 120, 150, 180].forEach((s) => setTimeout(refresh, s * 1000));
 
   const act = (name, action) => {
+    if (action === "power") action = displayState(name) === "up" ? "poweroff" : "wake";
     if (action === "stop" && !confirm(`Stop ${name}?`)) return;
     if (
       action === "poweroff" &&
       !confirm(`Power off ${name}? It shuts down in a minute; \`shutdown -c\` there cancels.`)
     )
       return;
-    if (action === "reboot" && !confirm(`Reboot ${name}? The dashboard goes down with it.`)) return;
+    if (
+      action === "reboot" &&
+      !confirm(
+        svcctlRebootTiles[name]
+          ? `Reboot ${name}? The dashboard goes down with it.`
+          : `Reboot ${name} now?`,
+      )
+    )
+      return;
     if (action === "switch" && !confirm(`Pull origin/master on ${name} and switch to it?`)) return;
     call("POST", `/${action}/${encodeURIComponent(name)}`)
       .then(() => {
@@ -73,8 +85,8 @@
           return settlePoweroff();
         }
         if (action === "reboot") {
-          rebootSent[name] = Date.now();
-          apiWentDown = false;
+          rebootSent[name] = { at: Date.now(), sawDown: false };
+          if (svcctlRebootTiles[name]) apiWentDown = false;
           return render();
         }
         settle();
@@ -127,19 +139,21 @@
         button(name, "restart", "↻"),
       );
     }
-    if (kinds.wake) {
-      if (name in svcctlTerminals) bar.append(terminalLink(name));
-      bar.append(button(name, "wake", "⏻"));
-      if (svcctlPoweroffTiles.includes(name)) bar.append(button(name, "poweroff", "■"));
-    }
-    if (kinds.reboot) bar.append(button(name, "reboot", "↻"));
+    if (kinds.terminal) bar.append(terminalLink(name));
     if (kinds.switch) bar.append(button(name, "switch", "⤓"));
+    if (kinds.reboot) bar.append(button(name, "reboot", "↻"));
+    if (kinds.wake) bar.append(button(name, "power", "⏻"));
     return bar;
   };
 
   const displayState = (name) => {
-    if (Date.now() - rebootSent[name] < rebootWindow) return "rebooting";
     const state = states[name] || "unknown";
+    const reboot = rebootSent[name];
+    if (reboot && Date.now() - reboot.at < rebootWindow) {
+      if (state === "down") reboot.sawDown = true;
+      if (!(reboot.sawDown && state === "up")) return "rebooting";
+    }
+    delete rebootSent[name];
     if (state === "up") delete wakeSent[name];
     else if (Date.now() - wakeSent[name] < wakeWindow) return "waking";
     if (state === "down") delete poweroffSent[name];
@@ -155,8 +169,9 @@
       const kinds = {
         unit: svcctlTiles.includes(name),
         wake: svcctlWakeTiles.includes(name),
-        reboot: svcctlRebootTiles.includes(name),
+        reboot: name in svcctlRebootTiles,
         switch: svcctlSwitchTiles.includes(name),
+        terminal: name in svcctlTerminals,
       };
       if (!Object.values(kinds).some(Boolean)) continue;
       const card = tile.firstElementChild;
@@ -176,13 +191,18 @@
         bar.querySelector(".svcctl-start").disabled = active;
         bar.querySelector(".svcctl-stop").disabled = !active;
       }
+      if (kinds.terminal) {
+        bar.querySelector(".svcctl-terminal").setAttribute("aria-disabled", String(state !== "up"));
+      }
       if (kinds.wake) {
-        bar.querySelector(".svcctl-wake").disabled =
-          state === "up" || state === "waking" || state === "shutting-down";
-        const poweroff = bar.querySelector(".svcctl-poweroff");
-        if (poweroff) poweroff.disabled = state !== "up";
-        const terminal = bar.querySelector(".svcctl-terminal");
-        if (terminal) terminal.setAttribute("aria-disabled", String(state !== "up"));
+        const power = bar.querySelector(".svcctl-power");
+        const up = state === "up";
+        power.disabled =
+          (up && !svcctlPoweroffTiles.includes(name)) ||
+          state === "waking" ||
+          state === "shutting-down" ||
+          state === "rebooting";
+        power.title = up ? `Power off ${name}` : `Wake ${name}`;
       }
       if (kinds.reboot) bar.querySelector(".svcctl-reboot").disabled = state !== "up";
       if (kinds.switch) {
