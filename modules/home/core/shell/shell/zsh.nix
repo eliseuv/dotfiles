@@ -33,7 +33,13 @@
       bindkey  "^[[H"   beginning-of-line
       bindkey  "^[[F"   end-of-line
       bindkey  "^[[3~"  delete-char
-      ${lib.getExe pkgs.fastfetch}
+      # tmux drops fastfetch's unwrapped kitty graphics, and kitty-icat is
+      # unreliable there (oversized in splits, lost before the client attaches)
+      if [[ -n $TMUX ]]; then
+        ${lib.getExe pkgs.fastfetch} --logo-type builtin
+      else
+        ${lib.getExe pkgs.fastfetch}
+      fi
     '' + lib.optionalString config.my.secrets.user.enable ''
 
       export ALPHAVANTAGE_API_KEY=$(<${config.sops.secrets."api-key/alphavantage".path})
