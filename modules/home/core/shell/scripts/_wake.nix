@@ -11,7 +11,7 @@ pkgs.writeShellApplication {
   name = "wake";
   runtimeInputs = with pkgs; [
     wakeonlan
-    getent
+    avahi
     coreutils
   ];
   text = ''
@@ -31,9 +31,11 @@ pkgs.writeShellApplication {
     # only answers on the LAN, unlike a subnet check, which a foreign network
     # numbered like ours would pass. The relay itself can only be woken from
     # the LAN, and while it sleeps it doesn't answer, so it skips the test.
+    # Ask avahi directly rather than through NSS: a miss there falls through
+    # to unicast DNS, and the router takes ~4s to NXDOMAIN .local names.
     if [ "''${target,,}" = "${lib.toLower relay}" ] ||
       [ "$(hostname)" = ${relay} ] ||
-      timeout 3 getent hosts ${relay}.local >/dev/null; then
+      timeout 3 avahi-resolve -4 -n ${relay}.local >/dev/null 2>&1; then
       wakeonlan "$mac"
     else
       echo "wake: not on the LAN; asking ${relay} over the tailnet" >&2
