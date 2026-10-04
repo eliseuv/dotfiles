@@ -39,7 +39,7 @@ in
       TimeoutStartSec = 60;
     };
     script = ''
-      until ${pkgs.glibc.bin}/bin/getent ahostsv4 ${nasAddress} >/dev/null 2>&1; do
+      until ${pkgs.getent}/bin/getent ahostsv4 ${nasAddress} >/dev/null 2>&1; do
         sleep 1
       done
     '';
