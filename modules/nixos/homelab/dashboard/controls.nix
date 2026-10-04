@@ -1,8 +1,11 @@
 # Start/stop/restart buttons on dashboard tiles whose registry entry names a
 # systemd unit (`homelab.services.<name>.dashboard.unit`). svcctl.py serves
 # the API on loopback behind the dashboard's nginx, so it shares the
-# dashboard's reach (LAN + tailnet) and has no login of its own. It runs
-# unprivileged; polkit lets it manage exactly the listed units, nothing else.
+# dashboard's reach (LAN + tailnet). nginx puts every action (any non-GET)
+# behind basic auth; reading the status stays open, like the dashboard. Over
+# plain HTTP on the LAN the password crosses the wire in the clear; the
+# tailnet encrypts it. svcctl runs unprivileged; polkit lets it manage exactly
+# the listed units, nothing else.
 # Tiles with `dashboard.wake` instead get a wake button, which sends a
 # Wake-on-LAN packet to that host (one of `my.wakeOnLan.hosts`), and an
 # up/down state from pinging it over mDNS. With `dashboard.poweroff` they also
@@ -76,6 +79,9 @@ let
   switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON switchable);
   canSwitchHere = lib.any (service: isLocal service.dashboard.switch) (lib.attrValues switchTiles);
 
+  # One `user:hash` line (`openssl passwd -6`).
+  htpasswd = "svcctl/htpasswd";
+
   # Named for its first use; it also logs in for remote switches.
   sshKey = "svcctl/poweroff-ssh-key";
   needsKey =
@@ -113,6 +119,10 @@ in
     # The target's host key must be in programs.ssh.knownHosts: svcctl runs
     # ssh with StrictHostKeyChecking and no known_hosts of its own.
     sops.secrets.${sshKey} = lib.mkIf needsKey { owner = "svcctl"; };
+    sops.secrets.${htpasswd} = {
+      owner = config.services.nginx.user;
+      restartUnits = [ "nginx.service" ];
+    };
 
     security.polkit.extraConfig = ''
       polkit.addRule(function (action, subject) {
@@ -195,8 +205,16 @@ in
       };
     };
 
-    services.nginx.virtualHosts.dashboard.locations."/api/svc/".proxyPass =
-      "http://127.0.0.1:${toString port}";
+    services.nginx.virtualHosts.dashboard.locations."/api/svc/" = {
+      proxyPass = "http://127.0.0.1:${toString port}";
+      # The browser asks once, on the first action, and resends it after.
+      extraConfig = ''
+        limit_except GET {
+          auth_basic "Aperture Science";
+          auth_basic_user_file ${config.sops.secrets.${htpasswd}.path};
+        }
+      '';
+    };
 
   };
 
