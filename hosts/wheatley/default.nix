@@ -7,6 +7,7 @@
   my.services = {
     tailscale.enable = true;
     nas.enable = true;
+    dotfilesSwitch.enable = true;
   };
 
   my.secrets = {

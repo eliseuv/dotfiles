@@ -82,6 +82,7 @@
     icon = "mdi-server";
     link = false;
     reboot = true;
+    switch = "wheatley";
   };
 
   # Remove bootloader timeout
