@@ -310,6 +310,85 @@ li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-terminal:hover {
     0 0 10px -2px rgb(var(--glados-yellow) / 0.8);
 }
 
+/* Wheatley (his reboot tile, see hosts/wheatley/system.nix): the core mask
+   with his optic drawn in, lit blue while he serves the dashboard and
+   flickering while he reboots. Keyed on the tile name and the reboot bar's
+   state (controls.js), like GLaDOS's tile. */
+:root {
+  --wheatley-blue: 0 132 214;
+  --wheatley-chassis: rgb(var(--color-600));
+}
+
+html.dark {
+  --wheatley-blue: 95 195 255;
+  /* Fixed cool grey: the dark palette's light shades run warm, and his
+     shell is white plastic. */
+  --wheatley-chassis: rgb(196 204 212);
+}
+
+li.service[data-name="Wheatley"] {
+  --eye: rgb(var(--color-500) / 0.6);
+  --eye-glow: transparent;
+}
+
+li.service[data-name="Wheatley"]:has(.svcctl[data-state="up"]) {
+  --eye: rgb(var(--wheatley-blue));
+  --eye-glow: rgb(var(--wheatley-blue) / 0.55);
+}
+
+li.service[data-name="Wheatley"] .service-card {
+  --ring: var(--wheatley-blue);
+}
+
+li.service[data-name="Wheatley"] .service-icon > * {
+  display: none;
+}
+
+li.service[data-name="Wheatley"] .service-icon {
+  filter: drop-shadow(0 0 4px var(--eye-glow));
+}
+
+li.service[data-name="Wheatley"] .service-icon::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  background:
+    radial-gradient(circle at 50% 53%, var(--eye) 0 4px, #111 4.5px 6.5px, transparent 7px),
+    var(--wheatley-chassis);
+  -webkit-mask: var(--wheatley) center / contain no-repeat;
+  mask: var(--wheatley) center / contain no-repeat;
+}
+
+/* Same stutter as GLaDOS booting. */
+li.service[data-name="Wheatley"]:has(.svcctl[data-state="rebooting"]) .service-icon::before {
+  --eye: rgb(var(--wheatley-blue));
+  animation: glados-boot 1.6s steps(1) infinite;
+}
+
+/* His words for the reboot bar's up/rebooting. */
+li.service[data-name="Wheatley"] .svcctl-state {
+  font-size: 0;
+}
+
+li.service[data-name="Wheatley"] .svcctl-state::after {
+  font-size: 0.7rem;
+  content: "Standby";
+}
+
+li.service[data-name="Wheatley"] .svcctl[data-state="up"] .svcctl-state::after {
+  content: "Online";
+  color: rgb(var(--wheatley-blue));
+}
+
+li.service[data-name="Wheatley"] .svcctl[data-state="rebooting"] .svcctl-state::after {
+  content: "Rebooting\2026";
+  color: rgb(var(--wheatley-blue));
+}
+
+li.service[data-name="Wheatley"] .svcctl button:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgb(var(--wheatley-blue));
+}
+
 /* The OS drives light/dark now (theme.js). */
 #theme {
   display: none !important;

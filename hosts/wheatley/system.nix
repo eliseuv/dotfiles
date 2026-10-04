@@ -72,7 +72,8 @@
   };
 
   # Reboot button for wheatley itself; ties GLaDOS's order and sorts after
-  # her by name.
+  # her by name. The icon is a placeholder the dashboard theme draws over
+  # with his core.
   homelab.services.wheatley.dashboard = {
     name = "Wheatley";
     group = "Hosts";

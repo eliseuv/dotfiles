@@ -179,6 +179,10 @@ let
   # GLaDOS's head as seen from below: ceiling stalk and optic housing, as a
   # CSS mask for her wake tile; theme.css draws the eye into it.
   glados = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='14' y='0' width='4' height='8' rx='1'/><path d='M3 17c0-6.2 5.8-10 13-10s13 3.8 13 10-5.8 10-13 10S3 23.2 3 17z'/></svg>";
+
+  # Wheatley's personality core: the sphere between its two carry handles, as
+  # a CSS mask for his reboot tile; theme.css draws the optic into it.
+  wheatley = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='17' r='11'/><path fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' d='M5 9A13 13 0 0 1 27 9M5 25A13 13 0 0 0 27 25'/></svg>";
 in
 {
 
@@ -323,6 +327,7 @@ in
             --aperture-iris: url("${iris "black"}");
             --companion-cube: url("${companionCube}");
             --glados: url("${glados}");
+            --wheatley: url("${wheatley}");
           }
         ''
         + builtins.readFile ./controls.css;
