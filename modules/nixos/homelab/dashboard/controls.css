@@ -1,5 +1,5 @@
-/* Start/stop/restart bar on unit-backed tiles, wake bar on machine tiles
-   (controls.js). */
+/* Start/stop/restart bar on unit-backed tiles, wake bar on machine tiles,
+   reboot bar on this host's tile (controls.js). */
 
 .svcctl {
   display: flex;
@@ -20,6 +20,10 @@
 .svcctl[data-state="active"] .svcctl-state,
 .svcctl[data-state="up"] .svcctl-state {
   color: rgb(16 185 129);
+}
+
+.svcctl[data-state="rebooting"] .svcctl-state {
+  color: rgb(var(--portal-orange));
 }
 
 .svcctl[data-state="failed"] .svcctl-state {
@@ -51,7 +55,8 @@ html.dark .svcctl a {
   box-shadow: 0 0 0 1px rgb(var(--portal-orange));
 }
 
-.svcctl button.svcctl-restart:hover:not(:disabled) {
+.svcctl button.svcctl-restart:hover:not(:disabled),
+.svcctl button.svcctl-reboot:hover:not(:disabled) {
   box-shadow: 0 0 0 1px rgb(var(--portal-blue));
 }
 

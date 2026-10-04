@@ -1,10 +1,12 @@
-"""svcctl PORT UNITS_JSON WAKE_JSON [POWEROFF_KEY]: start/stop/restart a fixed
-set of systemd units for the dashboard's tile buttons (controls.nix).
+"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON [POWEROFF_KEY]: start/stop/
+restart a fixed set of systemd units for the dashboard's tile buttons
+(controls.nix).
 UNITS_JSON maps tile names to units; nothing else can be touched, and polkit
 enforces the same list. WAKE_JSON maps tile names to {mac, host, poweroff} for
 tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
-POWEROFF_KEY, which the host pins to a forced `shutdown +1`."""
+POWEROFF_KEY, which the host pins to a forced `shutdown +1`. REBOOT_JSON lists
+tiles for this host itself, which reboot it."""
 
 import json
 import socket
@@ -20,7 +22,9 @@ with open(sys.argv[2]) as file:
     units = json.load(file)
 with open(sys.argv[3]) as file:
     wakeable = json.load(file)
-poweroff_key = sys.argv[4] if len(sys.argv) > 4 else None
+with open(sys.argv[4]) as file:
+    rebootable = json.load(file)
+poweroff_key = sys.argv[5] if len(sys.argv) > 5 else None
 
 ACTIONS = {"start", "stop", "restart"}
 
@@ -95,6 +99,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/api/svc/status":
             return self.reply(404)
         states = dict(reachable)
+        # This host is up for as long as it's answering.
+        states.update((name, "up") for name in rebootable)
         if units:
             names = list(units)
             # One state per line, in argument order; non-zero exit when any
@@ -122,6 +128,17 @@ class Handler(BaseHTTPRequestHandler):
                 result = power_off(wakeable[name]["host"])
             except subprocess.TimeoutExpired:
                 return self.reply(504, {"error": "ssh timed out"})
+            if result.returncode != 0:
+                return self.reply(500, {"error": result.stderr.strip()})
+            return self.reply(202, {"ok": True})
+        if action == "reboot" and name in rebootable:
+            # --no-block so the reply makes it back through nginx before
+            # shutdown stops it; polkit allows ignoring inhibitors.
+            result = subprocess.run(
+                ["systemctl", "--no-block", "--check-inhibitors=no", "reboot"],
+                capture_output=True,
+                text=True,
+            )
             if result.returncode != 0:
                 return self.reply(500, {"error": result.stderr.strip()})
             return self.reply(202, {"ok": True})

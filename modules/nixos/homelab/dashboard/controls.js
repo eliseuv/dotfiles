@@ -1,7 +1,8 @@
 // Start/stop/restart buttons on tiles backed by a systemd unit, and a wake
 // button on tiles for another machine, plus power-off and terminal buttons on
-// some of those (controls.nix). `svcctlTiles`, `svcctlWakeTiles`,
-// `svcctlPoweroffTiles` (tile names) and `svcctlTerminals` (tile name -> URL)
+// some of those, and a reboot button on the tile for this host (controls.nix).
+// `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`,
+// `svcctlRebootTiles` (tile names) and `svcctlTerminals` (tile name -> URL)
 // are defined ahead of this file by default.nix.
 (() => {
   const api = "/api/svc";
@@ -15,6 +16,11 @@
   // (`shutdown +1`) before it even starts.
   const poweroffSent = {};
   const poweroffWindow = 180 * 1000;
+  // This host serves the page, so "rebooting" lasts until the API has gone
+  // away and answered again, or the window lapses.
+  const rebootSent = {};
+  const rebootWindow = 300 * 1000;
+  let apiWentDown = false;
 
   const call = (method, path) =>
     fetch(api + path, { method, headers }).then((response) =>
@@ -25,9 +31,13 @@
     call("GET", "/status")
       .then((next) => {
         states = next;
+        if (apiWentDown) for (const name in rebootSent) delete rebootSent[name];
+        apiWentDown = false;
         render();
       })
-      .catch(() => {});
+      .catch(() => {
+        apiWentDown = true;
+      });
 
   // Several quick polls after an action, since systemctl returns before the
   // unit has actually changed state.
@@ -43,6 +53,7 @@
       !confirm(`Power off ${name}? It shuts down in a minute; \`shutdown -c\` there cancels.`)
     )
       return;
+    if (action === "reboot" && !confirm(`Reboot ${name}? The dashboard goes down with it.`)) return;
     call("POST", `/${action}/${encodeURIComponent(name)}`)
       .then(() => {
         if (action === "wake") {
@@ -54,6 +65,11 @@
           poweroffSent[name] = Date.now();
           render();
           return settlePoweroff();
+        }
+        if (action === "reboot") {
+          rebootSent[name] = Date.now();
+          apiWentDown = false;
+          return render();
         }
         settle();
       })
@@ -92,12 +108,14 @@
     return element;
   };
 
-  const build = (name, wakeable) => {
+  const build = (name, wakeable, rebootable) => {
     const bar = document.createElement("div");
     bar.className = "svcctl";
     const state = document.createElement("span");
     state.className = "svcctl-state";
-    if (wakeable) {
+    if (rebootable) {
+      bar.append(state, button(name, "reboot", "↻"));
+    } else if (wakeable) {
       bar.append(state);
       if (name in svcctlTerminals) bar.append(terminalLink(name));
       bar.append(button(name, "wake", "⏻"));
@@ -114,6 +132,7 @@
   };
 
   const displayState = (name) => {
+    if (Date.now() - rebootSent[name] < rebootWindow) return "rebooting";
     const state = states[name] || "unknown";
     if (state === "up") delete wakeSent[name];
     else if (Date.now() - wakeSent[name] < wakeWindow) return "waking";
@@ -128,19 +147,22 @@
     for (const tile of document.querySelectorAll("li.service[data-name]")) {
       const name = tile.dataset.name;
       const wakeable = svcctlWakeTiles.includes(name);
-      if (!wakeable && !svcctlTiles.includes(name)) continue;
+      const rebootable = svcctlRebootTiles.includes(name);
+      if (!wakeable && !rebootable && !svcctlTiles.includes(name)) continue;
       const card = tile.firstElementChild;
       if (!card) continue;
       let bar = card.querySelector(":scope > .svcctl");
       if (!bar) {
-        bar = build(name, wakeable);
+        bar = build(name, wakeable, rebootable);
         card.append(bar);
       }
       const state = displayState(name);
       if (bar.dataset.state !== state) {
         bar.dataset.state = state;
         bar.querySelector(".svcctl-state").textContent = state;
-        if (wakeable) {
+        if (rebootable) {
+          bar.querySelector(".svcctl-reboot").disabled = state !== "up";
+        } else if (wakeable) {
           bar.querySelector(".svcctl-wake").disabled =
             state === "up" || state === "waking" || state === "shutting-down";
           const poweroff = bar.querySelector(".svcctl-poweroff");

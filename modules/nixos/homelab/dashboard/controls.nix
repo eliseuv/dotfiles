@@ -8,6 +8,8 @@
 # up/down state from pinging it over mDNS. With `dashboard.poweroff` they also
 # get a power-off button, which logs in to the host over SSH with a key whose
 # only use there is a forced `shutdown +1` (services/remote-poweroff.nix).
+# Tiles with `dashboard.reboot` stand for this host itself and get a reboot
+# button, which reboots it at once; polkit lets svcctl do that and no more.
 {
   config,
   lib,
@@ -43,6 +45,14 @@ let
   ) wakeTiles;
   wakeFile = pkgs.writeText "svcctl-wake.json" (builtins.toJSON wakeable);
 
+  rebootTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (
+      _: service: service.dashboard != null && service.dashboard.reboot
+    ) config.homelab.services
+  );
+  rebootFile = pkgs.writeText "svcctl-reboot.json" (builtins.toJSON rebootTiles);
+  canReboot = rebootTiles != [ ];
+
   poweroffKey = "svcctl/poweroff-ssh-key";
   canPoweroff = lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles);
 in
@@ -62,6 +72,12 @@ in
       ++ lib.mapAttrsToList (name: service: {
         assertion = service.dashboard.terminal == null || service.dashboard.wake != null;
         message = "homelab.services.${name}.dashboard.terminal needs dashboard.wake";
+      }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
+      # controls.js builds one kind of button bar per tile.
+      ++ lib.mapAttrsToList (name: service: {
+        assertion =
+          !service.dashboard.reboot || (service.dashboard.unit == null && service.dashboard.wake == null);
+        message = "homelab.services.${name}.dashboard.reboot can't be combined with dashboard.unit or dashboard.wake";
       }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services);
 
     users.users.svcctl = {
@@ -84,6 +100,20 @@ in
           }
         }
       });
+    ''
+    # Same three actions as remote-poweroff.nix grants for power-off, for the
+    # same reasons: someone is usually logged in, and sessions hold inhibitors.
+    + lib.optionalString canReboot ''
+      polkit.addRule(function (action, subject) {
+        var actions = [
+          "org.freedesktop.login1.reboot",
+          "org.freedesktop.login1.reboot-multiple-sessions",
+          "org.freedesktop.login1.reboot-ignore-inhibit",
+        ];
+        if (subject.user == "svcctl" && actions.indexOf(action.id) >= 0) {
+          return polkit.Result.YES;
+        }
+      });
     '';
 
     systemd.services.svcctl = {
@@ -102,6 +132,7 @@ in
             (toString port)
             "${unitsFile}"
             "${wakeFile}"
+            "${rebootFile}"
           ]
           ++ lib.optional canPoweroff config.sops.secrets.${poweroffKey}.path
         );

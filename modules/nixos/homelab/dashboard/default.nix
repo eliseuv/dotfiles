@@ -55,6 +55,9 @@ let
   terminalTiles = lib.mapAttrs' (
     _: service: lib.nameValuePair service.dashboard.name service.dashboard.terminal
   ) (lib.filterAttrs (_: service: service.dashboard.terminal != null) tiled);
+  rebootTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (_: service: service.dashboard.reboot) tiled
+  );
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -150,6 +153,11 @@ let
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Web terminal URL for a `wake` tile's terminal button, live while the host is up (controls.js); a path is served by this dashboard's nginx.";
+    };
+    reboot = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Reboot button for this host, the one serving the dashboard (controls.nix).";
     };
   };
 
@@ -303,6 +311,7 @@ in
         const svcctlWakeTiles = ${builtins.toJSON wakeTiles};
         const svcctlPoweroffTiles = ${builtins.toJSON poweroffTiles};
         const svcctlTerminals = ${builtins.toJSON terminalTiles};
+        const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
       ''
       + builtins.readFile ./controls.js;
 
