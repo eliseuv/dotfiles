@@ -9,6 +9,7 @@
       containers.enable = lib.mkEnableOption "Docker (rootless) and Podman";
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
       remotePowerOff.enable = lib.mkEnableOption "power-off over SSH from the homelab dashboard";
+      dotfilesSwitch.enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, for the homelab dashboard";
 
       ttyd = {
         enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); needs `ttyd/credential` in the host's sops file";
