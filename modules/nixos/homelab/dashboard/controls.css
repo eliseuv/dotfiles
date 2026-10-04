@@ -1,5 +1,5 @@
 /* Start/stop/restart bar on unit-backed tiles, wake bar on machine tiles,
-   reboot bar on this host's tile (controls.js). */
+   reboot bar on this host's tile, switch button on host tiles (controls.js). */
 
 .svcctl {
   display: flex;
@@ -70,4 +70,20 @@ html.dark .svcctl a {
    click guard (for keyboard activation) never sees. */
 .svcctl a[aria-disabled="true"] {
   pointer-events: none;
+}
+
+/* The switch button carries its own state, separate from the host's. */
+.svcctl[data-switch="switching"] button.svcctl-switch {
+  color: rgb(var(--portal-blue));
+  animation: svcctl-switching 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes svcctl-switching {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
+}
+
+.svcctl[data-switch="failed"] button.svcctl-switch {
+  border-color: rgb(244 63 94);
+  color: rgb(244 63 94);
 }

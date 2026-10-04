@@ -6,10 +6,16 @@
 # Tiles with `dashboard.wake` instead get a wake button, which sends a
 # Wake-on-LAN packet to that host (one of `my.wakeOnLan.hosts`), and an
 # up/down state from pinging it over mDNS. With `dashboard.poweroff` they also
-# get a power-off button, which logs in to the host over SSH with a key whose
-# only use there is a forced `shutdown +1` (services/remote-poweroff.nix).
+# get a power-off button, which logs in to the host over SSH with a key the
+# host pins to a forced command that only takes a few fixed verbs, `poweroff`
+# among them (services/remote-control.nix).
 # Tiles with `dashboard.reboot` stand for this host itself and get a reboot
 # button, which reboots it at once; polkit lets svcctl do that and no more.
+# Tiles with `dashboard.switch` get a button that starts that host's
+# dotfiles-switch.service (services/dotfiles-switch.nix): directly when it's
+# this host, otherwise through the same SSH login as power-off, over the
+# tailnet so laptops can be switched away from home. Buttons combine: one
+# tile can wake, power off, reboot and switch.
 {
   config,
   lib,
@@ -53,8 +59,28 @@ let
   rebootFile = pkgs.writeText "svcctl-reboot.json" (builtins.toJSON rebootTiles);
   canReboot = rebootTiles != [ ];
 
-  poweroffKey = "svcctl/poweroff-ssh-key";
-  canPoweroff = lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles);
+  switchTiles = lib.filterAttrs (
+    _: service: service.dashboard != null && service.dashboard.switch != null
+  ) config.homelab.services;
+  isLocal = host: host == config.my.host.name;
+  # Tile name -> {host}: null for this host, else its MagicDNS name.
+  switchable = lib.mapAttrs' (
+    _: service:
+    let
+      host = service.dashboard.switch;
+    in
+    lib.nameValuePair service.dashboard.name {
+      host = if isLocal host then null else "${lib.toLower host}.${config.homelab.network.tailnetDomain}";
+    }
+  ) switchTiles;
+  switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON switchable);
+  canSwitchHere = lib.any (service: isLocal service.dashboard.switch) (lib.attrValues switchTiles);
+
+  # Named for its first use; it also logs in for remote switches.
+  sshKey = "svcctl/poweroff-ssh-key";
+  needsKey =
+    lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
+    || lib.any (service: !isLocal service.dashboard.switch) (lib.attrValues switchTiles);
 in
 {
 
@@ -73,12 +99,10 @@ in
         assertion = service.dashboard.terminal == null || service.dashboard.wake != null;
         message = "homelab.services.${name}.dashboard.terminal needs dashboard.wake";
       }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
-      # controls.js builds one kind of button bar per tile.
-      ++ lib.mapAttrsToList (name: service: {
-        assertion =
-          !service.dashboard.reboot || (service.dashboard.unit == null && service.dashboard.wake == null);
-        message = "homelab.services.${name}.dashboard.reboot can't be combined with dashboard.unit or dashboard.wake";
-      }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services);
+      ++ lib.optional canSwitchHere {
+        assertion = config.my.services.dotfilesSwitch.enable;
+        message = "a dashboard.switch tile targets this host, which needs my.services.dotfilesSwitch.enable";
+      };
 
     users.users.svcctl = {
       isSystemUser = true;
@@ -88,7 +112,7 @@ in
 
     # The target's host key must be in programs.ssh.knownHosts: svcctl runs
     # ssh with StrictHostKeyChecking and no known_hosts of its own.
-    sops.secrets.${poweroffKey} = lib.mkIf canPoweroff { owner = "svcctl"; };
+    sops.secrets.${sshKey} = lib.mkIf needsKey { owner = "svcctl"; };
 
     security.polkit.extraConfig = ''
       polkit.addRule(function (action, subject) {
@@ -101,7 +125,19 @@ in
         }
       });
     ''
-    # Same three actions as remote-poweroff.nix grants for power-off, for the
+    + lib.optionalString canSwitchHere ''
+      polkit.addRule(function (action, subject) {
+        if (
+          action.id == "org.freedesktop.systemd1.manage-units" &&
+          subject.user == "svcctl" &&
+          action.lookup("unit") == "dotfiles-switch.service" &&
+          action.lookup("verb") == "start"
+        ) {
+          return polkit.Result.YES;
+        }
+      });
+    ''
+    # Same three actions as remote-control.nix grants for power-off, for the
     # same reasons: someone is usually logged in, and sessions hold inhibitors.
     + lib.optionalString canReboot ''
       polkit.addRule(function (action, subject) {
@@ -133,15 +169,16 @@ in
             "${unitsFile}"
             "${wakeFile}"
             "${rebootFile}"
+            "${switchFile}"
           ]
-          ++ lib.optional canPoweroff config.sops.secrets.${poweroffKey}.path
+          ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
         );
         User = "svcctl";
         Group = "svcctl";
         Restart = "on-failure";
         # Talks to systemd over D-Bus (AF_UNIX), serves on loopback, and
         # broadcasts wake packets and pings (unprivileged ICMP) and SSHes to
-        # power hosts off on the LAN.
+        # power hosts off and switch them, on the LAN and the tailnet.
         RestrictAddressFamilies = [
           "AF_UNIX"
           "AF_INET"

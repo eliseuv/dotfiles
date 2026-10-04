@@ -1,13 +1,17 @@
 // Start/stop/restart buttons on tiles backed by a systemd unit, and a wake
 // button on tiles for another machine, plus power-off and terminal buttons on
-// some of those, and a reboot button on the tile for this host (controls.nix).
-// `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`,
-// `svcctlRebootTiles` (tile names) and `svcctlTerminals` (tile name -> URL)
-// are defined ahead of this file by default.nix.
+// some of those, a reboot button on the tile for this host, and a switch button
+// on tiles for hosts that can pull and switch to the dotfiles (controls.nix).
+// A tile gets every bar it's listed for. `svcctlTiles`, `svcctlWakeTiles`,
+// `svcctlPoweroffTiles`, `svcctlRebootTiles`, `svcctlSwitchTiles` (tile names)
+// and `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
+// default.nix.
 (() => {
   const api = "/api/svc";
   const headers = { "X-Svcctl": "1" };
   let states = {};
+  // Tile name -> "idle"/"switching"/"failed" for switch tiles.
+  let switchStates = {};
   // Tile name -> when its wake was sent; shown as "waking" until the host
   // answers pings or the window lapses (a cold boot takes a while).
   const wakeSent = {};
@@ -30,7 +34,8 @@
   const refresh = () =>
     call("GET", "/status")
       .then((next) => {
-        states = next;
+        states = next.tiles;
+        switchStates = next.switch;
         if (apiWentDown) for (const name in rebootSent) delete rebootSent[name];
         apiWentDown = false;
         render();
@@ -54,6 +59,7 @@
     )
       return;
     if (action === "reboot" && !confirm(`Reboot ${name}? The dashboard goes down with it.`)) return;
+    if (action === "switch" && !confirm(`Pull origin/master on ${name} and switch to it?`)) return;
     call("POST", `/${action}/${encodeURIComponent(name)}`)
       .then(() => {
         if (action === "wake") {
@@ -108,26 +114,26 @@
     return element;
   };
 
-  const build = (name, wakeable, rebootable) => {
+  const build = (name, kinds) => {
     const bar = document.createElement("div");
     bar.className = "svcctl";
     const state = document.createElement("span");
     state.className = "svcctl-state";
-    if (rebootable) {
-      bar.append(state, button(name, "reboot", "↻"));
-    } else if (wakeable) {
-      bar.append(state);
-      if (name in svcctlTerminals) bar.append(terminalLink(name));
-      bar.append(button(name, "wake", "⏻"));
-      if (svcctlPoweroffTiles.includes(name)) bar.append(button(name, "poweroff", "■"));
-    } else {
+    bar.append(state);
+    if (kinds.unit) {
       bar.append(
-        state,
         button(name, "start", "▶"),
         button(name, "stop", "■"),
         button(name, "restart", "↻"),
       );
     }
+    if (kinds.wake) {
+      if (name in svcctlTerminals) bar.append(terminalLink(name));
+      bar.append(button(name, "wake", "⏻"));
+      if (svcctlPoweroffTiles.includes(name)) bar.append(button(name, "poweroff", "■"));
+    }
+    if (kinds.reboot) bar.append(button(name, "reboot", "↻"));
+    if (kinds.switch) bar.append(button(name, "switch", "⤓"));
     return bar;
   };
 
@@ -146,34 +152,49 @@
   const render = () => {
     for (const tile of document.querySelectorAll("li.service[data-name]")) {
       const name = tile.dataset.name;
-      const wakeable = svcctlWakeTiles.includes(name);
-      const rebootable = svcctlRebootTiles.includes(name);
-      if (!wakeable && !rebootable && !svcctlTiles.includes(name)) continue;
+      const kinds = {
+        unit: svcctlTiles.includes(name),
+        wake: svcctlWakeTiles.includes(name),
+        reboot: svcctlRebootTiles.includes(name),
+        switch: svcctlSwitchTiles.includes(name),
+      };
+      if (!Object.values(kinds).some(Boolean)) continue;
       const card = tile.firstElementChild;
       if (!card) continue;
       let bar = card.querySelector(":scope > .svcctl");
       if (!bar) {
-        bar = build(name, wakeable, rebootable);
+        bar = build(name, kinds);
         card.append(bar);
       }
       const state = displayState(name);
-      if (bar.dataset.state !== state) {
-        bar.dataset.state = state;
-        bar.querySelector(".svcctl-state").textContent = state;
-        if (rebootable) {
-          bar.querySelector(".svcctl-reboot").disabled = state !== "up";
-        } else if (wakeable) {
-          bar.querySelector(".svcctl-wake").disabled =
-            state === "up" || state === "waking" || state === "shutting-down";
-          const poweroff = bar.querySelector(".svcctl-poweroff");
-          if (poweroff) poweroff.disabled = state !== "up";
-          const terminal = bar.querySelector(".svcctl-terminal");
-          if (terminal) terminal.setAttribute("aria-disabled", String(state !== "up"));
-        } else {
-          const active = state === "active" || state === "activating" || state === "reloading";
-          bar.querySelector(".svcctl-start").disabled = active;
-          bar.querySelector(".svcctl-stop").disabled = !active;
-        }
+      const switchState = kinds.switch ? switchStates[name] || "unknown" : "";
+      if (bar.dataset.state === state && (bar.dataset.switch || "") === switchState) continue;
+      bar.dataset.state = state;
+      bar.querySelector(".svcctl-state").textContent = state;
+      if (kinds.unit) {
+        const active = state === "active" || state === "activating" || state === "reloading";
+        bar.querySelector(".svcctl-start").disabled = active;
+        bar.querySelector(".svcctl-stop").disabled = !active;
+      }
+      if (kinds.wake) {
+        bar.querySelector(".svcctl-wake").disabled =
+          state === "up" || state === "waking" || state === "shutting-down";
+        const poweroff = bar.querySelector(".svcctl-poweroff");
+        if (poweroff) poweroff.disabled = state !== "up";
+        const terminal = bar.querySelector(".svcctl-terminal");
+        if (terminal) terminal.setAttribute("aria-disabled", String(state !== "up"));
+      }
+      if (kinds.reboot) bar.querySelector(".svcctl-reboot").disabled = state !== "up";
+      if (kinds.switch) {
+        bar.dataset.switch = switchState;
+        const element = bar.querySelector(".svcctl-switch");
+        element.disabled = state !== "up" || switchState === "switching";
+        element.title =
+          switchState === "switching"
+            ? `Switching ${name}\u2026`
+            : switchState === "failed"
+              ? `Last switch of ${name} failed; see \`journalctl -u dotfiles-switch\` there`
+              : `Pull origin/master on ${name} and switch to it`;
       }
     }
   };

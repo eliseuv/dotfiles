@@ -1,12 +1,14 @@
-"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON [POWEROFF_KEY]: start/stop/
-restart a fixed set of systemd units for the dashboard's tile buttons
-(controls.nix).
+"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON [SSH_KEY]:
+start/stop/restart a fixed set of systemd units for the dashboard's tile
+buttons (controls.nix).
 UNITS_JSON maps tile names to units; nothing else can be touched, and polkit
 enforces the same list. WAKE_JSON maps tile names to {mac, host, poweroff} for
 tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
-POWEROFF_KEY, which the host pins to a forced `shutdown +1`. REBOOT_JSON lists
-tiles for this host itself, which reboot it."""
+SSH_KEY, which the host pins to its remote-control forced command. REBOOT_JSON
+lists tiles for this host itself, which reboot it. SWITCH_JSON maps tile names
+to {host} for hosts whose dotfiles-switch.service can be started: here when
+`host` is null, otherwise through the same SSH login."""
 
 import json
 import socket
@@ -24,14 +26,30 @@ with open(sys.argv[3]) as file:
     wakeable = json.load(file)
 with open(sys.argv[4]) as file:
     rebootable = json.load(file)
-poweroff_key = sys.argv[5] if len(sys.argv) > 5 else None
+with open(sys.argv[5]) as file:
+    switchable = json.load(file)
+ssh_key = sys.argv[6] if len(sys.argv) > 6 else None
 
 ACTIONS = {"start", "stop", "restart"}
+SWITCH_UNIT = "dotfiles-switch.service"
 
+
+# Tile name -> host to ping for up/down: wake tiles, and remote switch tiles
+# that aren't also wake tiles.
+probed = {name: target["host"] for name, target in wakeable.items()}
+for name, target in switchable.items():
+    if target["host"] and name not in probed:
+        probed[name] = target["host"]
 
 # Tile name -> "up"/"down", kept fresh by probe() rather than pinged per
 # request: a sleeping host's mDNS lookup alone takes ~9s to fail.
-reachable = {name: "unknown" for name in wakeable}
+reachable = {name: "unknown" for name in probed}
+
+# Tile name -> "idle"/"switching"/"failed" for remote switch tiles, from
+# watch_switch(); the local one is read from systemd on each request.
+remote_switch = {
+    name: "unknown" for name, target in switchable.items() if target["host"]
+}
 
 
 def probe(name, host):
@@ -56,23 +74,63 @@ def send_magic_packet(mac):
         sock.sendto(payload, ("255.255.255.255", 9))
 
 
-def power_off(host):
-    # No command: the host's authorized_keys forces one. known_hosts comes
-    # from the system file only; svcctl has no home to keep one in.
+def remote(host, verb):
+    # The host's authorized_keys forces its remote-control command, which
+    # only takes the verb from here. known_hosts comes from the system file
+    # only; svcctl has no home to keep one in.
     return subprocess.run(
         [
             "ssh",
-            "-i", poweroff_key,
+            "-i", ssh_key,
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=5",
             "-o", "StrictHostKeyChecking=yes",
             "-o", "UserKnownHostsFile=/dev/null",
-            f"remote-poweroff@{host}",
+            f"remote-control@{host}",
+            verb,
         ],
         capture_output=True,
         text=True,
         timeout=20,
     )
+
+
+def switch_state(show_output):
+    # `systemctl show --property=ActiveState,Result --value`: two lines.
+    lines = show_output.split()
+    if len(lines) != 2:
+        return "unknown"
+    active, result = lines
+    if active in ("activating", "active", "deactivating"):
+        return "switching"
+    if active == "failed" or result != "success":
+        return "failed"
+    return "idle"
+
+
+def local_switch_state():
+    result = subprocess.run(
+        ["systemctl", "show", "--property=ActiveState,Result", "--value", SWITCH_UNIT],
+        capture_output=True,
+        text=True,
+    )
+    return switch_state(result.stdout)
+
+
+def watch_switch(name, until_done):
+    # Polled over SSH only around switches started from here, plus once at
+    # startup, rather than on every status request: each poll is a login.
+    host = switchable[name]["host"]
+    while True:
+        try:
+            result = remote(host, "switch-status")
+            if result.returncode == 0:
+                remote_switch[name] = switch_state(result.stdout)
+        except subprocess.TimeoutExpired:
+            pass
+        if not until_done or remote_switch[name] != "switching":
+            return
+        time.sleep(10)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -101,6 +159,11 @@ class Handler(BaseHTTPRequestHandler):
         states = dict(reachable)
         # This host is up for as long as it's answering.
         states.update((name, "up") for name in rebootable)
+        switch = dict(remote_switch)
+        local = [name for name, target in switchable.items() if not target["host"]]
+        if local:
+            state = local_switch_state()
+            switch.update((name, state) for name in local)
         if units:
             names = list(units)
             # One state per line, in argument order; non-zero exit when any
@@ -111,7 +174,7 @@ class Handler(BaseHTTPRequestHandler):
                 text=True,
             )
             states.update(zip(names, result.stdout.split()))
-        self.reply(200, states)
+        self.reply(200, {"tiles": states, "switch": switch})
 
     def do_POST(self):
         if not self.guarded():
@@ -123,9 +186,9 @@ class Handler(BaseHTTPRequestHandler):
         if action == "wake" and name in wakeable:
             send_magic_packet(wakeable[name]["mac"])
             return self.reply(202, {"ok": True})
-        if action == "poweroff" and wakeable.get(name, {}).get("poweroff") and poweroff_key:
+        if action == "poweroff" and wakeable.get(name, {}).get("poweroff") and ssh_key:
             try:
-                result = power_off(wakeable[name]["host"])
+                result = remote(wakeable[name]["host"], "poweroff")
             except subprocess.TimeoutExpired:
                 return self.reply(504, {"error": "ssh timed out"})
             if result.returncode != 0:
@@ -141,6 +204,27 @@ class Handler(BaseHTTPRequestHandler):
             )
             if result.returncode != 0:
                 return self.reply(500, {"error": result.stderr.strip()})
+            return self.reply(202, {"ok": True})
+        if action == "switch" and name in switchable:
+            host = switchable[name]["host"]
+            if host and not ssh_key:
+                return self.reply(404)
+            try:
+                if host:
+                    result = remote(host, "switch")
+                else:
+                    result = subprocess.run(
+                        ["systemctl", "--no-block", "start", SWITCH_UNIT],
+                        capture_output=True,
+                        text=True,
+                    )
+            except subprocess.TimeoutExpired:
+                return self.reply(504, {"error": "ssh timed out"})
+            if result.returncode != 0:
+                return self.reply(500, {"error": result.stderr.strip()})
+            if host:
+                remote_switch[name] = "switching"
+                threading.Thread(target=watch_switch, args=(name, True), daemon=True).start()
             return self.reply(202, {"ok": True})
         if action not in ACTIONS or name not in units:
             return self.reply(404)
@@ -159,6 +243,9 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s\n" % (format % args))
 
 
-for name, target in wakeable.items():
-    threading.Thread(target=probe, args=(name, target["host"]), daemon=True).start()
+for name, host in probed.items():
+    threading.Thread(target=probe, args=(name, host), daemon=True).start()
+if ssh_key:
+    for name in remote_switch:
+        threading.Thread(target=watch_switch, args=(name, False), daemon=True).start()
 ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

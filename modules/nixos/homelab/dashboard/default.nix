@@ -58,6 +58,9 @@ let
   rebootTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.reboot) tiled
   );
+  switchTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (_: service: service.dashboard.switch != null) tiled
+  );
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -158,6 +161,11 @@ let
       type = lib.types.bool;
       default = false;
       description = "Reboot button for this host, the one serving the dashboard (controls.nix).";
+    };
+    switch = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host (as in hosts/) whose dotfiles-switch.service the tile's switch button starts (controls.nix).";
     };
   };
 
@@ -316,6 +324,7 @@ in
         const svcctlPoweroffTiles = ${builtins.toJSON poweroffTiles};
         const svcctlTerminals = ${builtins.toJSON terminalTiles};
         const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
+        const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
       ''
       + builtins.readFile ./controls.js;
 
