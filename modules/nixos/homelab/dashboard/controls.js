@@ -91,7 +91,11 @@
         }
         settle();
       })
-      .catch((status) => alert(`${action} ${name} failed (${status})`));
+      .catch((status) => {
+        if (status !== 401) return alert(`${action} ${name} failed (${status})`);
+        // The login page; see /api/svc/login in controls.nix.
+        if (confirm("Log in to use the dashboard controls?")) location.href = `${api}/login`;
+      });
   };
 
   const button = (name, action, glyph) => {

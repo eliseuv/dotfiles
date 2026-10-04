@@ -221,13 +221,26 @@ in
     services.nginx.virtualHosts.dashboard.locations = {
       "/api/svc/" = {
         proxyPass = "http://127.0.0.1:${toString port}";
-        # The browser asks once, on the first action, and resends it after.
         extraConfig = ''
           limit_except GET {
             ${basicAuth}
           }
         '';
       };
+      # Not every browser asks for a login when a script's request gets a
+      # 401 (Firefox for Android doesn't), but every one does for a page, so
+      # controls.js sends the user here on a 401. Logged in at this path,
+      # the browser also sends the login with every later /api/svc/ request
+      # on its own, rather than only to paths it has already seen.
+      # `return` would run before auth_basic, skipping the login; try_files
+      # runs after it, finds nothing and hands over to the redirect.
+      "= /api/svc/login" = {
+        extraConfig = ''
+          ${basicAuth}
+          try_files /nonexistent @svcctl-logged-in;
+        '';
+      };
+      "@svcctl-logged-in".return = "302 /";
     }
     # Merged into the locations hosts declare for their terminals, which
     # bring their own proxyPass. Same realm, so the browser reuses one login.
