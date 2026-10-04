@@ -13,6 +13,7 @@ one connects. TAILSCALE_JSON likewise maps tiles to {hosts} whose Tailscale can
 be turned on and off, always through that login."""
 
 import json
+import re
 import socket
 import subprocess
 import sys
@@ -61,22 +62,30 @@ remote_switch = {
 tailscale_state = {name: "unknown" for name in tailscalable}
 
 
+# Tile name -> round-trip time in ms of the last answered ping, None while down.
+latency = {name: None for name in probed}
+
+
 def ping(host):
+    # Round-trip time in ms, None if unanswered.
     try:
         result = subprocess.run(
             ["ping", "-c1", "-W1", host],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
             timeout=15,
         )
     except subprocess.TimeoutExpired:
-        return False
-    return result.returncode == 0
+        return None
+    match = re.search(r"time=([\d.]+) ms", result.stdout)
+    return float(match.group(1)) if result.returncode == 0 and match else None
 
 
 def probe(name, hosts):
     while True:
-        reachable[name] = "up" if any(ping(host) for host in hosts) else "down"
+        rtt = next((r for r in map(ping, hosts) if r is not None), None)
+        latency[name] = rtt
+        reachable[name] = "up" if rtt is not None else "down"
         time.sleep(5)
 
 
@@ -259,7 +268,7 @@ class Handler(BaseHTTPRequestHandler):
             )
             states.update(zip(names, result.stdout.split()))
         self.reply(
-            200, {"tiles": states, "switch": switch, "tailscale": tailscale_state}
+            200, {"tiles": states, "switch": switch, "tailscale": tailscale_state, "ping": latency}
         )
 
     def do_POST(self):

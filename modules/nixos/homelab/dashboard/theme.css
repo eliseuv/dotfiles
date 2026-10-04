@@ -273,7 +273,7 @@ li.service[data-name="GLaDOS"] .svcctl-state::after {
 }
 
 li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-state::after {
-  content: "Online";
+  content: "Online" attr(data-ping);
   color: rgb(var(--glados-yellow));
 }
 

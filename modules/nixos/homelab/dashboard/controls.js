@@ -15,6 +15,8 @@
   let switchStates = {};
   // Tile name -> "on"/"off"/"unknown" for tailscale tiles.
   let tailscaleStates = {};
+  // Tile name -> round-trip ms of the host's last answered ping, or null.
+  let pings = {};
   // Tile name -> when its wake was sent; shown as "waking" until the host
   // answers pings or the window lapses (a cold boot takes a while).
   const wakeSent = {};
@@ -41,6 +43,7 @@
         states = next.tiles;
         switchStates = next.switch;
         tailscaleStates = next.tailscale;
+        pings = next.ping;
         if (apiWentDown) {
           for (const name in rebootSent) if (svcctlRebootTiles[name]) delete rebootSent[name];
         }
@@ -204,14 +207,20 @@
       const state = displayState(name);
       const switchState = kinds.switch ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
+      const ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
       if (
+        bar.dataset.ping === ping &&
         bar.dataset.state === state &&
         (bar.dataset.switch || "") === switchState &&
         (bar.dataset.tailscale || "") === tailscaleState
       )
         continue;
       bar.dataset.state = state;
-      bar.querySelector(".svcctl-state").textContent = state;
+      bar.dataset.ping = ping;
+      const label = bar.querySelector(".svcctl-state");
+      label.textContent = state + ping;
+      // For themes that draw their own label (theme.css).
+      label.dataset.ping = ping;
       if (kinds.unit) {
         const active = state === "active" || state === "activating" || state === "reloading";
         bar.querySelector(".svcctl-start").disabled = active;
