@@ -1,7 +1,16 @@
-{ ... }:
+{ config, lib, ... }:
 {
 
   networking.networkmanager.enable = true;
+
+  # Arm Wake-on-LAN on hosts listed as `wake` targets. Through NetworkManager
+  # rather than networking.interfaces.<name>.wakeOnLan, which would hardcode
+  # the interface name. 64 is NM's magic-packet flag; this global default
+  # applies to every wired connection, which on these single-NIC hosts is the
+  # one that matters.
+  networking.networkmanager.settings.connection."ethernet.wake-on-lan" = lib.mkIf (
+    config.my.wakeOnLan.hosts ? ${config.my.host.name}
+  ) 64;
 
   # networking.nameservers = [ "130.161.158.4" "130.161.33.17" ];
   networking.nameservers = [
