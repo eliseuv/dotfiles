@@ -39,8 +39,8 @@
     href = "https://login.tailscale.com/admin/machines";
   };
 
-  # Wake and power-off buttons for GLaDOS, which has no services of its own
-  # here; wheatley is the always-on LAN host that can send her the packet.
+  # Wake, power-off and terminal buttons for GLaDOS, which has no services of
+  # its own here; wheatley is the always-on LAN host that can send her the packet.
   # The icon is a placeholder the dashboard theme draws over with her head.
   homelab.services.glados.dashboard = {
     name = "GLaDOS";
@@ -51,6 +51,7 @@
     link = false;
     wake = "GLaDOS";
     poweroff = true;
+    terminal = "/glados/terminal/";
   };
   # For the dashboard's power-off, which SSHes to her with strict host key
   # checking.

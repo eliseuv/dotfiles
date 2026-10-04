@@ -286,8 +286,28 @@ li.service[data-name="GLaDOS"] .svcctl[data-state="shutting-down"] .svcctl-state
   color: rgb(var(--glados-yellow));
 }
 
-li.service[data-name="GLaDOS"] .svcctl button:hover:not(:disabled) {
+li.service[data-name="GLaDOS"] .svcctl button:hover:not(:disabled),
+li.service[data-name="GLaDOS"] .svcctl a:hover:not([aria-disabled="true"]) {
   box-shadow: 0 0 0 1px rgb(var(--glados-yellow));
+}
+
+/* Her terminal: a prompt lit in her optic's yellow while she's online, as
+   if typed straight into her console. */
+li.service[data-name="GLaDOS"] .svcctl-terminal {
+  font-weight: 600;
+}
+
+li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-terminal {
+  border-color: rgb(var(--glados-yellow) / 0.6);
+  color: rgb(var(--glados-yellow));
+  text-shadow: 0 0 6px rgb(var(--glados-yellow) / 0.55);
+}
+
+li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-terminal:hover {
+  background: rgb(var(--glados-yellow) / 0.12);
+  box-shadow:
+    0 0 0 1px rgb(var(--glados-yellow)),
+    0 0 10px -2px rgb(var(--glados-yellow) / 0.8);
 }
 
 /* The OS drives light/dark now (theme.js). */

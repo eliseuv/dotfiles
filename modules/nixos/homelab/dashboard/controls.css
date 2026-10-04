@@ -26,7 +26,8 @@
   color: rgb(244 63 94);
 }
 
-.svcctl button {
+.svcctl button,
+.svcctl a {
   min-width: 1.6rem;
   padding: 0.1rem 0.35rem;
   border: 1px solid var(--card-border);
@@ -34,14 +35,19 @@
   background: var(--block-bg);
   color: rgb(var(--color-700));
   line-height: 1.2;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
 }
 
-html.dark .svcctl button {
+html.dark .svcctl button,
+html.dark .svcctl a {
   color: rgb(var(--color-200));
 }
 
-.svcctl button:hover:not(:disabled) {
+.svcctl button:hover:not(:disabled),
+.svcctl a:hover:not([aria-disabled="true"]) {
   box-shadow: 0 0 0 1px rgb(var(--portal-orange));
 }
 
@@ -49,7 +55,14 @@ html.dark .svcctl button {
   box-shadow: 0 0 0 1px rgb(var(--portal-blue));
 }
 
-.svcctl button:disabled {
+.svcctl button:disabled,
+.svcctl a[aria-disabled="true"] {
   opacity: 0.35;
   cursor: default;
+}
+
+/* Links can't be disabled; this also stops middle clicks, which controls.js's
+   click guard (for keyboard activation) never sees. */
+.svcctl a[aria-disabled="true"] {
+  pointer-events: none;
 }

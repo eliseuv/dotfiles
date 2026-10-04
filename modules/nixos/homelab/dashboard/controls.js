@@ -1,8 +1,8 @@
 // Start/stop/restart buttons on tiles backed by a systemd unit, and a wake
-// button on tiles for another machine, plus a power-off button on some of
-// those (controls.nix). `svcctlTiles`, `svcctlWakeTiles` and
-// `svcctlPoweroffTiles` (tile names) are defined ahead of this file by
-// default.nix.
+// button on tiles for another machine, plus power-off and terminal buttons on
+// some of those (controls.nix). `svcctlTiles`, `svcctlWakeTiles`,
+// `svcctlPoweroffTiles` (tile names) and `svcctlTerminals` (tile name -> URL)
+// are defined ahead of this file by default.nix.
 (() => {
   const api = "/api/svc";
   const headers = { "X-Svcctl": "1" };
@@ -74,13 +74,33 @@
     return element;
   };
 
+  // A link rather than a button so it opens like one (new tab, middle click);
+  // links can't be disabled, so render() toggles aria-disabled, which
+  // controls.css makes inert to the pointer and this guards for the keyboard.
+  const terminalLink = (name) => {
+    const element = document.createElement("a");
+    element.className = "svcctl-terminal";
+    element.href = svcctlTerminals[name];
+    element.target = "_blank";
+    element.rel = "noopener";
+    element.title = `Terminal on ${name}`;
+    element.textContent = ">_";
+    element.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (element.getAttribute("aria-disabled") === "true") event.preventDefault();
+    });
+    return element;
+  };
+
   const build = (name, wakeable) => {
     const bar = document.createElement("div");
     bar.className = "svcctl";
     const state = document.createElement("span");
     state.className = "svcctl-state";
     if (wakeable) {
-      bar.append(state, button(name, "wake", "⏻"));
+      bar.append(state);
+      if (name in svcctlTerminals) bar.append(terminalLink(name));
+      bar.append(button(name, "wake", "⏻"));
       if (svcctlPoweroffTiles.includes(name)) bar.append(button(name, "poweroff", "■"));
     } else {
       bar.append(
@@ -125,6 +145,8 @@
             state === "up" || state === "waking" || state === "shutting-down";
           const poweroff = bar.querySelector(".svcctl-poweroff");
           if (poweroff) poweroff.disabled = state !== "up";
+          const terminal = bar.querySelector(".svcctl-terminal");
+          if (terminal) terminal.setAttribute("aria-disabled", String(state !== "up"));
         } else {
           const active = state === "active" || state === "activating" || state === "reloading";
           bar.querySelector(".svcctl-start").disabled = active;

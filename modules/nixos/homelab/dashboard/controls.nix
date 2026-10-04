@@ -58,6 +58,10 @@ in
       ++ lib.mapAttrsToList (name: service: {
         assertion = !service.dashboard.poweroff || service.dashboard.wake != null;
         message = "homelab.services.${name}.dashboard.poweroff needs dashboard.wake";
+      }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
+      ++ lib.mapAttrsToList (name: service: {
+        assertion = service.dashboard.terminal == null || service.dashboard.wake != null;
+        message = "homelab.services.${name}.dashboard.terminal needs dashboard.wake";
       }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services);
 
     users.users.svcctl = {
