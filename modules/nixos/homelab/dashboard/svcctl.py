@@ -82,10 +82,14 @@ def send_magic_packet(mac):
 def remote(host, verb):
     # The host's authorized_keys forces its remote-control command, which
     # only takes the verb from here. known_hosts comes from the system file
-    # only; svcctl has no home to keep one in.
+    # only; svcctl has no home to keep one in. -F /dev/null skips the system
+    # ssh_config, whose gpg-agent `Match exec` runs through svcctl's nologin
+    # shell and logs a refused login on every call; the system known_hosts
+    # is ssh's default anyway.
     return subprocess.run(
         [
             "ssh",
+            "-F", "/dev/null",
             "-i", ssh_key,
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=5",
