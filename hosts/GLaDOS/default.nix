@@ -42,7 +42,10 @@
 
   my.gaming.enable = true;
 
-  my.secrets.user.enable = true;
+  my.secrets = {
+    system.enable = true;
+    user.enable = true;
+  };
 
   my.home = {
     apps.enable = true;
