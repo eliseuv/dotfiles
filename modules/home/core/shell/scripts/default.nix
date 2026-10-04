@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
 
   # Nix scripts
@@ -22,6 +27,12 @@
     (import ./_schedule-claude.nix {
       inherit pkgs;
       inherit lib;
+    })
+    # wake
+    (import ./_wake.nix {
+      inherit pkgs;
+      inherit lib;
+      inherit (config.my) wakeOnLan;
     })
   ];
 
