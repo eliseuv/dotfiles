@@ -13,6 +13,10 @@
       # ImageMagick - image manipulation tool
       imagemagick
 
+      # Ghostscript - ImageMagick shells out to `gs` to rasterize PDFs
+      # (needed by snacks.nvim to render math equations)
+      ghostscript
+
       # GIMP - GNU Image Manipulation Program
       gimp
 
