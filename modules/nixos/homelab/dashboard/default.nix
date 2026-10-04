@@ -41,6 +41,9 @@ let
   controlledTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.unit != null) tiled
   );
+  wakeTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (_: service: service.dashboard.wake != null) tiled
+  );
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -121,6 +124,11 @@ let
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "systemd unit the tile's start/stop/restart buttons control (controls.nix).";
+    };
+    wake = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host in `my.wakeOnLan.hosts` the tile's wake button wakes and shows up/down (controls.nix).";
     };
   };
 
@@ -267,6 +275,7 @@ in
       + builtins.readFile ./theme.js
       + ''
         const svcctlTiles = ${builtins.toJSON controlledTiles};
+        const svcctlWakeTiles = ${builtins.toJSON wakeTiles};
       ''
       + builtins.readFile ./controls.js;
 

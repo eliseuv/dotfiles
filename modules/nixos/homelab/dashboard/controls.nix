@@ -3,6 +3,9 @@
 # the API on loopback behind the dashboard's nginx, so it shares the
 # dashboard's reach (LAN + tailnet) and has no login of its own. It runs
 # unprivileged; polkit lets it manage exactly the listed units, nothing else.
+# Tiles with `dashboard.wake` instead get a wake button, which sends a
+# Wake-on-LAN packet to that host (one of `my.wakeOnLan.hosts`), and an
+# up/down state from pinging it over mDNS.
 {
   config,
   lib,
@@ -20,10 +23,31 @@ let
     _: service: lib.nameValuePair service.dashboard.name service.dashboard.unit
   ) controlled;
   unitsFile = pkgs.writeText "svcctl-units.json" (builtins.toJSON units);
+
+  wakeTiles = lib.filterAttrs (
+    _: service: service.dashboard != null && service.dashboard.wake != null
+  ) config.homelab.services;
+  # Tile name -> {mac, host}.
+  wakeable = lib.mapAttrs' (
+    _: service:
+    let
+      host = service.dashboard.wake;
+    in
+    lib.nameValuePair service.dashboard.name {
+      mac = config.my.wakeOnLan.hosts.${host};
+      host = "${host}.local";
+    }
+  ) wakeTiles;
+  wakeFile = pkgs.writeText "svcctl-wake.json" (builtins.toJSON wakeable);
 in
 {
 
   config = lib.mkIf config.my.homelab.enable {
+
+    assertions = lib.mapAttrsToList (name: service: {
+      assertion = config.my.wakeOnLan.hosts ? ${service.dashboard.wake};
+      message = "homelab.services.${name}.dashboard.wake: ${service.dashboard.wake} is not in my.wakeOnLan.hosts";
+    }) wakeTiles;
 
     users.users.svcctl = {
       isSystemUser = true;
@@ -46,13 +70,17 @@ in
     systemd.services.svcctl = {
       description = "Dashboard service controls";
       wantedBy = [ "multi-user.target" ];
-      path = [ config.systemd.package ];
+      path = [
+        config.systemd.package
+        pkgs.iputils
+      ];
       serviceConfig = {
-        ExecStart = "${lib.getExe pkgs.python3} ${./svcctl.py} ${toString port} ${unitsFile}";
+        ExecStart = "${lib.getExe pkgs.python3} ${./svcctl.py} ${toString port} ${unitsFile} ${wakeFile}";
         User = "svcctl";
         Group = "svcctl";
         Restart = "on-failure";
-        # Talks to systemd over D-Bus (AF_UNIX) and serves on loopback.
+        # Talks to systemd over D-Bus (AF_UNIX), serves on loopback, and
+        # broadcasts wake packets and pings (unprivileged ICMP) on the LAN.
         RestrictAddressFamilies = [
           "AF_UNIX"
           "AF_INET"

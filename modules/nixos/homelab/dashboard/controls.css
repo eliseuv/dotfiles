@@ -1,4 +1,5 @@
-/* Start/stop/restart bar on unit-backed tiles (controls.js). */
+/* Start/stop/restart bar on unit-backed tiles, wake bar on machine tiles
+   (controls.js). */
 
 .svcctl {
   display: flex;
@@ -16,7 +17,8 @@
   color: rgb(var(--color-500));
 }
 
-.svcctl[data-state="active"] .svcctl-state {
+.svcctl[data-state="active"] .svcctl-state,
+.svcctl[data-state="up"] .svcctl-state {
   color: rgb(16 185 129);
 }
 
