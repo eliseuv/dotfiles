@@ -4,11 +4,12 @@ let
   # The language server lives in the nvim-lspconfig env, which nvim-lspconfig's
   # julials loads ahead of the global one; Zed manages its own @zed-julia env.
   # Both envs are updated even if one fails, so one breakage doesn't leave the
-  # other stale.
+  # other stale. Pkg.update only logs precompile failures, so the language
+  # server env is precompiled strictly to make a broken server fail the update.
   julia-env-update = pkgs.writeShellScriptBin "julia-env-update" ''
     status=0
     ${lib.getExe pkgs.julia-bin} --eval 'using Pkg; Pkg.add("Pluto"); Pkg.update()' || status=1
-    ${lib.getExe pkgs.julia-bin} --project=@nvim-lspconfig --eval 'using Pkg; Pkg.update()' || status=1
+    ${lib.getExe pkgs.julia-bin} --project=@nvim-lspconfig --eval 'using Pkg; Pkg.update(); Pkg.precompile(strict=true)' || status=1
     if [ "$status" -eq 0 ]; then
       ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed"
     else
