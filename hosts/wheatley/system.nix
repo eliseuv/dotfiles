@@ -19,10 +19,10 @@
     settings.connection."ipv4.dhcp-client-id" = "mac";
   };
 
-  # The LAN and NAS addresses are DHCP reservations on the router.
+  # The router hands out no fixed addresses, so hosts are reached by mDNS name
+  # on the LAN and by tailnet address elsewhere.
   homelab.network = {
     lanSubnet = "192.168.0.0/24";
-    lanAddress = "192.168.0.62";
     nasAddress = config.my.services.nas.address;
     tailnetDomain = "taild628c9.ts.net";
     tailnetAddress = "100.97.1.97";
@@ -66,11 +66,12 @@
 
   # Her ttyd (my.services.ttyd in hosts/GLaDOS), proxied so it's reachable
   # wherever the dashboard is, tailnet included; her firewall only admits
-  # wheatley. By address rather than GLaDOS.local: nginx resolves upstream
-  # names once at startup, and fails to start if she's asleep then. Long read
+  # wheatley, over the tailnet. By her tailnet address rather than a name:
+  # nginx resolves upstream names once at startup, and fails to start if she's
+  # asleep (.local) or tailscaled isn't up yet (MagicDNS). Long read
   # timeout so an idle terminal's websocket isn't cut after nginx's default 60s.
   services.nginx.virtualHosts.dashboard.locations."/glados/terminal/" = {
-    proxyPass = "http://192.168.0.51:3000";
+    proxyPass = "http://100.110.170.42:3000";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_read_timeout 1d;

@@ -266,7 +266,6 @@ in
         linkHost
         "${linkHost}.local"
         "${linkHost}.${network.tailnetDomain}"
-        network.lanAddress
         network.tailnetAddress
       ];
 

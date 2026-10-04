@@ -3,10 +3,12 @@
 
   boot.loader.timeout = 2;
 
-  # ttyd hands out a shell, so only wheatley (its reverse proxy, at its
-  # homelab.network.lanAddress) may reach it, not the whole LAN.
+  # ttyd hands out a shell, so only wheatley (its reverse proxy) may reach it,
+  # over the tailnet rather than the LAN: the router hands out no fixed
+  # addresses, tailnet ones don't move. The source is wheatley's
+  # homelab.network.tailnetAddress.
   networking.firewall.extraCommands = ''
-    iptables -A nixos-fw -s 192.168.0.62 -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
+    iptables -A nixos-fw -i tailscale0 -s 100.97.1.97 -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
   '';
 
   # Mount disks
