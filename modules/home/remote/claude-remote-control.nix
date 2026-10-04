@@ -7,9 +7,9 @@
 # The home directory itself can't be used: Claude Code never persists
 # workspace trust for $HOME, so a session started there fails every
 # launch. `~/Projects` is a dedicated, otherwise-empty directory instead,
-# with the dotfiles and `~/Services` granted as additional accessible
-# directories so sessions here can still reach the config and the deployed
-# services.
+# with the dotfiles (and, on homelab hosts, `~/Services`) granted as
+# additional accessible directories so sessions here can still reach the
+# config and the deployed services.
 #
 # Workspace trust for `~/Projects` was accepted once by hand (there's no
 # non-interactive way to answer that dialog). Separately, the command
@@ -26,8 +26,8 @@ in
     home.file."Projects/.claude/settings.json".text = builtins.toJSON {
       permissions.additionalDirectories = [
         config.my.dotfiles.path
-        "${config.home.homeDirectory}/Services"
-      ];
+      ]
+      ++ lib.optional config.my.homelab.enable "${config.home.homeDirectory}/Services";
     };
 
     systemd.user.services.claude-remote-control = {
