@@ -1,6 +1,6 @@
 # Lets the homelab dashboard (svcctl on wheatley, dashboard/controls.nix)
-# power this host off, reboot it, switch it to the latest dotfiles and turn
-# Tailscale on and off. svcctl
+# power this host off, reboot it, switch it to the latest dotfiles, turn
+# Tailscale on and off, and start and stop the units in `remoteUnits`. svcctl
 # logs in over SSH as a dedicated user whose only key is pinned to one forced
 # command, so the key can't open a shell, forward anything or run anything
 # else, whatever the client asks for. The forced command reads the requested
@@ -25,7 +25,10 @@ let
   systemctl = "${config.systemd.package}/bin/systemctl";
   switchUnit = "dotfiles-switch.service";
   enabled =
-    services.remotePowerOff.enable || services.dotfilesSwitch.enable || services.remoteTailscale.enable;
+    services.remotePowerOff.enable
+    || services.dotfilesSwitch.enable
+    || services.remoteTailscale.enable
+    || services.remoteUnits != [ ];
   tailscale = lib.getExe config.services.tailscale.package;
   # The tailscale CLI only obeys its operator, the primary user (see
   # services/tailscale.nix), so these root units run it on remote-control's
@@ -50,6 +53,13 @@ let
       tailscale-off) exec ${systemctl} start --no-block ${tailscaleUnits.down} ;;
       tailscale-status) exec ${tailscale} status --json --peers=false ;;
     ''}
+    ${lib.concatMapStrings (unit: ''
+      ${lib.escapeShellArg "start ${unit}"}) exec ${systemctl} start --no-block ${unit} ;;
+      ${lib.escapeShellArg "stop ${unit}"}) exec ${systemctl} stop --no-block ${unit} ;;
+      ${lib.escapeShellArg "restart ${unit}"}) exec ${systemctl} restart --no-block ${unit} ;;
+      # is-active exits non-zero for anything but active; the state is the answer.
+      ${lib.escapeShellArg "status ${unit}"}) ${systemctl} is-active ${unit}; exit 0 ;;
+    '') services.remoteUnits}
     *)
       echo "remote-control: refused: ''${SSH_ORIGINAL_COMMAND:-<none>}" >&2
       exit 1
@@ -85,6 +95,18 @@ in
             "org.freedesktop.login1.reboot-ignore-inhibit",
           ];
           if (subject.user == "${user}" && actions.indexOf(action.id) >= 0) {
+            return polkit.Result.YES;
+          }
+        });
+      ''
+      + lib.optionalString (services.remoteUnits != [ ]) ''
+        polkit.addRule(function (action, subject) {
+          if (
+            action.id == "org.freedesktop.systemd1.manage-units" &&
+            subject.user == "${user}" &&
+            ${builtins.toJSON services.remoteUnits}.indexOf(action.lookup("unit")) >= 0 &&
+            ["start", "stop", "restart"].indexOf(action.lookup("verb")) >= 0
+          ) {
             return polkit.Result.YES;
           }
         });

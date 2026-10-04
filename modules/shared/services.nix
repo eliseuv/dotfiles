@@ -11,6 +11,11 @@
       remotePowerOff.enable = lib.mkEnableOption "power-off and reboot over SSH from the homelab dashboard";
       dotfilesSwitch.enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, for the homelab dashboard";
       remoteTailscale.enable = lib.mkEnableOption "turning Tailscale on and off over SSH from the homelab dashboard (needs my.services.tailscale)";
+      remoteUnits = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "systemd units the homelab dashboard may start, stop, restart and query over SSH (services/remote-control.nix).";
+      };
 
       ttyd = {
         enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); it has no login of its own, so it belongs behind the homelab dashboard's nginx";
