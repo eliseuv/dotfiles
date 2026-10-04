@@ -48,6 +48,9 @@ let
   wakeTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.wake != null) tiled
   );
+  poweroffTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
+    lib.filterAttrs (_: service: service.dashboard.poweroff) tiled
+  );
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -133,6 +136,11 @@ let
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Host in `my.wakeOnLan.hosts` the tile's wake button wakes and shows up/down (controls.nix).";
+    };
+    poweroff = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Add a power-off button to a `wake` tile; the host needs `my.services.remotePowerOff` (controls.nix).";
     };
   };
 
@@ -284,6 +292,7 @@ in
       + ''
         const svcctlTiles = ${builtins.toJSON controlledTiles};
         const svcctlWakeTiles = ${builtins.toJSON wakeTiles};
+        const svcctlPoweroffTiles = ${builtins.toJSON poweroffTiles};
       ''
       + builtins.readFile ./controls.js;
 

@@ -1,8 +1,10 @@
-"""svcctl PORT UNITS_JSON WAKE_JSON: start/stop/restart a fixed set of systemd
-units for the dashboard's tile buttons (controls.nix). UNITS_JSON maps tile
-names to units; nothing else can be touched, and polkit enforces the same
-list. WAKE_JSON maps tile names to {mac, host} for tiles that wake another
-machine: Wake-on-LAN instead of a unit, and up/down from pinging `host`."""
+"""svcctl PORT UNITS_JSON WAKE_JSON [POWEROFF_KEY]: start/stop/restart a fixed
+set of systemd units for the dashboard's tile buttons (controls.nix).
+UNITS_JSON maps tile names to units; nothing else can be touched, and polkit
+enforces the same list. WAKE_JSON maps tile names to {mac, host, poweroff} for
+tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
+from pinging `host`. Those with `poweroff` are powered off by an SSH login with
+POWEROFF_KEY, which the host pins to a forced `shutdown +1`."""
 
 import json
 import socket
@@ -18,6 +20,7 @@ with open(sys.argv[2]) as file:
     units = json.load(file)
 with open(sys.argv[3]) as file:
     wakeable = json.load(file)
+poweroff_key = sys.argv[4] if len(sys.argv) > 4 else None
 
 ACTIONS = {"start", "stop", "restart"}
 
@@ -47,6 +50,25 @@ def send_magic_packet(mac):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.sendto(payload, ("255.255.255.255", 9))
+
+
+def power_off(host):
+    # No command: the host's authorized_keys forces one. known_hosts comes
+    # from the system file only; svcctl has no home to keep one in.
+    return subprocess.run(
+        [
+            "ssh",
+            "-i", poweroff_key,
+            "-o", "BatchMode=yes",
+            "-o", "ConnectTimeout=5",
+            "-o", "StrictHostKeyChecking=yes",
+            "-o", "UserKnownHostsFile=/dev/null",
+            f"remote-poweroff@{host}",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -94,6 +116,14 @@ class Handler(BaseHTTPRequestHandler):
         action, name = parts[2], unquote(parts[3])
         if action == "wake" and name in wakeable:
             send_magic_packet(wakeable[name]["mac"])
+            return self.reply(202, {"ok": True})
+        if action == "poweroff" and wakeable.get(name, {}).get("poweroff") and poweroff_key:
+            try:
+                result = power_off(wakeable[name]["host"])
+            except subprocess.TimeoutExpired:
+                return self.reply(504, {"error": "ssh timed out"})
+            if result.returncode != 0:
+                return self.reply(500, {"error": result.stderr.strip()})
             return self.reply(202, {"ok": True})
         if action not in ACTIONS or name not in units:
             return self.reply(404)

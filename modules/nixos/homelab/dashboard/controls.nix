@@ -5,7 +5,9 @@
 # unprivileged; polkit lets it manage exactly the listed units, nothing else.
 # Tiles with `dashboard.wake` instead get a wake button, which sends a
 # Wake-on-LAN packet to that host (one of `my.wakeOnLan.hosts`), and an
-# up/down state from pinging it over mDNS.
+# up/down state from pinging it over mDNS. With `dashboard.poweroff` they also
+# get a power-off button, which logs in to the host over SSH with a key whose
+# only use there is a forced `shutdown +1` (services/remote-poweroff.nix).
 {
   config,
   lib,
@@ -27,7 +29,7 @@ let
   wakeTiles = lib.filterAttrs (
     _: service: service.dashboard != null && service.dashboard.wake != null
   ) config.homelab.services;
-  # Tile name -> {mac, host}.
+  # Tile name -> {mac, host, poweroff}.
   wakeable = lib.mapAttrs' (
     _: service:
     let
@@ -36,24 +38,37 @@ let
     lib.nameValuePair service.dashboard.name {
       mac = config.my.wakeOnLan.hosts.${host};
       host = "${host}.local";
+      inherit (service.dashboard) poweroff;
     }
   ) wakeTiles;
   wakeFile = pkgs.writeText "svcctl-wake.json" (builtins.toJSON wakeable);
+
+  poweroffKey = "svcctl/poweroff-ssh-key";
+  canPoweroff = lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles);
 in
 {
 
   config = lib.mkIf config.my.homelab.enable {
 
-    assertions = lib.mapAttrsToList (name: service: {
-      assertion = config.my.wakeOnLan.hosts ? ${service.dashboard.wake};
-      message = "homelab.services.${name}.dashboard.wake: ${service.dashboard.wake} is not in my.wakeOnLan.hosts";
-    }) wakeTiles;
+    assertions =
+      lib.mapAttrsToList (name: service: {
+        assertion = config.my.wakeOnLan.hosts ? ${service.dashboard.wake};
+        message = "homelab.services.${name}.dashboard.wake: ${service.dashboard.wake} is not in my.wakeOnLan.hosts";
+      }) wakeTiles
+      ++ lib.mapAttrsToList (name: service: {
+        assertion = !service.dashboard.poweroff || service.dashboard.wake != null;
+        message = "homelab.services.${name}.dashboard.poweroff needs dashboard.wake";
+      }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services);
 
     users.users.svcctl = {
       isSystemUser = true;
       group = "svcctl";
     };
     users.groups.svcctl = { };
+
+    # The target's host key must be in programs.ssh.knownHosts: svcctl runs
+    # ssh with StrictHostKeyChecking and no known_hosts of its own.
+    sops.secrets.${poweroffKey} = lib.mkIf canPoweroff { owner = "svcctl"; };
 
     security.polkit.extraConfig = ''
       polkit.addRule(function (action, subject) {
@@ -73,14 +88,25 @@ in
       path = [
         config.systemd.package
         pkgs.iputils
+        pkgs.openssh
       ];
       serviceConfig = {
-        ExecStart = "${lib.getExe pkgs.python3} ${./svcctl.py} ${toString port} ${unitsFile} ${wakeFile}";
+        ExecStart = lib.concatStringsSep " " (
+          [
+            (lib.getExe pkgs.python3)
+            "${./svcctl.py}"
+            (toString port)
+            "${unitsFile}"
+            "${wakeFile}"
+          ]
+          ++ lib.optional canPoweroff config.sops.secrets.${poweroffKey}.path
+        );
         User = "svcctl";
         Group = "svcctl";
         Restart = "on-failure";
         # Talks to systemd over D-Bus (AF_UNIX), serves on loopback, and
-        # broadcasts wake packets and pings (unprivileged ICMP) on the LAN.
+        # broadcasts wake packets and pings (unprivileged ICMP) and SSHes to
+        # power hosts off on the LAN.
         RestrictAddressFamilies = [
           "AF_UNIX"
           "AF_INET"
