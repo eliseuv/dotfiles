@@ -1,6 +1,8 @@
 { config, ... }:
 {
 
+  boot.loader.timeout = 2;
+
   # ttyd hands out a shell, so only wheatley (its reverse proxy, at its
   # homelab.network.lanAddress) may reach it, not the whole LAN.
   networking.firewall.extraCommands = ''
