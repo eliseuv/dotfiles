@@ -146,6 +146,10 @@ let
   # Companion Cube face (corner pads, ring, heart) as a CSS mask for the NAS
   # storage readout and service tile.
   companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='20' height='20' rx='3' fill='none' stroke='black' stroke-width='1.8'/><rect x='2' y='2' width='6' height='6' rx='2'/><rect x='16' y='2' width='6' height='6' rx='2'/><rect x='2' y='16' width='6' height='6' rx='2'/><rect x='16' y='16' width='6' height='6' rx='2'/><circle cx='12' cy='12' r='5' fill='none' stroke='black' stroke-width='1.6'/><path d='M12 14.6l-2.3-2.2a1.35 1.35 0 0 1 2.3-1.8a1.35 1.35 0 0 1 2.3 1.8z'/></svg>";
+
+  # GLaDOS's head as seen from below: ceiling stalk and optic housing, as a
+  # CSS mask for her wake tile; theme.css draws the eye into it.
+  glados = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='14' y='0' width='4' height='8' rx='1'/><path d='M3 17c0-6.2 5.8-10 13-10s13 3.8 13 10-5.8 10-13 10S3 23.2 3 17z'/></svg>";
 in
 {
 
@@ -286,6 +290,7 @@ in
           :root {
             --aperture-iris: url("${iris "black"}");
             --companion-cube: url("${companionCube}");
+            --glados: url("${glados}");
           }
         ''
         + builtins.readFile ./controls.css;

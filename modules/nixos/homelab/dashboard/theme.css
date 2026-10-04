@@ -194,6 +194,87 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usag
   mask: var(--companion-cube) center / contain no-repeat;
 }
 
+/* GLaDOS (her wake tile, see hosts/wheatley/system.nix): the head mask with
+   her optic drawn in, lit yellow while she answers pings, dark while she
+   sleeps, flickering while she boots. Keyed on the tile name and the wake
+   bar's state (controls.js), since the icon itself is a placeholder. */
+:root {
+  --glados-yellow: 222 160 0;
+  --glados-chassis: rgb(var(--color-700));
+}
+
+html.dark {
+  --glados-yellow: 255 204 51;
+  --glados-chassis: rgb(var(--color-200));
+}
+
+li.service[data-name="GLaDOS"] {
+  --eye: rgb(var(--color-500) / 0.6);
+  --eye-glow: transparent;
+}
+
+li.service[data-name="GLaDOS"]:has(.svcctl[data-state="up"]) {
+  --eye: rgb(var(--glados-yellow));
+  --eye-glow: rgb(var(--glados-yellow) / 0.55);
+}
+
+li.service[data-name="GLaDOS"] .service-card {
+  --ring: var(--glados-yellow);
+}
+
+li.service[data-name="GLaDOS"] .service-icon > * {
+  display: none;
+}
+
+li.service[data-name="GLaDOS"] .service-icon {
+  filter: drop-shadow(0 0 4px var(--eye-glow));
+}
+
+li.service[data-name="GLaDOS"] .service-icon::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  background:
+    radial-gradient(circle at 50% 53%, var(--eye) 0 3px, #111 3.5px 6px, transparent 6.5px),
+    var(--glados-chassis);
+  -webkit-mask: var(--glados) center / contain no-repeat;
+  mask: var(--glados) center / contain no-repeat;
+}
+
+li.service[data-name="GLaDOS"]:has(.svcctl[data-state="waking"]) .service-icon::before {
+  --eye: rgb(var(--glados-yellow));
+  animation: glados-boot 1.6s steps(1) infinite;
+}
+
+@keyframes glados-boot {
+  0%, 30%, 55% { opacity: 1; }
+  25%, 50%, 85% { opacity: 0.35; }
+}
+
+/* Her words for the wake bar's up/down/waking. */
+li.service[data-name="GLaDOS"] .svcctl-state {
+  font-size: 0;
+}
+
+li.service[data-name="GLaDOS"] .svcctl-state::after {
+  font-size: 0.7rem;
+  content: "Dormant";
+}
+
+li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-state::after {
+  content: "Online";
+  color: rgb(var(--glados-yellow));
+}
+
+li.service[data-name="GLaDOS"] .svcctl[data-state="waking"] .svcctl-state::after {
+  content: "Reactivating\2026";
+  color: rgb(var(--glados-yellow));
+}
+
+li.service[data-name="GLaDOS"] .svcctl button:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgb(var(--glados-yellow));
+}
+
 /* The OS drives light/dark now (theme.js). */
 #theme {
   display: none !important;
