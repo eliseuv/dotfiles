@@ -1,8 +1,20 @@
 { lib, pkgs, ... }:
 let
   # Update environment script
+  # The language server lives in the nvim-lspconfig env, which nvim-lspconfig's
+  # julials loads ahead of the global one; Zed manages its own @zed-julia env.
+  # Both envs are updated even if one fails, so one breakage doesn't leave the
+  # other stale.
   julia-env-update = pkgs.writeShellScriptBin "julia-env-update" ''
-    ${lib.getExe pkgs.julia-bin} --eval "using Pkg; Pkg.add([\"LanguageServer\", \"SymbolServer\", \"Pluto\"]); Pkg.update()" && ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed" || ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update failed" -u critical
+    status=0
+    ${lib.getExe pkgs.julia-bin} --eval 'using Pkg; Pkg.add("Pluto"); Pkg.update()' || status=1
+    ${lib.getExe pkgs.julia-bin} --project=@nvim-lspconfig --eval 'using Pkg; Pkg.update()' || status=1
+    if [ "$status" -eq 0 ]; then
+      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed"
+    else
+      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update failed" -u critical
+      exit 1
+    fi
   '';
   # Cleanup environment script
   julia-env-gc = pkgs.writeShellScriptBin "julia-env-gc" ''
