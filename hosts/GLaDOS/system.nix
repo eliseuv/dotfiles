@@ -1,5 +1,11 @@
-{ ... }:
+{ config, ... }:
 {
+
+  # ttyd hands out a shell, so only wheatley (its reverse proxy, at its
+  # homelab.network.lanAddress) may reach it, not the whole LAN.
+  networking.firewall.extraCommands = ''
+    iptables -A nixos-fw -s 192.168.0.62 -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
+  '';
 
   # Mount disks
   fileSystems = {

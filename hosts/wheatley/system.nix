@@ -57,6 +57,19 @@
   programs.ssh.knownHosts."glados.local".publicKey =
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/zYzxZZv+cAVbffNG59reLWlJeKjA7g92eAi0VVdS9";
 
+  # Her ttyd (my.services.ttyd in hosts/GLaDOS), proxied so it's reachable
+  # wherever the dashboard is, tailnet included; her firewall only admits
+  # wheatley. By address rather than GLaDOS.local: nginx resolves upstream
+  # names once at startup, and fails to start if she's asleep then. Long read
+  # timeout so an idle terminal's websocket isn't cut after nginx's default 60s.
+  services.nginx.virtualHosts.dashboard.locations."/glados/terminal/" = {
+    proxyPass = "http://192.168.0.51:3000";
+    proxyWebsockets = true;
+    extraConfig = ''
+      proxy_read_timeout 1d;
+    '';
+  };
+
   # Remove bootloader timeout
   boot.loader.timeout = 0;
 
