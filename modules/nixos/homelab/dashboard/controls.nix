@@ -17,8 +17,8 @@
 # Tiles with `dashboard.switch` get a button that starts that host's
 # dotfiles-switch.service (services/dotfiles-switch.nix): directly when it's
 # this host, otherwise through the same SSH login as power-off, over the
-# tailnet so laptops can be switched away from home. Buttons combine: one
-# tile can wake, power off, reboot and switch.
+# tailnet so laptops can be switched away from home, falling back to mDNS.
+# Buttons combine: one tile can wake, power off, reboot and switch.
 {
   config,
   lib,
@@ -66,14 +66,18 @@ let
     _: service: service.dashboard != null && service.dashboard.switch != null
   ) config.homelab.services;
   isLocal = host: host == config.my.host.name;
-  # Tile name -> {host}: null for this host, else its MagicDNS name.
+  # Tile name -> {hosts}: empty for this host, else its MagicDNS name, then
+  # its mDNS one for when Tailscale is down on it but it's on the LAN.
   switchable = lib.mapAttrs' (
     _: service:
     let
-      host = service.dashboard.switch;
+      host = lib.toLower service.dashboard.switch;
     in
     lib.nameValuePair service.dashboard.name {
-      host = if isLocal host then null else "${lib.toLower host}.${config.homelab.network.tailnetDomain}";
+      hosts = lib.optionals (!isLocal service.dashboard.switch) [
+        "${host}.${config.homelab.network.tailnetDomain}"
+        "${host}.local"
+      ];
     }
   ) switchTiles;
   switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON switchable);

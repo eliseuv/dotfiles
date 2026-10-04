@@ -7,8 +7,9 @@ tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
 SSH_KEY, which the host pins to its remote-control forced command. REBOOT_JSON
 lists tiles for this host itself, which reboot it. SWITCH_JSON maps tile names
-to {host} for hosts whose dotfiles-switch.service can be started: here when
-`host` is null, otherwise through the same SSH login."""
+to {hosts} for hosts whose dotfiles-switch.service can be started: here when
+`hosts` is empty, otherwise through the same SSH login, trying each name in
+turn until one connects."""
 
 import json
 import socket
@@ -34,12 +35,12 @@ ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
 
 
-# Tile name -> host to ping for up/down: wake tiles, and remote switch tiles
-# that aren't also wake tiles.
-probed = {name: target["host"] for name, target in wakeable.items()}
+# Tile name -> hosts to ping for up/down, up if any answers: wake tiles, and
+# remote switch tiles that aren't also wake tiles.
+probed = {name: [target["host"]] for name, target in wakeable.items()}
 for name, target in switchable.items():
-    if target["host"] and name not in probed:
-        probed[name] = target["host"]
+    if target["hosts"] and name not in probed:
+        probed[name] = target["hosts"]
 
 # Tile name -> "up"/"down", kept fresh by probe() rather than pinged per
 # request: a sleeping host's mDNS lookup alone takes ~9s to fail.
@@ -48,22 +49,26 @@ reachable = {name: "unknown" for name in probed}
 # Tile name -> "idle"/"switching"/"failed" for remote switch tiles, from
 # watch_switch(); the local one is read from systemd on each request.
 remote_switch = {
-    name: "unknown" for name, target in switchable.items() if target["host"]
+    name: "unknown" for name, target in switchable.items() if target["hosts"]
 }
 
 
-def probe(name, host):
+def ping(host):
+    try:
+        result = subprocess.run(
+            ["ping", "-c1", "-W1", host],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
+    except subprocess.TimeoutExpired:
+        return False
+    return result.returncode == 0
+
+
+def probe(name, hosts):
     while True:
-        try:
-            result = subprocess.run(
-                ["ping", "-c1", "-W1", host],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=15,
-            )
-            reachable[name] = "up" if result.returncode == 0 else "down"
-        except subprocess.TimeoutExpired:
-            reachable[name] = "down"
+        reachable[name] = "up" if any(ping(host) for host in hosts) else "down"
         time.sleep(5)
 
 
@@ -95,6 +100,24 @@ def remote(host, verb):
     )
 
 
+def remote_any(hosts, verb):
+    # ssh exits 255 when it can't connect (or log in), anything else is the
+    # forced command's own exit; only the former moves on to the next name.
+    # Raises the last TimeoutExpired if every name timed out.
+    result = timeout = None
+    for host in hosts:
+        try:
+            result = remote(host, verb)
+        except subprocess.TimeoutExpired as error:
+            timeout = error
+            continue
+        if result.returncode != 255:
+            return result
+    if result is None:
+        raise timeout
+    return result
+
+
 def switch_state(show_output):
     # `systemctl show --property=ActiveState,Result --value`: two lines.
     lines = show_output.split()
@@ -120,10 +143,10 @@ def local_switch_state():
 def watch_switch(name, until_done):
     # Polled over SSH only around switches started from here, plus once at
     # startup, rather than on every status request: each poll is a login.
-    host = switchable[name]["host"]
+    hosts = switchable[name]["hosts"]
     while True:
         try:
-            result = remote(host, "switch-status")
+            result = remote_any(hosts, "switch-status")
             if result.returncode == 0:
                 remote_switch[name] = switch_state(result.stdout)
         except subprocess.TimeoutExpired:
@@ -160,7 +183,7 @@ class Handler(BaseHTTPRequestHandler):
         # This host is up for as long as it's answering.
         states.update((name, "up") for name in rebootable)
         switch = dict(remote_switch)
-        local = [name for name, target in switchable.items() if not target["host"]]
+        local = [name for name, target in switchable.items() if not target["hosts"]]
         if local:
             state = local_switch_state()
             switch.update((name, state) for name in local)
@@ -206,12 +229,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(500, {"error": result.stderr.strip()})
             return self.reply(202, {"ok": True})
         if action == "switch" and name in switchable:
-            host = switchable[name]["host"]
-            if host and not ssh_key:
+            hosts = switchable[name]["hosts"]
+            if hosts and not ssh_key:
                 return self.reply(404)
             try:
-                if host:
-                    result = remote(host, "switch")
+                if hosts:
+                    result = remote_any(hosts, "switch")
                 else:
                     result = subprocess.run(
                         ["systemctl", "--no-block", "start", SWITCH_UNIT],
@@ -222,7 +245,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(504, {"error": "ssh timed out"})
             if result.returncode != 0:
                 return self.reply(500, {"error": result.stderr.strip()})
-            if host:
+            if hosts:
                 remote_switch[name] = "switching"
                 threading.Thread(target=watch_switch, args=(name, True), daemon=True).start()
             return self.reply(202, {"ok": True})
@@ -243,8 +266,8 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s\n" % (format % args))
 
 
-for name, host in probed.items():
-    threading.Thread(target=probe, args=(name, host), daemon=True).start()
+for name, hosts in probed.items():
+    threading.Thread(target=probe, args=(name, hosts), daemon=True).start()
 if ssh_key:
     for name in remote_switch:
         threading.Thread(target=watch_switch, args=(name, False), daemon=True).start()
