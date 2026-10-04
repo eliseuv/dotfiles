@@ -48,6 +48,7 @@
     apps.enable = true;
     notes.enable = true;
     cloudSync.enable = true;
+    remoteAccess.enable = true;
   };
 
 }
