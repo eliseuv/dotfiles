@@ -38,6 +38,7 @@
     containers.enable = true;
     virtualisation.enable = true;
     remotePowerOff.enable = true;
+    dotfilesSwitch.enable = true;
     # Served through wheatley's dashboard nginx, which proxies this subpath to
     # her (hosts/wheatley/system.nix).
     ttyd = {
