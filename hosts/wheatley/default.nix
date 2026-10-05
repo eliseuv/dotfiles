@@ -5,7 +5,12 @@
   my.host.type = "server";
 
   my.services = {
-    tailscale.enable = true;
+    # Up at boot: the dashboard and everything it proxies are reached over
+    # the tailnet.
+    tailscale = {
+      enable = true;
+      upAtBoot = true;
+    };
     nas.enable = true;
     dotfilesSwitch.enable = true;
   };
