@@ -144,7 +144,15 @@ in
           serviceConfig = {
             Type = "oneshot";
             # Bounded so a node that needs a login can't hang the unit.
-            ExecStart = "${tailscale} ${verb}" + lib.optionalString (verb == "up") " --timeout=20s";
+            # `up` as root refuses unless it repeats every non-default
+            # setting, i.e. the operator from extraSetFlags.
+            ExecStart = lib.escapeShellArgs (
+              [
+                tailscale
+                verb
+              ]
+              ++ lib.optionals (verb == "up") ([ "--timeout=20s" ] ++ config.services.tailscale.extraSetFlags)
+            );
           };
         }
       ) tailscaleUnits
