@@ -21,8 +21,17 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
-        # Bounded so a node that needs a login can't hang the unit.
-        ExecStart = "${lib.getExe config.services.tailscale.package} up --timeout=60s";
+        # Bounded so a node that needs a login can't hang the unit. `up` as
+        # root refuses unless it repeats every non-default setting, i.e. the
+        # operator from extraSetFlags.
+        ExecStart = lib.escapeShellArgs (
+          [
+            (lib.getExe config.services.tailscale.package)
+            "up"
+            "--timeout=60s"
+          ]
+          ++ config.services.tailscale.extraSetFlags
+        );
       };
     };
 
