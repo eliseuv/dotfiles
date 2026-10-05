@@ -138,6 +138,13 @@ html.dark .information-widget-greeting span {
   background: linear-gradient(90deg, rgb(var(--portal-orange)), rgb(var(--portal-blue))) !important;
 }
 
+/* Uptime's bar is just the seconds of the current minute. Homepage gives it no
+   hook, but always renders it last in its widget; single-resource widgets
+   (the disks) are spared. */
+.information-widget-resource:last-child:not(:only-child) .resource-usage {
+  display: none;
+}
+
 /* Companion Cube (NAS): the storage readout (the last header widget) and the
    DSM service tile, see default.nix. Both get the cube face, in pink. */
 :root {
