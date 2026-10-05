@@ -307,6 +307,7 @@ in
             label = "System";
             cpu = true;
             memory = true;
+            expanded = true;
             uptime = true;
           };
         }
@@ -314,6 +315,7 @@ in
           resources = {
             label = "Wheatley";
             disk = "/";
+            expanded = true;
           };
         }
         # Must stay the last widget: theme.css themes it by position,
@@ -322,6 +324,7 @@ in
           resources = {
             label = "Companion Cube";
             disk = "/mnt/media";
+            expanded = true;
           };
         }
       ];
