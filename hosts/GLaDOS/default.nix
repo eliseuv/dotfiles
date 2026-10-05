@@ -33,7 +33,11 @@
   my.hardware.nvidia.enable = true;
 
   my.services = {
-    tailscale.enable = true;
+    # Up at boot: wheatley proxies her terminal and Pluto over the tailnet.
+    tailscale = {
+      enable = true;
+      upAtBoot = true;
+    };
     nas.enable = true;
     containers.enable = true;
     virtualisation.enable = true;
