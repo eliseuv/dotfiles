@@ -89,6 +89,8 @@ in
 
     servers.${serverName} = {
       enable = true;
+      # Started from the dashboard when wanted; stays down across reboots.
+      autoStart = false;
       # Pinned rather than `fabricServers.fabric` (latest): a game version
       # bump silently breaks every mod built for the old one.
       # The Fabric wrapper launches with nixpkgs' default jre_headless (21)
