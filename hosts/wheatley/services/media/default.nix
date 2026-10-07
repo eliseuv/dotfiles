@@ -1,5 +1,6 @@
 # Media stack: qBittorrent (download client) -> Sonarr/Radarr (library
-# management) <- Prowlarr (indexers) -> Jellyfin (playback) <- Seerr (requests).
+# management) <- Prowlarr (indexers) -> Jellyfin (playback) <- Seerr (requests); Bazarr adds subtitles
+# to the library and Navidrome streams its music.
 # All native NixOS services, open on the LAN and, for Seerr and Jellyfin (over
 # HTTPS), the tailnet (see firewall.nix) - Tailscale is the remote-access
 # layer, there is no reverse proxy. Downloads and library share one NFS mount
@@ -12,7 +13,7 @@
 let
   mediaRoot = config.homelab.media.root;
   # Units that write to the share.
-  mediaServices = [ "qbittorrent" "sonarr" "radarr" "jellyfin" ];
+  mediaServices = [ "qbittorrent" "sonarr" "radarr" "jellyfin" "bazarr" "navidrome" ];
 in
 {
 
@@ -22,6 +23,8 @@ in
     ./arr-sync.nix
     ./jellyfin.nix
     ./seerr.nix
+    ./bazarr.nix
+    ./navidrome.nix
   ];
 
   options.homelab.media.root = lib.mkOption {
@@ -52,7 +55,7 @@ in
           script = ''
             install -d -m 2775 -o root -g media \
               ${mediaRoot} ${mediaRoot}/downloads ${mediaRoot}/library/tv ${mediaRoot}/library/movies \
-              ${mediaRoot}/library/anime
+              ${mediaRoot}/library/anime ${mediaRoot}/library/music
           '';
         };
       }
