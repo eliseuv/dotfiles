@@ -12,9 +12,11 @@ REBOOT_JSON and SWITCH_JSON map tile names to {hosts} for hosts that can be
 rebooted, or whose dotfiles-switch.service can be started: here when `hosts`
 is empty, otherwise through the same SSH login, trying each name in turn until
 one connects. TAILSCALE_JSON likewise maps tiles to {hosts} whose Tailscale can
-be turned on and off, always through that login."""
+be turned on and off, always through that login.
+Also serves per-service resource usage, read from the cgroup tree."""
 
 import json
+import os
 import re
 import socket
 import subprocess
@@ -22,6 +24,7 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import unquote
 
 port = int(sys.argv[1])
@@ -75,6 +78,120 @@ remote_unit_poke = {name: threading.Event() for name in remote_units}
 
 # Tile name -> round-trip time in ms of the last answered ping, None while down.
 latency = {name: None for name in probed}
+
+
+CGROUP_ROOT = Path("/sys/fs/cgroup")
+USAGE_INTERVAL = 3
+
+# Unit -> tile name, so services with a tile show up under its name.
+tile_of_unit = {target["unit"]: name for name, target in units.items() if not target["hosts"]}
+
+# Latest sample, replaced whole by sample_usage(); each entry is
+# {unit, label, cpu, memory, tasks, read, write}.
+usage = []
+
+
+def read_int(path):
+    try:
+        return int(path.read_text())
+    except (OSError, ValueError):
+        return 0
+
+
+def read_keyed(path):
+    # "key value" lines (cpu.stat, memory.stat).
+    try:
+        return {
+            key: int(value)
+            for key, value in (line.split() for line in path.read_text().splitlines())
+        }
+    except (OSError, ValueError):
+        return {}
+
+
+def read_io(path):
+    # io.stat has one line per device: sum read and written bytes over them.
+    read = write = 0
+    try:
+        lines = path.read_text().splitlines()
+    except OSError:
+        return 0, 0
+    for line in lines:
+        fields = dict(field.split("=") for field in line.split()[1:])
+        read += int(fields.get("rbytes", 0))
+        write += int(fields.get("wbytes", 0))
+    return read, write
+
+
+def service_cgroups():
+    # Service cgroups under system.slice, plus all login sessions as one row.
+    # A service's counters already include its children, so don't descend
+    # into it; slices (system-getty.slice, ...) only group services.
+    found = {}
+    pending = [CGROUP_ROOT / "system.slice"]
+    while pending:
+        try:
+            entries = list(pending.pop().iterdir())
+        except OSError:
+            continue
+        for entry in entries:
+            if entry.name.endswith(".service"):
+                found[entry.name] = entry
+            elif entry.name.endswith(".slice") and entry.is_dir():
+                pending.append(entry)
+    found["user.slice"] = CGROUP_ROOT / "user.slice"
+    return found
+
+
+def measure(path):
+    memory = read_keyed(path / "memory.stat")
+    # Like `docker stats`: page cache that can be dropped isn't the
+    # service's footprint, and for a media server it would dwarf the rest.
+    resident = max(read_int(path / "memory.current") - memory.get("inactive_file", 0), 0)
+    read, write = read_io(path / "io.stat")
+    return {
+        "cpu_usec": read_keyed(path / "cpu.stat").get("usage_usec", 0),
+        "memory": resident,
+        "tasks": read_int(path / "pids.current"),
+        "read": read,
+        "write": write,
+    }
+
+
+def sample_usage():
+    global usage
+    previous = {}
+    last = time.monotonic()
+    while True:
+        time.sleep(USAGE_INTERVAL)
+        now = time.monotonic()
+        elapsed = now - last
+        last = now
+        current = {unit: measure(path) for unit, path in service_cgroups().items()}
+        rows = []
+        for unit, sample in current.items():
+            before = previous.get(unit)
+            # A unit new since the last sample has no rate yet.
+            if before is not None:
+                rows.append(
+                    {
+                        "unit": unit,
+                        "label": tile_of_unit.get(unit),
+                        # Percent of one core, as in top.
+                        "cpu": max(sample["cpu_usec"] - before["cpu_usec"], 0) / (elapsed * 1e4),
+                        "memory": sample["memory"],
+                        "tasks": sample["tasks"],
+                        "read": max(sample["read"] - before["read"], 0) / elapsed,
+                        "write": max(sample["write"] - before["write"], 0) / elapsed,
+                    }
+                )
+        previous = current
+        usage = rows
+
+
+def memory_total():
+    with open("/proc/meminfo") as file:
+        return int(file.readline().split()[1]) * 1024
 
 
 def ping(host):
@@ -279,6 +396,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.guarded():
             return
+        if self.path == "/api/svc/usage":
+            return self.reply(
+                200, {"cores": os.cpu_count(), "memory_total": memory_total(), "services": usage}
+            )
         if self.path != "/api/svc/status":
             return self.reply(404)
         states = dict(reachable)
@@ -376,6 +497,7 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s\n" % (format % args))
 
 
+threading.Thread(target=sample_usage, daemon=True).start()
 for name, hosts in probed.items():
     threading.Thread(target=probe, args=(name, hosts), daemon=True).start()
 if ssh_key:

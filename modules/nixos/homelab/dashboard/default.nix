@@ -358,7 +358,8 @@ in
         const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
         const svcctlTailscaleTiles = ${builtins.toJSON tailscaleTiles};
       ''
-      + builtins.readFile ./controls.js;
+      + builtins.readFile ./controls.js
+      + builtins.readFile ./tasks.js;
 
       # @import must stay first in the stylesheet, so the mask is appended.
       customCSS =
@@ -371,7 +372,8 @@ in
             --wheatley: url("${wheatley}");
           }
         ''
-        + builtins.readFile ./controls.css;
+        + builtins.readFile ./controls.css
+        + builtins.readFile ./tasks.css;
     };
 
     services.nginx = {

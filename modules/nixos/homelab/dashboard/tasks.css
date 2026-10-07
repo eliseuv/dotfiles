@@ -1,0 +1,114 @@
+/* Task manager panel (tasks.js). */
+
+#tasks-toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 50;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--card-bg);
+  color: rgb(var(--color-700));
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#tasks-toggle[aria-expanded="true"],
+#tasks-toggle:hover {
+  box-shadow: 0 0 0 1px rgb(var(--portal-orange));
+}
+
+#tasks-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 3.4rem;
+  z-index: 50;
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 5rem);
+  overflow: auto;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--card-bg);
+  color: rgb(var(--color-700));
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+#tasks-panel[hidden] {
+  display: none;
+}
+
+html.dark #tasks-toggle,
+html.dark #tasks-panel {
+  color: rgb(var(--color-200));
+}
+
+.tasks-summary {
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+  color: rgb(var(--color-500));
+}
+
+#tasks-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#tasks-panel th {
+  padding: 0.2rem 0.3rem;
+  text-align: right;
+  font-weight: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--color-500));
+  cursor: pointer;
+  user-select: none;
+}
+
+#tasks-panel th[data-sorted="true"] {
+  color: rgb(var(--portal-orange));
+}
+
+#tasks-panel td {
+  padding: 0.2rem 0.3rem;
+  text-align: right;
+  white-space: nowrap;
+  border-top: 1px solid var(--card-border);
+  /* Usage bar behind the number; --fill is set per cell. */
+  background: linear-gradient(
+      90deg,
+      rgb(var(--portal-orange) / 0.25) var(--fill, 0%),
+      transparent var(--fill, 0%)
+    );
+}
+
+#tasks-panel th:first-child,
+#tasks-panel td:first-child {
+  text-align: left;
+  width: 100%;
+  background: none;
+}
+
+#tasks-panel tr.tasks-tile td:first-child {
+  color: rgb(var(--portal-blue));
+}
+
+.tasks-more {
+  margin-top: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--block-bg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tasks-more[hidden] {
+  display: none;
+}
