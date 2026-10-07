@@ -65,10 +65,11 @@
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/zYzxZZv+cAVbffNG59reLWlJeKjA7g92eAi0VVdS9";
   };
 
-  # Wake, restart and on/off buttons for the Pop!_OS desktop, which isn't a
-  # host here: its remote-control login and forced command are set up by hand
-  # to mirror services/remote-control.nix (poweroff and reboot verbs only).
-  # No Tailscale on it, so it's only reached over mDNS on the LAN.
+  # Wake, restart, on/off, Tailscale and terminal buttons for the Pop!_OS
+  # desktop, which isn't a host here: its remote-control login, forced
+  # command, ttyd unit and firewall rule are set up by hand to mirror
+  # services/remote-control.nix, services/ttyd.nix and GLaDOS's firewall. No
+  # `address`, so like GLaDOS it's reached over the tailnet, then mDNS.
   homelab.services.pop-os.dashboard = {
     name = "pop-os";
     group = "Hosts";
@@ -79,10 +80,22 @@
     wake = "pop-os";
     poweroff = true;
     reboot = "pop-os";
-    address = "pop-os.local";
+    tailscale = "pop-os";
+    terminal = "/pop-os/terminal/";
   };
-  programs.ssh.knownHosts."pop-os.local".publicKey =
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBPufcEsAPYzlxegM5uUoNAnHmCKuGA3i2XqcXwZrpgN";
+  programs.ssh.knownHosts."pop-os.local" = {
+    extraHostNames = [ "pop-os.${config.homelab.network.tailnetDomain}" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBPufcEsAPYzlxegM5uUoNAnHmCKuGA3i2XqcXwZrpgN";
+  };
+  # Its ttyd, proxied by tailnet address for the same reasons as GLaDOS's
+  # below; only wheatley may reach it (ufw there).
+  services.nginx.virtualHosts.dashboard.locations."/pop-os/terminal/" = {
+    proxyPass = "http://100.68.2.108:3000";
+    proxyWebsockets = true;
+    extraConfig = ''
+      proxy_read_timeout 1d;
+    '';
+  };
 
   # Her ttyd (my.services.ttyd in hosts/GLaDOS), proxied so it's reachable
   # wherever the dashboard is, tailnet included; her firewall only admits
