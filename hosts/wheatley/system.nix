@@ -65,6 +65,25 @@
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/zYzxZZv+cAVbffNG59reLWlJeKjA7g92eAi0VVdS9";
   };
 
+  # Wake, restart and on/off buttons for the Pop!_OS desktop, which isn't a
+  # host here: its remote-control login and forced command are set up by hand
+  # to mirror services/remote-control.nix (poweroff and reboot verbs only).
+  # No Tailscale on it, so it's only reached over mDNS on the LAN.
+  homelab.services.pop-os.dashboard = {
+    name = "pop-os";
+    group = "Hosts";
+    order = 0;
+    description = "Pop!_OS desktop";
+    icon = "mdi-desktop-tower";
+    link = false;
+    wake = "pop-os";
+    poweroff = true;
+    reboot = "pop-os";
+    address = "pop-os.local";
+  };
+  programs.ssh.knownHosts."pop-os.local".publicKey =
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBPufcEsAPYzlxegM5uUoNAnHmCKuGA3i2XqcXwZrpgN";
+
   # Her ttyd (my.services.ttyd in hosts/GLaDOS), proxied so it's reachable
   # wherever the dashboard is, tailnet included; her firewall only admits
   # wheatley, over the tailnet. By her tailnet address rather than a name:
