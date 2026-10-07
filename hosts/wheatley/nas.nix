@@ -46,6 +46,8 @@ in
   };
 
   fileSystems."/mnt/media" = nfsMount "/volume1/media";
+  # Personal files, served remotely by services/drive.nix.
+  fileSystems."/mnt/drive" = nfsMount "/volume1/drive";
   # Game server data; Minecraft world backups live under minecraft/ (restic
   # repo, see services/minecraft.nix).
   fileSystems."/mnt/games" = nfsMount "/volume1/games";

@@ -10,6 +10,8 @@
     ./services/dev.nix
     ./services/ttyd.nix
     ./services/pluto.nix
+    ./services/drive.nix
+    ./services/netdata.nix
   ];
 
   # Keep the MAC and the DHCP client-id from drifting (randomization,
