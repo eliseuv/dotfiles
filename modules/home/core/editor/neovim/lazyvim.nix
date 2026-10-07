@@ -6,7 +6,13 @@
 let
   # lazy.nvim sync script
   lazy-sync = pkgs.writeShellScriptBin "lazy-sync" ''
-    ${lib.getExe pkgs.neovim} --headless "+Lazy! sync" +qa && ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync completed" || ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync failed" -u critical
+    # Notifications are best-effort: headless hosts have no notification daemon
+    if ${lib.getExe pkgs.neovim} --headless "+Lazy! sync" +qa; then
+      ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync completed" || true
+    else
+      ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync failed" -u critical || true
+      exit 1
+    fi
   '';
 in
 {
@@ -47,7 +53,8 @@ in
       Type = "oneshot";
       ExecStart = lib.getExe lazy-sync;
     };
-    Install.WantedBy = [ "default.target" ];
+    # Not WantedBy default.target: activation would wait for the sync; the
+    # timer's OnBootSec covers the run after login.
   };
 
   # lazy.nvim sync timer

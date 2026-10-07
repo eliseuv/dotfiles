@@ -1,5 +1,7 @@
 { lib, pkgs, ... }:
 let
+  # Notifications are best-effort: headless hosts have no notification daemon,
+  # and a failed notify-send must not mark the job itself as failed.
   # Update environment script
   # The language server lives in the nvim-lspconfig env, which nvim-lspconfig's
   # julials loads ahead of the global one; Zed manages its own @zed-julia env.
@@ -11,15 +13,20 @@ let
     ${lib.getExe pkgs.julia-bin} --eval 'using Pkg; Pkg.add("Pluto"); Pkg.update()' || status=1
     ${lib.getExe pkgs.julia-bin} --project=@nvim-lspconfig --eval 'using Pkg; Pkg.update(); Pkg.precompile(strict=true)' || status=1
     if [ "$status" -eq 0 ]; then
-      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed"
+      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update completed" || true
     else
-      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update failed" -u critical
+      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment update failed" -u critical || true
       exit 1
     fi
   '';
   # Cleanup environment script
   julia-env-gc = pkgs.writeShellScriptBin "julia-env-gc" ''
-    ${lib.getExe pkgs.julia-bin} --eval "using Pkg; Pkg.gc()" && ${pkgs.libnotify}/bin/notify-send "Julia" "Environment cleanup completed" || ${pkgs.libnotify}/bin/notify-send "Julia" "Environment cleanup failed" -u critical
+    if ${lib.getExe pkgs.julia-bin} --eval "using Pkg; Pkg.gc()"; then
+      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment cleanup completed" || true
+    else
+      ${pkgs.libnotify}/bin/notify-send "Julia" "Environment cleanup failed" -u critical || true
+      exit 1
+    fi
   '';
 
   # Start (or reattach to) the Pluto service on a host (nixos services/pluto),
@@ -144,7 +151,8 @@ in
       Type = "oneshot";
       ExecStart = lib.getExe julia-env-update;
     };
-    Install.WantedBy = [ "default.target" ];
+    # Not WantedBy default.target: activation waits for it, and a full update
+    # plus precompile blocks the switch for minutes. The timer runs it instead.
   };
 
   systemd.user.timers.julia-env-update = {
@@ -166,7 +174,6 @@ in
       Type = "oneshot";
       ExecStart = lib.getExe julia-env-gc;
     };
-    Install.WantedBy = [ "default.target" ];
   };
 
   systemd.user.timers.julia-env-gc = {

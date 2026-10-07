@@ -11,7 +11,8 @@
       Type = "oneshot";
       ExecStart = "${lib.getExe pkgs.kondo} --all --follow-symlinks --same-filesystem --older 1w $HOME";
     };
-    Install.WantedBy = [ "default.target" ];
+    # Not WantedBy default.target: a full $HOME scan would block activation;
+    # the timer runs it instead.
   };
 
   systemd.user.timers.kondo-clean = {
