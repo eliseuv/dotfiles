@@ -74,10 +74,10 @@ let
 
   # Each *arr's own key (for its API) plus any the specs reference.
   credentials = {
-    sonarr = config.sops.secrets."api-key/sonarr".path;
-    radarr = config.sops.secrets."api-key/radarr".path;
-    prowlarr = config.sops.secrets."api-key/prowlarr".path;
-    qbittorrent = config.sops.secrets."api-key/qbittorrent".path;
+    sonarr = config.sops.secrets."sonarr/api-key".path;
+    radarr = config.sops.secrets."radarr/api-key".path;
+    prowlarr = config.sops.secrets."prowlarr/api-key".path;
+    qbittorrent = config.sops.secrets."qbittorrent/api-key".path;
   };
 
   arrSync = pkgs.writeShellApplication {

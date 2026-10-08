@@ -30,14 +30,14 @@
       defaultSopsFormat = "yaml";
 
       secrets = {
-        "api-key/alphavantage" = { };
-        "api-key/deepseek" = { };
-        "api-key/gemini" = { };
-        "api-key/openweather" = { };
-        "api-key/quandl" = { };
-        "api-key/spotify/client-id" = { };
-        "api-key/spotify/client-secret" = { };
-        "ntfy-topic" = { };
+        "alphavantage/api-key" = { };
+        "deepseek/api-key" = { };
+        "gemini/api-key" = { };
+        "openweather/api-key" = { };
+        "quandl/api-key" = { };
+        "spotify/client-id" = { };
+        "spotify/client-secret" = { };
+        "ntfy/topic" = { };
       };
     };
 

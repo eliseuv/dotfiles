@@ -143,12 +143,12 @@ in
   # Daily restic snapshots to the NAS. Autosave is paused and a full flush
   # forced first, so no region file is captured half-written; the cleanup
   # step runs even when the backup fails, so autosave is always restored.
-  sops.secrets."restic/minecraft" = { };
+  sops.secrets."minecraft/restic-password" = { };
 
   services.restic.backups.minecraft = {
     repository = "${backupRoot}/restic";
     initialize = true;
-    passwordFile = config.sops.secrets."restic/minecraft".path;
+    passwordFile = config.sops.secrets."minecraft/restic-password".path;
     paths = [ serverDir ];
     # mods is a store symlink rebuilt from this file; logs aren't worth keeping.
     exclude = [

@@ -17,7 +17,7 @@
       description = "Media requests";
       icon = "jellyseerr.png";
       widget.type = "seerr";
-      widgetKey = "api-key/seerr";
+      widgetKey = "seerr/api-key";
       unit = "seerr.service";
     };
   };

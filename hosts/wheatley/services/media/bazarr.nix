@@ -11,16 +11,16 @@
         use_sonarr = true;
         use_radarr = true;
       };
-      auth.apikey._secret = config.sops.secrets."api-key/bazarr".path;
+      auth.apikey._secret = config.sops.secrets."bazarr/api-key".path;
       sonarr = {
         ip = "127.0.0.1";
         port = config.services.sonarr.settings.server.port;
-        apikey._secret = config.sops.secrets."api-key/sonarr".path;
+        apikey._secret = config.sops.secrets."sonarr/api-key".path;
       };
       radarr = {
         ip = "127.0.0.1";
         port = config.services.radarr.settings.server.port;
-        apikey._secret = config.sops.secrets."api-key/radarr".path;
+        apikey._secret = config.sops.secrets."radarr/api-key".path;
       };
     };
   };
@@ -29,7 +29,7 @@
   users.users.bazarr.extraGroups = [ "media" ];
 
   # Read through LoadCredential, so root-owned is enough.
-  sops.secrets."api-key/bazarr".restartUnits = [ "bazarr.service" ];
+  sops.secrets."bazarr/api-key".restartUnits = [ "bazarr.service" ];
 
   homelab.services.bazarr = {
     port = config.services.bazarr.settings.general.port;
@@ -40,7 +40,7 @@
       description = "Subtitles";
       icon = "bazarr.png";
       widget.type = "bazarr";
-      widgetKey = "api-key/bazarr";
+      widgetKey = "bazarr/api-key";
       unit = "bazarr.service";
     };
   };

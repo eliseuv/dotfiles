@@ -42,12 +42,12 @@
       fi
     '' + lib.optionalString config.my.secrets.user.enable ''
 
-      export ALPHAVANTAGE_API_KEY=$(<${config.sops.secrets."api-key/alphavantage".path})
-      export DEEPSEEK_API_KEY=$(<${config.sops.secrets."api-key/deepseek".path})
-      export GEMINI_API_KEY=$(<${config.sops.secrets."api-key/gemini".path})
-      export OPENWEATHER_API_KEY=$(<${config.sops.secrets."api-key/openweather".path})
-      export QUANDL_API_KEY=$(<${config.sops.secrets."api-key/quandl".path})
-      export NTFY_TOPIC=$(<${config.sops.secrets."ntfy-topic".path})
+      export ALPHAVANTAGE_API_KEY=$(<${config.sops.secrets."alphavantage/api-key".path})
+      export DEEPSEEK_API_KEY=$(<${config.sops.secrets."deepseek/api-key".path})
+      export GEMINI_API_KEY=$(<${config.sops.secrets."gemini/api-key".path})
+      export OPENWEATHER_API_KEY=$(<${config.sops.secrets."openweather/api-key".path})
+      export QUANDL_API_KEY=$(<${config.sops.secrets."quandl/api-key".path})
+      export NTFY_TOPIC=$(<${config.sops.secrets."ntfy/topic".path})
     '';
     oh-my-zsh = {
       enable = true;
