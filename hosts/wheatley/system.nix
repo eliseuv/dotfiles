@@ -129,6 +129,25 @@
     terminal = "/wheatley/terminal/";
   };
 
+  # Wake, switch and restart buttons for rattmann, the old laptop that serves
+  # as this dashboard's kiosk (hosts/rattmann). No on/off: it's a screen
+  # someone is looking at, switched off by hand and woken from here.
+  homelab.services.rattmann.dashboard = {
+    name = "Rattmann";
+    group = "Hosts";
+    order = 0;
+    description = "Kiosk showing this dashboard";
+    icon = "mdi-laptop";
+    link = false;
+    wake = "rattmann";
+    reboot = "rattmann";
+    switch = "rattmann";
+  };
+  programs.ssh.knownHosts."rattmann.local" = {
+    extraHostNames = [ "rattmann.${config.homelab.network.tailnetDomain}" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMSS/e/drunmk5UHJ5mplGg0hIKznGeZWL/eL7QRlYKU";
+  };
+
   # Remove bootloader timeout
   boot.loader.timeout = 0;
 
