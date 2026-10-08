@@ -1,14 +1,24 @@
 # Netdata: per-second system metrics with history, which the dashboard's Tasks
 # panel doesn't keep. Cloud and telemetry are off; the dashboard is open to the
 # LAN like Homepage itself.
-# Also the streaming parent for GLaDOS (hosts/GLaDOS/netdata.nix), so her
-# metrics show up as a second node here and her history lives on this host,
-# which is always on.
-{ config, pkgs, ... }:
+# Also the streaming parent for GLaDOS and rattmann (hosts/<child>/netdata.nix),
+# so their metrics show up as further nodes here and their history lives on
+# this host, which is always on.
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
-  # Her tailnet address, as for her terminal and Pluto: the router hands out no
-  # fixed LAN addresses.
-  gladosAddress = "100.110.170.42";
+  # Tailnet addresses of the children, as for GLaDOS's terminal and Pluto: the
+  # router hands out no fixed LAN addresses. A null one (not yet on the
+  # tailnet) is left out of the allow list and the firewall.
+  children = lib.filterAttrs (_: address: address != null) {
+    GLaDOS = "100.110.170.42";
+    # TODO: rattmann's tailnet address once he has joined (`tailscale up`)
+    rattmann = null;
+  };
 in
 {
 
@@ -30,16 +40,16 @@ in
     content = ''
       [${config.sops.placeholder."netdata/stream-key"}]
           enabled = yes
-          allow from = ${gladosAddress}
+          allow from = ${lib.concatStringsSep " " (lib.attrValues children)}
     '';
     owner = config.services.netdata.user;
     restartUnits = [ "netdata.service" ];
   };
 
-  # The port is LAN-only in the registry; she streams over the tailnet.
-  networking.firewall.extraCommands = ''
-    iptables -A nixos-fw -i tailscale0 -s ${gladosAddress} -p tcp --dport ${toString config.homelab.services.netdata.port} -j nixos-fw-accept
-  '';
+  # The port is LAN-only in the registry; the children stream over the tailnet.
+  networking.firewall.extraCommands = lib.concatMapStrings (address: ''
+    iptables -A nixos-fw -i tailscale0 -s ${address} -p tcp --dport ${toString config.homelab.services.netdata.port} -j nixos-fw-accept
+  '') (lib.attrValues children);
 
   homelab.services.netdata = {
     port = 19999;
