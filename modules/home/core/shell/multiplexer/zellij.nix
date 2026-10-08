@@ -63,7 +63,10 @@ let
         borderless = true;
       };
       plugin = {
-        _props.location = "file:${pkgs.zellijPlugins.zjstatus}";
+        # Stable symlink instead of the store path: Zellij re-reads the
+        # plugin per tab/session, so a long-lived session would otherwise
+        # break once a rebuild + GC removes the old store path.
+        _props.location = "file:${config.xdg.configHome}/zellij/plugins/zjstatus.wasm";
 
         color_base = "#1e1e2e";
         color_mantle = "#181825";
@@ -128,6 +131,8 @@ let
   ];
 in
 {
+
+  xdg.configFile."zellij/plugins/zjstatus.wasm".source = pkgs.zellijPlugins.zjstatus;
 
   programs.zellij = {
     enable = true;
