@@ -1,4 +1,9 @@
-{ config, ... }:
+{ config, lib, ... }:
+let
+  # rattmann's tailnet address, for his terminal. TODO: fill in once he has
+  # joined (`tailscale up`); while null he has no terminal button or proxy.
+  rattmannAddress = null;
+in
 {
 
   imports = [
@@ -142,7 +147,20 @@
     wake = "rattmann";
     reboot = "rattmann";
     switch = "rattmann";
+    terminal = lib.mkIf (rattmannAddress != null) "/rattmann/terminal/";
   };
+  # His ttyd (my.services.ttyd in hosts/rattmann), proxied by tailnet address
+  # for the same reasons as GLaDOS's; his firewall only admits wheatley. Port
+  # is his my.services.ttyd.port.
+  services.nginx.virtualHosts.dashboard.locations."/rattmann/terminal/" =
+    lib.mkIf (rattmannAddress != null)
+      {
+        proxyPass = "http://${rattmannAddress}:3000";
+        proxyWebsockets = true;
+        extraConfig = ''
+          proxy_read_timeout 1d;
+        '';
+      };
   programs.ssh.knownHosts."rattmann.local" = {
     extraHostNames = [ "rattmann.${config.homelab.network.tailnetDomain}" ];
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMSS/e/drunmk5UHJ5mplGg0hIKznGeZWL/eL7QRlYKU";
