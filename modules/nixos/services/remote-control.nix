@@ -19,7 +19,7 @@
 let
   user = "remote-control";
   services = config.my.services;
-  # Public half of the `svcctl/poweroff-ssh-key` secret in secrets/wheatley.yaml.
+  # Public half of the `svcctl/poweroff-ssh-key` secret in secrets/hosts/wheatley.yaml.
   svcctlKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBkYyj2vQNoL702tMIZPdaLAXt6qNA9loALCYKBij9Sx svcctl@wheatley";
   shutdown = "${config.systemd.package}/bin/shutdown";
   systemctl = "${config.systemd.package}/bin/systemctl";

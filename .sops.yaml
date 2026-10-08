@@ -1,3 +1,6 @@
+# secrets/hosts/<host>.yaml   only that host (and primary) can decrypt
+# secrets/users/<user>.yaml   primary only, decrypted by home-manager
+# secrets/shared/<name>.yaml  exactly the hosts that consume it
 keys:
   - &primary age1vlw5kwua3mvwunt50gm824cvphpwuhykklqq3rukyfzmgd07m9gqcj48y4
   # ssh-to-age of /etc/ssh/ssh_host_ed25519_key.pub
@@ -5,22 +8,22 @@ keys:
   - &GLaDOS age1hf0tz972zkzl7lp3qft94jccx0x0nxq9wgpgkmvw2ljqfkxxaejsr96hvj
   - &rattmann age1wc2y9gc3nm884cj52q28w5k2pc66306ymul2w2ejvq558pypwc8qt0006e
 creation_rules:
-  - path_regex: secrets/wheatley\.yaml$
+  - path_regex: secrets/hosts/wheatley\.yaml$
     key_groups:
     - age:
       - *primary
       - *wheatley
-  - path_regex: secrets/GLaDOS\.yaml$
+  - path_regex: secrets/hosts/GLaDOS\.yaml$
     key_groups:
     - age:
       - *primary
       - *GLaDOS
-  - path_regex: secrets/rattmann\.yaml$
+  - path_regex: secrets/hosts/rattmann\.yaml$
     key_groups:
     - age:
       - *primary
       - *rattmann
-  - path_regex: secrets/user\.yaml$
+  - path_regex: secrets/users/[^/]+\.yaml$
     key_groups:
     - age:
       - *primary
