@@ -140,7 +140,7 @@ html.dark .information-widget-greeting span {
 
 /* Uptime's bar is just the seconds of the current minute. Homepage gives it no
    hook, but always renders it last in its widget; single-resource widgets
-   (the disks) are spared. */
+   (the Companion Cube's disk) are spared. */
 .information-widget-resource:last-child:not(:only-child) .resource-usage {
   display: none;
 }

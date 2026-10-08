@@ -304,18 +304,12 @@ in
         }
         {
           resources = {
-            label = "System";
+            label = "Wheatley";
             cpu = true;
             memory = true;
-            expanded = true;
-            uptime = true;
-          };
-        }
-        {
-          resources = {
-            label = "Wheatley";
             disk = "/";
             expanded = true;
+            uptime = true;
           };
         }
         # Must stay the last widget: theme.css themes it by position,
