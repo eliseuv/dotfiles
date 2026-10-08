@@ -28,6 +28,12 @@
       inherit pkgs;
       inherit lib;
     })
+    # ssh-unlock
+    (import ./_ssh-unlock.nix {
+      inherit pkgs;
+      inherit lib;
+      cacheTtl = config.services.gpg-agent.maxCacheTtlSsh;
+    })
     # wake
     (import ./_wake.nix {
       inherit pkgs;
