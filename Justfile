@@ -130,3 +130,24 @@ pin-claude-code version='':
     curl -fsSL "$base/$version/manifest.zst.json" --output "$out"
     git add "$out"
     echo "pin-claude-code: wrote $version to $out; set manifestOverride = ./claude-code-manifest.json"
+
+# Accept password logins over ssh for a while, so a new client can
+# `ssh-copy-id` this host; Ctrl-C ends it early. sshd_config is a
+# read-only store path, so rather than rebuild, the regular sshd is
+# stopped and a foreground one takes its place with password auth
+# overridden on the command line (which wins over the config file).
+# KillMode=process keeps existing sessions alive across the stop, so this
+# is safe to run over ssh; the trap brings the regular sshd back however
+# this exits.
+ssh-allow-password duration='5m':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    sudo -v
+    trap 'sudo systemctl start sshd.service' EXIT
+    sudo systemctl stop sshd.service
+    echo "ssh-allow-password: accepting passwords for {{duration}}, Ctrl-C to stop early"
+    status=0
+    sudo timeout {{duration}} "$(command -v sshd)" -D -e -f /etc/ssh/sshd_config \
+        -o PasswordAuthentication=yes -o KbdInteractiveAuthentication=yes || status=$?
+    # 124: timed out, 130/143: interrupted; both are the intended way out.
+    case "$status" in 0|124|130|143) ;; *) exit "$status" ;; esac
