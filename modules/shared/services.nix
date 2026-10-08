@@ -7,7 +7,9 @@
 
       tailscale = {
         enable = lib.mkEnableOption "Tailscale";
-        upAtBoot = lib.mkEnableOption "bringing Tailscale up at every boot, undoing a `tailscale down` from the last session";
+        upAtBoot = lib.mkEnableOption "bringing Tailscale up at every boot, undoing a `tailscale down` from the last session" // {
+          default = true;
+        };
       };
       containers.enable = lib.mkEnableOption "Docker (rootless) and Podman";
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
