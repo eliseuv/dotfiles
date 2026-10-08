@@ -41,7 +41,7 @@ in
   homelab.services.tailscale.dashboard = {
     name = "Tailscale";
     group = "Hosts";
-    order = 2;
+    order = 5;
     description = "Tailnet admin console";
     icon = "tailscale.png";
     href = "https://login.tailscale.com/admin/machines";
@@ -54,7 +54,7 @@ in
   homelab.services.glados.dashboard = {
     name = "GLaDOS";
     group = "Hosts";
-    order = 0;
+    order = 2;
     description = "Genetic Lifeform and Disk Operating System";
     icon = "mdi-robot-industrial";
     link = false;
@@ -80,7 +80,7 @@ in
   homelab.services.pop-os.dashboard = {
     name = "pop-os";
     group = "Hosts";
-    order = 0;
+    order = 3;
     description = "Pop!_OS desktop";
     icon = "mdi-desktop-tower";
     link = false;
@@ -119,9 +119,9 @@ in
   };
 
   # Terminal, switch and restart buttons for wheatley himself; no on/off, as
-  # nothing here could turn him back on. Ties GLaDOS's order and sorts after
-  # her by name. The icon is a placeholder the dashboard theme draws over
-  # with his core.
+  # nothing here could turn him back on. First in Hosts, followed by the
+  # Companion Cube and GLaDOS, so the Aperture machines fill the first row.
+  # The icon is a placeholder the dashboard theme draws over with his core.
   homelab.services.wheatley.dashboard = {
     name = "Wheatley";
     group = "Hosts";
@@ -140,7 +140,7 @@ in
   homelab.services.rattmann.dashboard = {
     name = "Rattmann";
     group = "Hosts";
-    order = 0;
+    order = 4;
     description = "Kiosk showing this dashboard";
     icon = "mdi-laptop";
     link = false;
