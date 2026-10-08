@@ -31,6 +31,13 @@ creation_rules:
       - *wheatley
       - *GLaDOS
       - *rattmann
+  # GLaDOS's Pluto, reverse-proxied by wheatley
+  - path_regex: secrets/shared/pluto-GLaDOS\.yaml$
+    key_groups:
+    - age:
+      - *primary
+      - *GLaDOS
+      - *wheatley
   - path_regex: secrets/users/[^/]+\.yaml$
     key_groups:
     - age:

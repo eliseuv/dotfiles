@@ -40,9 +40,12 @@ in
     basePath = "/wheatley/pluto/";
   };
 
-  # This host's own pluto/secret is declared by the Pluto module; GLaDOS's is a
-  # copy of the one in secrets/GLaDOS.yaml.
-  sops.secrets."pluto/glados-secret" = { };
+  # This host's own pluto/secret is declared by the Pluto module; GLaDOS's is
+  # shared with her, under another name here so the two don't collide.
+  sops.secrets."pluto/glados-secret" = {
+    sopsFile = ../../../secrets/shared/pluto-GLaDOS.yaml;
+    key = "pluto/secret";
+  };
   sops.templates."pluto-cookie-wheatley.conf" = cookieTemplate "pluto/secret";
   sops.templates."pluto-cookie-glados.conf" = cookieTemplate "pluto/glados-secret";
 

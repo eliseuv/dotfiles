@@ -14,6 +14,9 @@
     iptables -A nixos-fw -i tailscale0 -s 100.97.1.97 -p tcp --dport ${toString config.my.services.pluto.port} -j nixos-fw-accept
   '';
 
+  # Shared with wheatley, whose nginx hands it to her Pluto as a cookie.
+  sops.secrets."pluto/secret".sopsFile = ../../secrets/shared/pluto-GLaDOS.yaml;
+
   # Mount disks
   fileSystems = {
 
