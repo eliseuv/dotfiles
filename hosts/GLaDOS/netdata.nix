@@ -17,10 +17,11 @@
     configDir."stream.conf" = config.sops.templates."netdata-stream.conf".path;
   };
 
-  # A copy of the key in secrets/wheatley.yaml. The destination is wheatley's
-  # tailnet address (homelab.network.tailnetAddress in her system.nix), whose
-  # firewall accepts this stream only over the tailnet.
-  sops.secrets."netdata/stream-key" = { };
+  # Shared with wheatley through secrets/shared/netdata.yaml. The destination
+  # is wheatley's tailnet address (homelab.network.tailnetAddress in
+  # her system.nix), whose firewall accepts this stream only over the
+  # tailnet.
+  sops.secrets."netdata/stream-key".sopsFile = ../../secrets/shared/netdata.yaml;
   sops.templates."netdata-stream.conf" = {
     content = ''
       [stream]

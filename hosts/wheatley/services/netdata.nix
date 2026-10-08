@@ -23,9 +23,9 @@ in
     configDir."stream.conf" = config.sops.templates."netdata-stream.conf".path;
   };
 
-  # A copy of the key in secrets/GLaDOS.yaml; a stream section is named by the
-  # API key it accepts.
-  sops.secrets."netdata/stream-key" = { };
+  # Shared with the children through secrets/shared/netdata.yaml; a stream
+  # section is named by the API key it accepts.
+  sops.secrets."netdata/stream-key".sopsFile = ../../../secrets/shared/netdata.yaml;
   sops.templates."netdata-stream.conf" = {
     content = ''
       [${config.sops.placeholder."netdata/stream-key"}]
