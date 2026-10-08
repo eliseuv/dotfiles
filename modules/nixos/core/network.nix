@@ -49,6 +49,12 @@
     .local
   '';
 
+  # The mDNS plug-in is only reachable through nscd, and resolvconf
+  # try-restarts nscd on every resolv.conf rewrite. NetworkManager and
+  # tailscaled together can exceed the default 5-starts/10s limit at boot,
+  # leaving nscd failed and .local names unresolvable.
+  systemd.services.nscd.startLimitIntervalSec = 0;
+
   # Enable the OpenSSH daemon.
   services.openssh = {
     enable = true;
