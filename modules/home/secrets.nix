@@ -35,8 +35,6 @@
         "gemini/api-key" = { };
         "openweather/api-key" = { };
         "quandl/api-key" = { };
-        "spotify/client-id" = { };
-        "spotify/client-secret" = { };
         "ntfy/topic" = { };
       };
     };
