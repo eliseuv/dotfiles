@@ -1,22 +1,31 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    # Typescript
-    typescript
-    typescript-language-server
-    vtsls
+    home.packages = with pkgs; [
 
-    # html/css/json/eslint language servers
-    vscode-langservers-extracted
+      # Typescript
+      typescript
+      typescript-language-server
+      vtsls
 
-    # Sass
-    sass
+      # html/css/json/eslint language servers
+      vscode-langservers-extracted
 
-    # Vue
-    vue-language-server
+      # Sass
+      sass
 
-  ];
+      # Vue
+      vue-language-server
+
+    ];
+
+  };
 
 }

@@ -1,24 +1,33 @@
-{ pkgs, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    # LLVM tools for C/C++ development
-    clang
-    # lowPrio: clang-tools and clang-analyzer both ship bin/scan-view;
-    # defer to clang-analyzer's copy on conflict.
-    (lib.lowPrio clang-tools)
-    clang-manpages
-    clang-analyzer
+    home.packages = with pkgs; [
 
-    # Compilation database
-    bear
+      # LLVM tools for C/C++ development
+      clang
+      # lowPrio: clang-tools and clang-analyzer both ship bin/scan-view;
+      # defer to clang-analyzer's copy on conflict.
+      (lib.lowPrio clang-tools)
+      clang-manpages
+      clang-analyzer
 
-    # Debuggers
-    gdb
-    lldb
-    gf
+      # Compilation database
+      bear
 
-  ];
+      # Debuggers
+      gdb
+      lldb
+      gf
+
+    ];
+
+  };
 
 }

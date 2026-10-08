@@ -1,39 +1,48 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    # The glorious Glasgow Haskell Compiler
-    ghc
+    home.packages = with pkgs; [
 
-    # LSP
-    haskell-language-server
+      # The glorious Glasgow Haskell Compiler
+      ghc
 
-    # Linter
-    hlint
+      # LSP
+      haskell-language-server
 
-    # Formatter
-    fourmolu
+      # Linter
+      hlint
 
-    # Prettifier
-    stylish-haskell
+      # Formatter
+      fourmolu
 
-    # Projects
-    cabal-install
-    cabal2nix
-    stack
-    haskellPackages.implicit-hie
+      # Prettifier
+      stylish-haskell
 
-    # Hoogle
-    haskellPackages.hoogle
+      # Projects
+      cabal-install
+      cabal2nix
+      stack
+      haskellPackages.implicit-hie
 
-    # Tags generation
-    haskellPackages.fast-tags
+      # Hoogle
+      haskellPackages.hoogle
 
-    # Tools
-    ghcid
-    ghciwatch
+      # Tags generation
+      haskellPackages.fast-tags
 
-  ];
+      # Tools
+      ghcid
+      ghciwatch
+
+    ];
+
+  };
 
 }

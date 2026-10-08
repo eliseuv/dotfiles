@@ -1,4 +1,10 @@
-{ pkgs, inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # Each source comes from a flake input (flake = false) pinned in flake.lock;
@@ -25,8 +31,12 @@ in
 
 {
 
-  home.packages = [
-    shoin
-  ];
+  config = lib.mkIf config.my.home.development.enable {
+
+    home.packages = [
+      shoin
+    ];
+
+  };
 
 }

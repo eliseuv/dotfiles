@@ -7,6 +7,12 @@
 
     apps.enable = lib.mkEnableOption "the full desktop app set (GUI editors, documents, media, social)";
 
+    development.enable =
+      lib.mkEnableOption "language toolchains, LSPs and heavy dev tools (Rust, Haskell, Julia, Ghidra, ...)"
+      // {
+        default = true;
+      };
+
     notes.enable = lib.mkEnableOption "the notes vault environment and its agent skills";
 
     cloudSync.enable = lib.mkEnableOption "rclone and its sync services";

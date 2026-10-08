@@ -1,18 +1,27 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    zig
+    home.packages = with pkgs; [
 
-    # Compiler shell completions
-    zig-shell-completions
+      zig
 
-    # LSP
-    zls
+      # Compiler shell completions
+      zig-shell-completions
 
-    # Debugger
-    lldb
-  ];
+      # LSP
+      zls
+
+      # Debugger
+      lldb
+    ];
+
+  };
 
 }

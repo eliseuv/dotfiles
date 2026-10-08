@@ -1,27 +1,36 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    python3
-    python3Packages.cython
-    python3Packages.pytest
+    home.packages = with pkgs; [
 
-    basedpyright
+      python3
+      python3Packages.cython
+      python3Packages.pytest
 
-  ];
+      basedpyright
 
-  programs.uv = {
-    enable = true;
-    settings = { };
+    ];
+
+    programs.uv = {
+      enable = true;
+      settings = { };
+    };
+
+    programs.ruff = {
+      enable = true;
+      settings = { };
+    };
+
+    # uv installed tools path
+    home.sessionPath = [ "$HOME/.local/bin" ];
+
   };
-
-  programs.ruff = {
-    enable = true;
-    settings = { };
-  };
-
-  # uv installed tools path
-  home.sessionPath = [ "$HOME/.local/bin" ];
 
 }

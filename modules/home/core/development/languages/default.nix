@@ -1,34 +1,43 @@
 # Languages that need no more than a package or two; the rest have a module
 # each.
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    # Assembly LSP
-    asm-lsp
+    home.packages = with pkgs; [
 
-    # Fortran LSP
-    fortls
+      # Assembly LSP
+      asm-lsp
 
-    # Lean
-    lean4
+      # Fortran LSP
+      fortls
 
-    # Shell formatter and linter
-    shfmt
-    shellcheck
+      # Lean
+      lean4
 
-    # Uiua
-    uiua
+      # Shell formatter and linter
+      shfmt
+      shellcheck
 
-  ];
+      # Uiua
+      uiua
 
-  # OCaml toolchain (ocamlformat, dune, utop, ocp-indent, merlin) is
-  # per-switch via `opam install`, not nixpkgs, so it tracks whatever
-  # compiler each project uses.
-  programs.opam = {
-    enable = true;
-    enableZshIntegration = true;
+    ];
+
+    # OCaml toolchain (ocamlformat, dune, utop, ocp-indent, merlin) is
+    # per-switch via `opam install`, not nixpkgs, so it tracks whatever
+    # compiler each project uses.
+    programs.opam = {
+      enable = true;
+      enableZshIntegration = true;
+    };
+
   };
 
 }

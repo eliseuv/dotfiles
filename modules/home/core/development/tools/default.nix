@@ -1,39 +1,54 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  development = config.my.home.development.enable;
+in
 {
 
-  home.packages = with pkgs; [
+  home.packages =
+    with pkgs;
+    [
 
-    # Command runners
-    gnumake
-    cmake
-    just
+      # Command runner
+      just
 
-    # Run command on change
-    watchexec
+      # Run command on change
+      watchexec
 
-    # Linter
-    ast-grep
+      # Linter
+      ast-grep
 
-    # Benchmarking
-    hyperfine
+      # Benchmarking
+      hyperfine
 
-    # Profiler
-    cargo-flamegraph
+    ]
+    ++ lib.optionals development [
 
-    # Formatter
-    prettierd
+      # Build systems
+      gnumake
+      cmake
 
-    # Reverse engineering
-    ghidra-bin
+      # Profiler
+      cargo-flamegraph
 
-  ];
+      # Formatter
+      prettierd
+
+      # Reverse engineering
+      ghidra-bin
+
+    ];
 
   programs = {
 
     # JavaScript
-    npm.enable = true;
+    npm.enable = development;
     bun = {
-      enable = true;
+      enable = development;
       enableGitIntegration = true;
     };
 
@@ -52,7 +67,7 @@
 
   };
 
-  home.sessionPath = [ "$HOME/.bun/bin" ];
+  home.sessionPath = lib.optional development "$HOME/.bun/bin";
 
   home.shellAliases.j = "just";
 

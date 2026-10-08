@@ -1,33 +1,42 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    # LSP
-    gopls
+    home.packages = with pkgs; [
 
-    # godoc, goimports, etc.
-    gotools
+      # LSP
+      gopls
 
-    # Formatter
-    gofumpt
+      # godoc, goimports, etc.
+      gotools
 
-    # Modify struct field tags
-    gomodifytags
-    # Method stubs for interfaces
-    impl
+      # Formatter
+      gofumpt
 
-    # Debugger
-    delve
+      # Modify struct field tags
+      gomodifytags
+      # Method stubs for interfaces
+      impl
 
-  ];
+      # Debugger
+      delve
 
-  programs.go = {
-    enable = true;
-    env = {
-      GOPATH = ".go";
+    ];
+
+    programs.go = {
+      enable = true;
+      env = {
+        GOPATH = ".go";
+      };
+      telemetry.mode = "off";
     };
-    telemetry.mode = "off";
+
   };
 
 }

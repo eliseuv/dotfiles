@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   # Notifications are best-effort: headless hosts have no notification daemon,
   # and a failed notify-send must not mark the job itself as failed.
@@ -110,80 +115,84 @@ let
 in
 {
 
-  home.packages = with pkgs; [
-    julia-bin
+  config = lib.mkIf config.my.home.development.enable {
 
-    # Environment management scripts
-    julia-env-update
-    julia-env-gc
+    home.packages = with pkgs; [
+      julia-bin
 
-    pluto-connect
+      # Environment management scripts
+      julia-env-update
+      julia-env-gc
 
-  ];
+      pluto-connect
 
-  home.file = {
-    # REPL startup script
-    ".julia/config/startup.jl".source = ./julia/startup.jl;
-    # LSP requirements makefile
-    ".julia/environments/nvim-lspconfig/Makefile".source = ./julia/Makefile;
-    # Pluto notebook templates
-    ".julia/pluto_notebooks/ingredients.jl".source = ./julia/ingredients.jl;
-  };
+    ];
 
-  home.sessionVariables = {
-    JULIA_NUM_THREADS = "auto";
-  };
-
-  # Julia environment update
-  systemd.user.services.julia-env-update = {
-    Unit = {
-      Description = "Update Julia environment";
-      Wants = [
-        "network.target"
-        "nss-lookup.target"
-      ];
-      After = [
-        "network.target"
-        "nss-lookup.target"
-      ];
+    home.file = {
+      # REPL startup script
+      ".julia/config/startup.jl".source = ./julia/startup.jl;
+      # LSP requirements makefile
+      ".julia/environments/nvim-lspconfig/Makefile".source = ./julia/Makefile;
+      # Pluto notebook templates
+      ".julia/pluto_notebooks/ingredients.jl".source = ./julia/ingredients.jl;
     };
-    Service = {
-      Type = "oneshot";
-      ExecStart = lib.getExe julia-env-update;
-    };
-    # Not WantedBy default.target: activation waits for it, and a full update
-    # plus precompile blocks the switch for minutes. The timer runs it instead.
-  };
 
-  systemd.user.timers.julia-env-update = {
-    Unit.Description = "Scheduled Julia environment update";
-    Timer = {
-      OnCalendar = "daily";
-      Persistent = true;
-      RandomizedDelaySec = "1h";
+    home.sessionVariables = {
+      JULIA_NUM_THREADS = "auto";
     };
-    Install.WantedBy = [ "timers.target" ];
-  };
 
-  # Julia environment cleanup
-  systemd.user.services.julia-env-gc = {
-    Unit = {
-      Description = "Cleanup Julia environment";
+    # Julia environment update
+    systemd.user.services.julia-env-update = {
+      Unit = {
+        Description = "Update Julia environment";
+        Wants = [
+          "network.target"
+          "nss-lookup.target"
+        ];
+        After = [
+          "network.target"
+          "nss-lookup.target"
+        ];
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = lib.getExe julia-env-update;
+      };
+      # Not WantedBy default.target: activation waits for it, and a full update
+      # plus precompile blocks the switch for minutes. The timer runs it instead.
     };
-    Service = {
-      Type = "oneshot";
-      ExecStart = lib.getExe julia-env-gc;
-    };
-  };
 
-  systemd.user.timers.julia-env-gc = {
-    Unit.Description = "Scheduled Julia environment cleanup";
-    Timer = {
-      OnCalendar = "daily";
-      Persistent = true;
-      RandomizedDelaySec = "1h";
+    systemd.user.timers.julia-env-update = {
+      Unit.Description = "Scheduled Julia environment update";
+      Timer = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "1h";
+      };
+      Install.WantedBy = [ "timers.target" ];
     };
-    Install.WantedBy = [ "timers.target" ];
+
+    # Julia environment cleanup
+    systemd.user.services.julia-env-gc = {
+      Unit = {
+        Description = "Cleanup Julia environment";
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = lib.getExe julia-env-gc;
+      };
+    };
+
+    systemd.user.timers.julia-env-gc = {
+      Unit.Description = "Scheduled Julia environment cleanup";
+      Timer = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "1h";
+      };
+      Install.WantedBy = [ "timers.target" ];
+    };
+
   };
 
 }

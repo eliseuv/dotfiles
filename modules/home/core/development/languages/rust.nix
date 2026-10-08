@@ -1,56 +1,66 @@
-{ pkgs, inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
 
-  home.packages = with pkgs; [
+  config = lib.mkIf config.my.home.development.enable {
 
-    # Full stable rust toolchain via fenix
-    inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.completeToolchain
+    home.packages = with pkgs; [
 
-    # Cargo
-    cargo-watch
-    cargo-generate
-    cargo-cache
-    cargo-binstall
-    cargo-update
-    cargo-cross
-    cargo-fuzz
-    cargo-nextest
+      # Full stable rust toolchain via fenix
+      inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.completeToolchain
 
-    # CLI Crate Docs
-    rusty-man
+      # Cargo
+      cargo-watch
+      cargo-generate
+      cargo-cache
+      cargo-binstall
+      cargo-update
+      cargo-cross
+      cargo-fuzz
+      cargo-nextest
 
-    # Compilation cache
-    sccache
+      # CLI Crate Docs
+      rusty-man
 
-    # Debugging
-    lldb
+      # Compilation cache
+      sccache
 
-    # https://nixos.wiki/wiki/Rust#Building_Rust_crates_that_require_external_system_libraries
-    openssl.dev
-    pkg-config
+      # Debugging
+      lldb
 
-  ];
+      # https://nixos.wiki/wiki/Rust#Building_Rust_crates_that_require_external_system_libraries
+      openssl.dev
+      pkg-config
 
-  # Cargo will look for OpenSSL with pkg-config
-  home.sessionVariables.PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
+    ];
 
-  # Cargo-installed binaries
-  home.sessionPath = [ "$HOME/.cargo/bin" ];
+    # Cargo will look for OpenSSL with pkg-config
+    home.sessionVariables.PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
 
-  # Environment variables for Rust
-  home.sessionVariables = {
-    RUSTC_WRAPPER = "sccache";
-    RUST_BACKTRACE = 1;
-    RUST_LOG = "info";
-  };
+    # Cargo-installed binaries
+    home.sessionPath = [ "$HOME/.cargo/bin" ];
 
-  # Background program analyzer
-  programs.bacon = {
-    enable = true;
-    settings = {
-      default_job = "clippy-all";
+    # Environment variables for Rust
+    home.sessionVariables = {
+      RUSTC_WRAPPER = "sccache";
+      RUST_BACKTRACE = 1;
+      RUST_LOG = "info";
     };
+
+    # Background program analyzer
+    programs.bacon = {
+      enable = true;
+      settings = {
+        default_job = "clippy-all";
+      };
+    };
+
   };
 
 }
