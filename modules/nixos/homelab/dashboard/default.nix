@@ -74,6 +74,10 @@ let
       tileCfg = service.dashboard;
       local = "http://127.0.0.1:${toString service.port}";
       linked = tileCfg.link && service.port != null;
+      mainWidget =
+        lib.optionalAttrs (service.port != null) { url = local; }
+        // tileCfg.widget
+        // lib.optionalAttrs (tileCfg.widgetKey != null) { key = "{{${keyVar name}}}"; };
     in
     {
       inherit (tileCfg) description icon;
@@ -90,11 +94,13 @@ let
       href = "http://${linkHost}:${toString service.port}";
       siteMonitor = local;
     }
-    // lib.optionalAttrs (tileCfg.widget != null) {
-      widget =
-        lib.optionalAttrs (service.port != null) { url = local; }
-        // tileCfg.widget
-        // lib.optionalAttrs (tileCfg.widgetKey != null) { key = "{{${keyVar name}}}"; };
+    // lib.optionalAttrs (tileCfg.widget != null && tileCfg.extraWidgets == [ ]) {
+      widget = mainWidget;
+    }
+    # One list rather than `widget` beside `widgets`: Homepage appends a
+    # `widget` after the list, which would put the main one last.
+    // lib.optionalAttrs (tileCfg.extraWidgets != [ ]) {
+      widgets = lib.optional (tileCfg.widget != null) mainWidget ++ tileCfg.extraWidgets;
     };
 
   groupTiles =
@@ -140,6 +146,11 @@ let
       type = lib.types.nullOr (lib.types.attrsOf lib.types.anything);
       default = null;
       description = "Homepage widget; `url` defaults to the service's port on loopback.";
+    };
+    extraWidgets = lib.mkOption {
+      type = lib.types.listOf (lib.types.attrsOf lib.types.anything);
+      default = [ ];
+      description = "Further Homepage widgets, each a row below `widget`; taken as given, so each needs its own full `url`.";
     };
     widgetKey = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
