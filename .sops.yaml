@@ -3,6 +3,7 @@ keys:
   # ssh-to-age of /etc/ssh/ssh_host_ed25519_key.pub
   - &wheatley age1rhyfer4n7lrx3640j7n5jp3kxz245q0j9034agu06ju87ve2zanse3u59q
   - &GLaDOS age1hf0tz972zkzl7lp3qft94jccx0x0nxq9wgpgkmvw2ljqfkxxaejsr96hvj
+  - &rattmann age1wc2y9gc3nm884cj52q28w5k2pc66306ymul2w2ejvq558pypwc8qt0006e
 creation_rules:
   - path_regex: secrets/wheatley\.yaml$
     key_groups:
@@ -14,6 +15,11 @@ creation_rules:
     - age:
       - *primary
       - *GLaDOS
+  - path_regex: secrets/rattmann\.yaml$
+    key_groups:
+    - age:
+      - *primary
+      - *rattmann
   - path_regex: secrets/user\.yaml$
     key_groups:
     - age:

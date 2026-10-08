@@ -20,6 +20,8 @@
     };
   };
 
+  my.secrets.system.enable = true;
+
   # Its 4510U would build toolchains for minutes on every dashboard switch
   my.home.development.enable = false;
 
