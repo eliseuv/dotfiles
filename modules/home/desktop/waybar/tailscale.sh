@@ -31,7 +31,7 @@ print_status() {
             | ([.Peer[]?] | length) as $total
             | ([.Peer[]? | select(.ExitNode) | .HostName] | first // null) as $exit
             | {
-                text: "\($icon)  \(.Self.TailscaleIPs[0])",
+                text: $icon,
                 class: "connected",
                 tooltip: (
                     "Tailnet: \(.CurrentTailnet.Name | @html)\n"
