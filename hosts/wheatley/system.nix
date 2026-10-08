@@ -40,8 +40,8 @@ in
   # homelab registry share.
   homelab.services.tailscale.dashboard = {
     name = "Tailscale";
-    group = "Hosts";
-    order = 5;
+    group = "Tools";
+    order = 3;
     description = "Tailnet admin console";
     icon = "tailscale.png";
     href = "https://login.tailscale.com/admin/machines";
