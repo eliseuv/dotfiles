@@ -17,6 +17,7 @@
         # Pop!_OS desktop: also not a host here.
         pop-os = "b4:2e:99:6e:1a:bd";
         wheatley = "20:47:47:08:7c:bd";
+        rattmann = "b0:10:41:fd:79:5d";
       };
       description = "Host name (as in hosts/) -> MAC of the wired NIC that listens for the magic packet.";
     };
