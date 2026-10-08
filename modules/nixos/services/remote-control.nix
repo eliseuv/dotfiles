@@ -84,37 +84,23 @@ in
     # The dashboard logs in every few seconds, and each login would otherwise
     # start a user@.service for this user, with every per-user unit (rootless
     # Docker, devmon, ...), only to tear it down again. A switch that lands
-    # while one is stopping fails reloading it. background-light sessions
-    # don't pull in user@.service; polkit only checks the user, not a session.
-    # pam_succeed_if skips the pam_env line for everyone else; neither can
-    # fail a login.
-    security.pam.services.sshd.rules.session =
-      let
-        systemdOrder = config.security.pam.services.sshd.rules.session.systemd.order;
-        pamModule = name: "${config.security.pam.package}/lib/security/${name}.so";
-      in
-      {
-        remote-control-only = {
-          order = systemdOrder - 20;
-          control = "[success=1 default=ignore]";
-          modulePath = pamModule "pam_succeed_if";
-          args = [
-            "quiet"
-            "user"
-            "!="
-            user
-          ];
-        };
-        remote-control-light = {
-          order = systemdOrder - 10;
-          control = "optional";
-          modulePath = pamModule "pam_env";
-          args = [
-            "conffile=${pkgs.writeText "remote-control-pam-env.conf" "XDG_SESSION_CLASS DEFAULT=background-light\n"}"
-            "readenv=0"
-          ];
-        };
-      };
+    # while one is stopping fails reloading it. So this user gets no logind
+    # session at all: a background-light one still creates /run/user/<uid>,
+    # which switch-to-configuration takes as a running user manager and fails
+    # to reach. polkit only checks the user, not a session.
+    # [success=1] jumps over exactly the next line, pam_systemd, for this user
+    # only; nothing may be ordered between the two.
+    security.pam.services.sshd.rules.session.remote-control-no-logind = {
+      order = config.security.pam.services.sshd.rules.session.systemd.order - 10;
+      control = "[success=1 default=ignore]";
+      modulePath = "${config.security.pam.package}/lib/security/pam_succeed_if.so";
+      args = [
+        "quiet"
+        "user"
+        "="
+        user
+      ];
+    };
 
     # *-multiple-sessions because someone is usually logged in, and
     # *-ignore-inhibit because desktop sessions hold inhibitor locks.
