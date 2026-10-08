@@ -19,6 +19,18 @@ let
     # TODO: rattmann's tailnet address once he has joined (`tailscale up`)
     rattmann = null;
   };
+
+  # Charts for the tile's second row, all fetched in one allmetrics request:
+  # what the header's resources widget doesn't show. Sensor names are this
+  # Dell's (dell_smm, coretemp); enp7s0f1 carries the default route.
+  charts = {
+    cpuTemp = "sensors.temperature_coretemp-isa-0000_temp1_Package_id_0_input";
+    fan = "sensors.fan_dell_smm-isa-0000_fan1_Processor_Fan_input";
+    lan = "net.enp7s0f1";
+  };
+  # customapi reads a string field as a dotted path, which chart names would
+  # break; a nested attrset is followed key by key instead.
+  value = chart: dimension: { ${chart}.dimensions.${dimension} = "value"; };
 in
 {
 
@@ -60,6 +72,39 @@ in
       description = "System metrics";
       icon = "netdata.png";
       widget.type = "netdata";
+      extraWidgets = [
+        {
+          type = "customapi";
+          url = "http://127.0.0.1:${toString config.homelab.services.netdata.port}/api/v1/allmetrics?format=json&filter=${lib.concatStringsSep "%20" (lib.attrValues charts)}";
+          mappings = [
+            {
+              label = "CPU temp";
+              field = value charts.cpuTemp "input";
+              format = "number";
+              suffix = "°C";
+            }
+            {
+              label = "Fan";
+              field = value charts.fan "input";
+              format = "number";
+              suffix = "RPM";
+            }
+            # Netdata reports kilobits/s, and sent as negative.
+            {
+              label = "LAN ↓";
+              field = value charts.lan "received";
+              format = "bitrate";
+              scale = 1000;
+            }
+            {
+              label = "LAN ↑";
+              field = value charts.lan "sent";
+              format = "bitrate";
+              scale = -1000;
+            }
+          ];
+        }
+      ];
       unit = "netdata.service";
     };
   };
