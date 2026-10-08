@@ -1,6 +1,8 @@
 { config, ... }:
 {
 
+  imports = [ ./netdata.nix ];
+
   boot.loader.timeout = 2;
 
   # ttyd and Pluto run code as evf, so only wheatley (their reverse proxy) may
