@@ -8,6 +8,12 @@
 # Builds, git and Home Manager run as the primary user in their own checkout;
 # only activation runs as root, through systemd's `+` prefix rather than
 # sudo, so the user gains no passwordless sudo from this.
+#
+# Each switch records the commit it built in `revisionsDir`, keyed by the
+# system's store hash, for the dashboard's host pages (_host-report.nix); the
+# Justfile's record-gen does the same for switches by hand. Kept out of the
+# system itself (system.configurationRevision would do that) so a commit that
+# doesn't change the config doesn't change the system either.
 {
   config,
   lib,
@@ -21,6 +27,7 @@ let
   upstream = "https://github.com/eliseuv/dotfiles.git";
   # RuntimeDirectory: owned by `user`, gone after each run.
   systemLink = "/run/dotfiles-switch/system";
+  inherit (config.my.services.dotfilesSwitch) revisionsDir;
 
   pull = pkgs.writeShellScript "dotfiles-switch-pull" ''
     set -euo pipefail
@@ -47,10 +54,21 @@ let
     nix-env --profile /nix/var/nix/profiles/system --set "$system"
     exec "$system/bin/switch-to-configuration" switch
   '';
+
+  # The pull refused uncommitted changes, so HEAD is what was built.
+  record = pkgs.writeShellScript "dotfiles-switch-record" ''
+    set -euo pipefail
+    system=$(basename "$(readlink -f ${systemLink})")
+    git rev-parse HEAD > ${revisionsDir}/"''${system%%-*}"
+  '';
 in
 {
 
   config = lib.mkIf config.my.services.dotfilesSwitch.enable {
+
+    # Written by the primary user (here and by hand), read by anyone:
+    # host-report runs as remote-control, or as hostctl on the dashboard host.
+    systemd.tmpfiles.rules = [ "d ${revisionsDir} 0755 ${user} - -" ];
 
     systemd.services.dotfiles-switch = {
       description = "Pull the dotfiles and switch to them";
@@ -74,6 +92,7 @@ in
           pull
           build
           "+${activate}"
+          record
           "${lib.getExe pkgs.just} home-switch"
         ];
       };

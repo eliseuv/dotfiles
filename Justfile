@@ -25,6 +25,22 @@ commit-gen:
         --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
     git push --follow-tags
 
+# Record the commit the newest system was built from, for the homelab
+# dashboard's host pages (as dotfiles-switch.service does; see
+# modules/nixos/services/dotfiles-switch.nix). Before commit-gen, which stops
+# at uncommitted changes, so a switch from a dirty tree is still recorded, as
+# such. A no-op on hosts without the directory (no dotfilesSwitch).
+[private]
+record-gen:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dir=/var/lib/dotfiles-revisions
+    [ -d "$dir" ] || exit 0
+    system=$(basename "$(readlink -f /nix/var/nix/profiles/system)")
+    rev=$(git rev-parse HEAD)
+    git diff --quiet HEAD || rev="$rev-dirty"
+    echo "$rev" > "$dir/${system%%-*}"
+
 # Prompt for sudo up front and keep the timestamp fresh for as long as this
 # `just` process lives, so the elevation inside `nh os switch` and `gc` (which
 # can land well past sudo's 5 min timeout on a long build) doesn't prompt again.
@@ -65,7 +81,7 @@ vpn:
 home-switch:
     nh home switch .
 
-after-switch: commit-gen home-switch gc
+after-switch: record-gen commit-gen home-switch gc
 
 system-test: sudo-keepalive && home-switch
     nh os test .
