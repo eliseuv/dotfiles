@@ -230,10 +230,10 @@
         continue;
       bar.dataset.state = state;
       bar.dataset.ping = ping;
-      const label = bar.querySelector(".svcctl-state");
-      label.textContent = state + ping;
-      // For themes that draw their own label (theme.css).
-      label.dataset.ping = ping;
+      // Hosts read on/off, units their systemd state; anything in between
+      // shows as is. controls.css uppercases it.
+      const words = kinds.unit ? {} : { up: "on", down: "off" };
+      bar.querySelector(".svcctl-state").textContent = (words[state] || state) + ping;
       if (kinds.unit) {
         const run = bar.querySelector(".svcctl-run");
         const active = unitActive(state);

@@ -269,33 +269,13 @@ li.service[data-name="GLaDOS"]:has(.svcctl[data-state="shutting-down"]) .service
   to { opacity: 0.35; }
 }
 
-/* Her words for the bar's up/down/waking/shutting-down/rebooting. */
-li.service[data-name="GLaDOS"] .svcctl-state {
-  font-size: 0;
-}
-
-li.service[data-name="GLaDOS"] .svcctl-state::after {
-  font-size: 0.7rem;
-  content: "Dormant";
-}
-
-li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-state::after {
-  content: "Online" attr(data-ping);
-  color: rgb(var(--glados-yellow));
-}
-
-li.service[data-name="GLaDOS"] .svcctl[data-state="waking"] .svcctl-state::after {
-  content: "Reactivating\2026";
-  color: rgb(var(--glados-yellow));
-}
-
-li.service[data-name="GLaDOS"] .svcctl[data-state="shutting-down"] .svcctl-state::after {
-  content: "Deactivating\2026";
-  color: rgb(var(--glados-yellow));
-}
-
-li.service[data-name="GLaDOS"] .svcctl[data-state="rebooting"] .svcctl-state::after {
-  content: "Rebooting\2026";
+/* The bar's state in her optic's yellow whenever she's anything but off. */
+li.service[data-name="GLaDOS"] .svcctl:is(
+  [data-state="up"],
+  [data-state="waking"],
+  [data-state="shutting-down"],
+  [data-state="rebooting"]
+) .svcctl-state {
   color: rgb(var(--glados-yellow));
 }
 
@@ -378,23 +358,8 @@ li.service[data-name="Wheatley"]:has(.svcctl[data-state="rebooting"]) .service-i
   animation: glados-boot 1.6s steps(1) infinite;
 }
 
-/* His words for the reboot bar's up/rebooting. */
-li.service[data-name="Wheatley"] .svcctl-state {
-  font-size: 0;
-}
-
-li.service[data-name="Wheatley"] .svcctl-state::after {
-  font-size: 0.7rem;
-  content: "Standby";
-}
-
-li.service[data-name="Wheatley"] .svcctl[data-state="up"] .svcctl-state::after {
-  content: "Online";
-  color: rgb(var(--wheatley-blue));
-}
-
-li.service[data-name="Wheatley"] .svcctl[data-state="rebooting"] .svcctl-state::after {
-  content: "Rebooting\2026";
+/* The reboot bar's state in his optic's blue while he's on or rebooting. */
+li.service[data-name="Wheatley"] .svcctl:is([data-state="up"], [data-state="rebooting"]) .svcctl-state {
   color: rgb(var(--wheatley-blue));
 }
 
