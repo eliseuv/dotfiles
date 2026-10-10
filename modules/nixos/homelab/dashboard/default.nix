@@ -224,9 +224,17 @@ let
   # storage readout and service tile.
   companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='20' height='20' rx='3' fill='none' stroke='black' stroke-width='1.8'/><rect x='2' y='2' width='6' height='6' rx='2'/><rect x='16' y='2' width='6' height='6' rx='2'/><rect x='2' y='16' width='6' height='6' rx='2'/><rect x='16' y='16' width='6' height='6' rx='2'/><circle cx='12' cy='12' r='5' fill='none' stroke='black' stroke-width='1.6'/><path d='M12 14.6l-2.3-2.2a1.35 1.35 0 0 1 2.3-1.8a1.35 1.35 0 0 1 2.3 1.8z'/></svg>";
 
-  # GLaDOS's head as seen from below: ceiling stalk and optic housing, as a
-  # CSS mask for her wake tile; theme.css draws the eye into it.
-  glados = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='14' y='0' width='4' height='8' rx='1'/><path d='M3 17c0-6.2 5.8-10 13-10s13 3.8 13 10-5.8 10-13 10S3 23.2 3 17z'/></svg>";
+  # GLaDOS from the front, after the usual fan art: her stalk and cables, the
+  # tall head and the disc behind it, kept apart by a gap cut around the head,
+  # as a CSS mask for her wake tile. The faceplate is drawn separately, as a
+  # dark layer under the optic (theme.css), since a mask has one colour; its
+  # light rim keeps it apart from the dark chassis of the light theme.
+  glados =
+    let
+      head = "M9.4 9C9.4 6 11 5.2 16 4.8C21 5.2 22.6 6 22.6 9C22 13 22 19 22.6 23C22.6 26.5 19.5 28.4 16 28.4C12.5 28.4 9.4 26.5 9.4 23C10 19 10 13 9.4 9z";
+    in
+    svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><mask id='m'><rect width='32' height='32' fill='white'/><path d='${head}' fill='black' stroke='black' stroke-width='1.8'/></mask><g mask='url(#m)'><circle cx='16' cy='16' r='9.6'/><path d='M14 0C14 2 11.6 3 11.2 6.4M18 0C18 2 20.4 3 20.8 6.4' fill='none' stroke='black' stroke-width='1.1'/></g><rect x='14.4' y='0' width='3.2' height='6'/><path d='${head}'/></svg>";
+  gladosFace = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='12.6' y='10.4' width='6.8' height='13.5' rx='2.5' fill='#141414' stroke='#b4b4b4' stroke-width='0.7'/></svg>";
 
   # Wheatley's personality core: the sphere between its two carry handles, as
   # a CSS mask for his reboot tile; theme.css draws the optic into it.
@@ -374,6 +382,7 @@ in
             --aperture-iris: url("${iris "black"}");
             --companion-cube: url("${companionCube}");
             --glados: url("${glados}");
+            --glados-face: url("${gladosFace}");
             --wheatley: url("${wheatley}");
           }
         ''

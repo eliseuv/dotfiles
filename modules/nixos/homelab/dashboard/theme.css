@@ -201,9 +201,9 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usag
   mask: var(--companion-cube) center / contain no-repeat;
 }
 
-/* GLaDOS (her wake tile, see hosts/wheatley/system.nix): the head mask with
-   her optic drawn in, lit yellow while she answers pings, dark while she
-   sleeps, flickering while she boots. Keyed on the tile name and the wake
+/* GLaDOS (her wake tile, see hosts/wheatley/system.nix): her mask with the
+   faceplate and optic drawn in, the optic lit yellow while she answers pings,
+   dark while she sleeps, flickering while she boots. Keyed on the tile name and the wake
    bar's state (controls.js), since the icon itself is a placeholder. */
 :root {
   --glados-yellow: 222 160 0;
@@ -242,7 +242,8 @@ li.service[data-name="GLaDOS"] .service-icon::before {
   width: 32px;
   height: 32px;
   background:
-    radial-gradient(circle at 50% 53%, var(--eye) 0 3px, #111 3.5px 6px, transparent 6.5px),
+    radial-gradient(circle at 50% 55%, var(--eye) 0 1.6px, #111 1.9px 2.3px, var(--eye) 2.6px 3px, transparent 3.3px),
+    var(--glados-face) center / contain no-repeat,
     var(--glados-chassis);
   -webkit-mask: var(--glados) center / contain no-repeat;
   mask: var(--glados) center / contain no-repeat;
