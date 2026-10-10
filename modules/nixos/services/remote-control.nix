@@ -7,9 +7,7 @@
 # verb from SSH_ORIGINAL_COMMAND and accepts only the ones this host enables.
 # polkit lets that user, and only it, do exactly those; no sudo.
 #
-# `shutdown +1` rather than an immediate poweroff, so whoever is at the
-# machine gets a minute to `shutdown -c`. Reboots are immediate, like the
-# dashboard host's own.
+# Power-off and reboot are immediate, like the dashboard host's own reboot.
 {
   config,
   lib,
@@ -21,7 +19,6 @@ let
   services = config.my.services;
   # Public half of the `svcctl/poweroff-ssh-key` secret in secrets/hosts/wheatley.yaml.
   svcctlKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBkYyj2vQNoL702tMIZPdaLAXt6qNA9loALCYKBij9Sx svcctl@wheatley";
-  shutdown = "${config.systemd.package}/bin/shutdown";
   systemctl = "${config.systemd.package}/bin/systemctl";
   switchUnit = "dotfiles-switch.service";
   enabled =
@@ -41,7 +38,7 @@ let
   dispatch = pkgs.writeShellScript "remote-control" ''
     case "''${SSH_ORIGINAL_COMMAND:-}" in
     ${lib.optionalString services.remotePowerOff.enable ''
-      poweroff) exec ${shutdown} +1 'Powered off from the dashboard' ;;
+      poweroff) exec ${systemctl} --no-block --check-inhibitors=no poweroff ;;
       reboot) exec ${systemctl} --no-block --check-inhibitors=no reboot ;;
     ''}
     ${lib.optionalString services.dotfilesSwitch.enable ''

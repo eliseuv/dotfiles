@@ -21,10 +21,9 @@
   // answers pings or the window lapses (a cold boot takes a while).
   const wakeSent = {};
   const wakeWindow = 120 * 1000;
-  // Likewise "shutting down" until pings stop; the host waits a minute
-  // (`shutdown +1`) before it even starts.
+  // Likewise "shutting down" until pings stop.
   const poweroffSent = {};
-  const poweroffWindow = 180 * 1000;
+  const poweroffWindow = 120 * 1000;
   // Tile name -> {at, sawDown}: "rebooting" until the host has gone away and
   // come back, or the window lapses. Another host's pings show that; this
   // host serves the page, so for it the API going away and answering again.
@@ -59,7 +58,7 @@
   const settle = () => [1, 3, 6, 12].forEach((s) => setTimeout(refresh, s * 1000));
   const settleWake = () => [5, 15, 30, 45, 60, 90, 120].forEach((s) => setTimeout(refresh, s * 1000));
   const settlePoweroff = () =>
-    [60, 75, 90, 120, 150, 180].forEach((s) => setTimeout(refresh, s * 1000));
+    [5, 15, 30, 45, 60, 90, 120].forEach((s) => setTimeout(refresh, s * 1000));
 
   const unitActive = (state) =>
     state === "active" || state === "activating" || state === "reloading";
@@ -68,11 +67,7 @@
     if (action === "power") action = displayState(name) === "up" ? "poweroff" : "wake";
     if (action === "run") action = unitActive(displayState(name)) ? "stop" : "start";
     if (action === "stop" && !confirm(`Stop ${name}?`)) return;
-    if (
-      action === "poweroff" &&
-      !confirm(`Power off ${name}? GLaDOS shuts down in a minute (\`shutdown -c\` there cancels); others at once.`)
-    )
-      return;
+    if (action === "poweroff" && !confirm(`Power off ${name} now?`)) return;
     if (
       action === "reboot" &&
       !confirm(
