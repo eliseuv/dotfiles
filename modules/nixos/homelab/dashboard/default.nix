@@ -86,12 +86,15 @@ let
       inherit (tileCfg) href;
     }
     # Homepage monitors server-side, where a path on this dashboard means
-    # nothing.
-    // lib.optionalAttrs (tileCfg.href != null && !lib.hasPrefix "/" tileCfg.href) {
-      siteMonitor = tileCfg.href;
-    }
-    # Up/down rather than a response time over loopback, which says nothing
-    # about the network; the time stays in the tooltip.
+    # nothing. Up/down rather than a response time, except for LAN machines
+    # (those with an `address`): over loopback or to the internet the time
+    # says nothing about the network here. It stays in the tooltip.
+    // lib.optionalAttrs (tileCfg.href != null && !lib.hasPrefix "/" tileCfg.href) (
+      {
+        siteMonitor = tileCfg.href;
+      }
+      // lib.optionalAttrs (tileCfg.address == null) { statusStyle = "basic"; }
+    )
     // lib.optionalAttrs (tileCfg.href == null && linked) {
       href = "http://${linkHost}:${toString service.port}";
       siteMonitor = local;
