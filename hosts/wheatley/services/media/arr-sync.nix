@@ -34,8 +34,9 @@ let
     };
   };
 
-  # Per service: its API root, then API resources (`rootfolder` takes paths,
-  # the rest take entry specs).
+  # Per service: its API root, then API resources (`rootfolder` takes paths, or
+  # objects with a `path` and whatever else the service requires; the rest take
+  # entry specs).
   wiring = {
     sonarr = {
       api = "${arrUrl "sonarr"}/api/v3";
@@ -47,11 +48,27 @@ let
       downloadclient = [ (qbittorrentClient { movieCategory = "radarr"; }) ];
       rootfolder = [ "${mediaRoot}/library/movies" ];
     };
+    lidarr = {
+      api = "${arrUrl "lidarr"}/api/v1";
+      downloadclient = [ (qbittorrentClient { musicCategory = "lidarr"; }) ];
+      # Lidarr won't create a root folder without default profiles. Ids 1 are
+      # the "Any" quality and "Standard" metadata profiles a fresh install
+      # seeds; this breaks if those are deleted.
+      rootfolder = [
+        {
+          name = "Music";
+          path = "${mediaRoot}/library/music";
+          defaultQualityProfileId = 1;
+          defaultMetadataProfileId = 1;
+        }
+      ];
+    };
     prowlarr = {
       api = "${arrUrl "prowlarr"}/api/v1";
       applications = [
         (prowlarrApp "Sonarr" "sonarr")
         (prowlarrApp "Radarr" "radarr")
+        (prowlarrApp "Lidarr" "lidarr")
       ];
       # Only applies to indexers carrying the tag.
       indexerproxy = [
@@ -76,6 +93,7 @@ let
   credentials = {
     sonarr = config.sops.secrets."sonarr/api-key".path;
     radarr = config.sops.secrets."radarr/api-key".path;
+    lidarr = config.sops.secrets."lidarr/api-key".path;
     prowlarr = config.sops.secrets."prowlarr/api-key".path;
     qbittorrent = config.sops.secrets."qbittorrent/api-key".path;
   };

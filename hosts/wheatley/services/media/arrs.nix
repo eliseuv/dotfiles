@@ -1,5 +1,6 @@
-# Sonarr (TV), Radarr (movies) and Prowlarr (indexers), plus FlareSolverr for
-# Prowlarr. How they're wired to each other lives in arr-sync.nix.
+# Sonarr (TV), Radarr (movies), Lidarr (music) and Prowlarr (indexers), plus
+# FlareSolverr for Prowlarr. How they're wired to each other lives in
+# arr-sync.nix.
 { config, lib, ... }:
 {
 
@@ -8,6 +9,9 @@
 
   services.radarr.enable = true;
   users.users.radarr.extraGroups = [ "media" ];
+
+  services.lidarr.enable = true;
+  users.users.lidarr.extraGroups = [ "media" ];
 
   services.prowlarr.enable = true;
 
@@ -33,9 +37,14 @@
       order = 5;
       description = "Movies";
     };
+    lidarr = {
+      name = "Lidarr";
+      order = 6;
+      description = "Music";
+    };
     prowlarr = {
       name = "Prowlarr";
-      order = 6;
+      order = 7;
       description = "Indexers";
     };
   };
@@ -43,8 +52,8 @@
   # Pin each *arr's API key to the sops copy instead of the one it generated on
   # first start, so the keys the dashboard and arr-sync use can't drift from
   # the apps'.
-  sops.secrets = lib.genAttrs [ "sonarr/api-key" "radarr/api-key" "prowlarr/api-key" ] (_: { });
-  sops.templates = lib.genAttrs [ "sonarr.env" "radarr.env" "prowlarr.env" ] (
+  sops.secrets = lib.genAttrs [ "sonarr/api-key" "radarr/api-key" "lidarr/api-key" "prowlarr/api-key" ] (_: { });
+  sops.templates = lib.genAttrs [ "sonarr.env" "radarr.env" "lidarr.env" "prowlarr.env" ] (
     file:
     let
       service = lib.removeSuffix ".env" file;
@@ -56,6 +65,7 @@
   );
   services.sonarr.environmentFiles = [ config.sops.templates."sonarr.env".path ];
   services.radarr.environmentFiles = [ config.sops.templates."radarr.env".path ];
+  services.lidarr.environmentFiles = [ config.sops.templates."lidarr.env".path ];
   services.prowlarr.environmentFiles = [ config.sops.templates."prowlarr.env".path ];
 
   # Cloudflare challenge solver for Prowlarr, used by indexers tagged

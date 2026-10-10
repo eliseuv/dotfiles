@@ -1,4 +1,4 @@
-# qBittorrent: the download client Sonarr and Radarr hand torrents to.
+# qBittorrent: the download client Sonarr, Radarr and Lidarr hand torrents to.
 { config, lib, pkgs, ... }:
 let
   mediaRoot = config.homelab.media.root;
@@ -30,7 +30,7 @@ in
   ];
 
   # API key for the WebUI (Authorization: Bearer), used by the dashboard and
-  # by Sonarr/Radarr (arr-sync.nix). qBittorrent requires the form qbt_ + 28
+  # by the *arrs (arr-sync.nix). qBittorrent requires the form qbt_ + 28
   # alphanumerics; anything else is silently ignored.
   sops.secrets."qbittorrent/api-key" = {
     owner = config.services.qbittorrent.user;

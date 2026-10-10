@@ -22,7 +22,7 @@ in
     dashboard = {
       name = "Navidrome";
       group = "Media";
-      order = 8;
+      order = 9;
       description = "Music streaming";
       icon = "navidrome.png";
       unit = "navidrome.service";

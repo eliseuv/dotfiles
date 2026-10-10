@@ -36,7 +36,7 @@
     dashboard = {
       name = "Bazarr";
       group = "Media";
-      order = 7;
+      order = 8;
       description = "Subtitles";
       icon = "bazarr.png";
       widget.type = "bazarr";
