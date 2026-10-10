@@ -75,8 +75,9 @@ in
   # Wake, restart, on/off, Tailscale and terminal buttons for the Pop!_OS
   # desktop, which isn't a host here: its remote-control login, forced
   # command, ttyd unit and firewall rule are set up by hand to mirror
-  # services/remote-control.nix, services/ttyd.nix and GLaDOS's firewall. No
-  # `address`, so like GLaDOS it's reached over the tailnet, then mDNS.
+  # services/remote-control.nix, services/ttyd.nix and GLaDOS's firewall,
+  # as docs/pop-os.md records. No `address`, so like GLaDOS it's reached over
+  # the tailnet, then mDNS.
   homelab.services.pop-os.dashboard = {
     name = "pop-os";
     group = "Hosts";
