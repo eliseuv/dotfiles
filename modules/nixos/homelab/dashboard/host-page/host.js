@@ -232,12 +232,49 @@
     renderSwitch();
   };
 
+  // One `nix store diff-closures` line: "<name>: <old> → <new>, <size>",
+  // either part optional. Versions are comma-separated lists, "∅" for not in
+  // the closure and "ε" for a path without a version (config files and the
+  // like). The size is coloured even through a pipe or with NO_COLOR, and
+  // only signed when it shrinks, so the escapes are stripped here, which
+  // also covers diffs hostctl cached before this.
   const change = (line) => {
+    line = line.replace(/\x1b\[[0-9;]*m/g, "");
     const split = line.indexOf(": ");
     const name = split < 0 ? line : line.slice(0, split);
-    const rest = split < 0 ? "" : line.slice(split + 2);
-    const kind = rest.startsWith("∅ →") ? "added" : rest.includes("→ ∅") ? "removed" : "changed";
-    return el("li", { class: kind }, el("span", { class: "name" }, name), el("span", {}, rest));
+    let rest = split < 0 ? "" : line.slice(split + 2);
+    let size = null;
+    const sized = rest.match(/(?:^|, )(-?[\d.]+ [KMGTP]?i?B)$/);
+    if (sized) {
+      size = sized[1];
+      rest = rest.slice(0, sized.index);
+    }
+    let kind = "resized";
+    let detail = "";
+    if (rest.includes(" → ")) {
+      const [from, to] = rest.split(" → ");
+      const versions = (list) =>
+        list
+          .split(", ")
+          .filter((version) => version !== "ε")
+          .join(", ");
+      if (from === "∅") [kind, detail] = ["added", versions(to)];
+      else if (to === "∅") [kind, detail] = ["removed", versions(from)];
+      else {
+        kind = "updated";
+        detail = `${versions(from) || "unversioned"} → ${versions(to) || "unversioned"}`;
+      }
+    }
+    const shrunk = size?.startsWith("-");
+    return el(
+      "li",
+      { class: kind },
+      el("span", { class: "kind" }, kind),
+      el("span", { class: "name" }, name),
+      el("span", { class: "detail" }, detail),
+      size &&
+        el("span", { class: shrunk ? "size shrunk" : "size grown" }, shrunk ? `−${size.slice(1)}` : `+${size}`),
+    );
   };
 
   const details = (generation, previous) => {

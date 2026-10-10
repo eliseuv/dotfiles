@@ -336,20 +336,53 @@ dd {
 }
 
 .changes li {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, max-content) 1fr auto;
+  align-items: baseline;
+  gap: 0.75rem;
   padding: 0.1rem 0;
 }
 
-.changes .name {
-  margin-right: 0.5rem;
-  font-weight: 600;
+.changes .kind {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
-.changes .added .name {
+.changes .added .kind {
   color: rgb(var(--green));
 }
 
-.changes .removed .name {
+.changes .removed .kind {
   color: rgb(var(--red));
+}
+
+.changes .updated .kind {
+  color: rgb(var(--portal-blue));
+}
+
+.changes .name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.changes .detail {
+  color: var(--muted);
+}
+
+.changes .size {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Like nix's own colours: growth red, shrinkage green. */
+.changes .grown {
+  color: rgb(var(--red));
+}
+
+.changes .shrunk {
+  color: rgb(var(--green));
 }
 
 /* Phones: date, tags and commit wrap under the number. */
