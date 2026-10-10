@@ -90,9 +90,12 @@ let
     // lib.optionalAttrs (tileCfg.href != null && !lib.hasPrefix "/" tileCfg.href) {
       siteMonitor = tileCfg.href;
     }
+    # Up/down rather than a response time over loopback, which says nothing
+    # about the network; the time stays in the tooltip.
     // lib.optionalAttrs (tileCfg.href == null && linked) {
       href = "http://${linkHost}:${toString service.port}";
       siteMonitor = local;
+      statusStyle = "basic";
     }
     // lib.optionalAttrs (tileCfg.widget != null && tileCfg.extraWidgets == [ ]) {
       widget = mainWidget;
