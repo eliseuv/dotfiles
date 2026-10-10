@@ -57,7 +57,7 @@ toggle() {
     case "$(backend_state)" in
         Running) tailscale down ;;
         # Login prints a URL that has to be opened, so it needs a terminal
-        NeedsLogin | NeedsMachineAuth) kitty --hold tailscale up & ;;
+        NeedsLogin | NeedsMachineAuth) "$TERMINAL" -e sh -c 'tailscale up; read -rp "Press Enter to close"' & ;;
         *) tailscale up ;;
     esac
     pkill -RTMIN+"$SIGNAL" waybar

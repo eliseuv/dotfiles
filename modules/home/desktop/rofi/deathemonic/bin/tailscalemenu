@@ -45,7 +45,7 @@ if [[ "$state" != "Running" ]]; then
     [[ -z "$row" || "$row" -lt 0 ]] && exit 0
     case "${actions[$row]}" in
     # Login prints a URL that has to be opened, so it needs a terminal
-    login) kitty --hold tailscale up & ;;
+    login) "$TERMINAL" -e sh -c 'tailscale up; read -rp "Press Enter to close"' & ;;
     up) run up ;;
     esac
     exit 0
@@ -109,7 +109,7 @@ peer)
         wl-copy -n "$ip"
         notify-send -a Tailscale "Copied $name IP" "$ip"
         ;;
-    1) kitty ssh "$dns" & ;;
+    1) "$TERMINAL" -e ssh "$dns" & ;;
     esac
     ;;
 esac

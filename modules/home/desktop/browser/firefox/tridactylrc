@@ -131,7 +131,7 @@ autocmddelete DocStart ^http(s?)://\w\+.wikipedia.org js tri.excmds.urlmodify("-
 autocmddelete DocStart ^http(s?)://\w+.wikipedia.org js tri.excmds.urlmodify("-t", "wikipedia", "wikiwand")
 autocmddelete DocStart ^http(s?)://(\w+).wikipedia.org js tri.excmds.urlmodify("-t", "wikipedia", "wikiwand")
 
-set editorcmd alacritty -e 'nvim'
+set editorcmd ghostty -e 'nvim'
 
 " Sane hinting mode
 " set hintfiltermode vimperator-reflow
