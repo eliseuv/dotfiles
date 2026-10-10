@@ -408,6 +408,10 @@ in
       virtualHosts.dashboard = {
         default = true;
         locations."/".proxyPass = "http://127.0.0.1:${toString homepagePort}";
+        # Tile icons kept here (`icon = "/icons/<file>"`), for ones neither
+        # Homepage's icon sets nor its CDNs carry; Homepage loads a path as is
+        # from the page's origin.
+        locations."/icons/".alias = "${./icons}/";
       };
     };
     homelab.services.homepage = {

@@ -80,7 +80,7 @@ in
     name = "pop-os";
     group = "Hosts";
     order = 3;
-    icon = "mdi-desktop-tower";
+    icon = "/icons/pop-os.svg";
     link = false;
     wake = "pop-os";
     poweroff = true;
