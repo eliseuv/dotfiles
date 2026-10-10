@@ -45,6 +45,13 @@
   cursor: pointer;
 }
 
+.svcctl button svg {
+  display: block;
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0 auto;
+}
+
 html.dark .svcctl button,
 html.dark .svcctl a {
   color: rgb(var(--color-200));

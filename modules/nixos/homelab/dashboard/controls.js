@@ -115,12 +115,28 @@
       });
   };
 
-  const button = (name, action, glyph) => {
+  // Drawn rather than typed: phone fonts lack ⏻ and ⤓ and turn ⛓ and ▶ into
+  // colour emoji. Stroked in currentColor so controls.css and theme.css
+  // still colour them.
+  const icons = {
+    play: '<path fill="currentColor" stroke="none" d="M7 4l13 8-13 8z"/>',
+    stop: '<rect fill="currentColor" stroke="none" x="6" y="6" width="12" height="12"/>',
+    restart: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+    download: '<path d="M12 3v12M7 10l5 5 5-5M5 20h14"/>',
+    link:
+      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
+      '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>',
+  };
+
+  const button = (name, action, icon) => {
     const element = document.createElement("button");
     element.type = "button";
     element.className = `svcctl-${action}`;
     element.title = `${action[0].toUpperCase()}${action.slice(1)} ${name}`;
-    element.textContent = glyph;
+    element.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+      `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[icon]}</svg>`;
     element.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -155,16 +171,16 @@
     bar.append(state);
     if (kinds.unit) {
       bar.append(
-        button(name, "start", "▶"),
-        button(name, "stop", "■"),
-        button(name, "restart", "↻"),
+        button(name, "start", "play"),
+        button(name, "stop", "stop"),
+        button(name, "restart", "restart"),
       );
     }
     if (kinds.terminal) bar.append(terminalLink(name));
-    if (kinds.switch) bar.append(button(name, "switch", "⤓"));
-    if (kinds.tailscale) bar.append(button(name, "tailscale", "⛓"));
-    if (kinds.reboot) bar.append(button(name, "reboot", "↻"));
-    if (kinds.wake) bar.append(button(name, "power", "⏻"));
+    if (kinds.switch) bar.append(button(name, "switch", "download"));
+    if (kinds.tailscale) bar.append(button(name, "tailscale", "link"));
+    if (kinds.reboot) bar.append(button(name, "reboot", "restart"));
+    if (kinds.wake) bar.append(button(name, "power", "power"));
     return bar;
   };
 
