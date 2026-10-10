@@ -79,10 +79,12 @@ upsert() {
   echo "$service: $method $resource '$(jq -r .name <<<"$spec")'"
 }
 
+# root_folder SERVICE SPEC: create the folder at the spec's path, with the
+# spec as the body, unless one is already there.
 root_folder() {
-  local service=$1 path=$2
-  request "$service" GET rootfolder | jq -e --arg path "$path" 'any(.path == $path)' >/dev/null ||
-    jq -n --arg path "$path" '{$path}' | request "$service" POST rootfolder >/dev/null
+  local service=$1 spec=$2
+  request "$service" GET rootfolder | jq -e --argjson spec "$spec" 'any(.path == $spec.path)' >/dev/null ||
+    request "$service" POST rootfolder <<<"$spec" >/dev/null
 }
 
 mapfile -t urls < <(jq -r '.waitFor[]' "$config")
@@ -99,7 +101,7 @@ for service in "${!api[@]}"; do
     done
   done
 
-  mapfile -t folders < <(jq -r --arg service "$service" '.services[$service].rootfolder // [] | .[]' "$config")
+  mapfile -t folders < <(jq -c --arg service "$service" '.services[$service].rootfolder // [] | .[] | if type == "string" then {path: .} else . end' "$config")
   for folder in "${folders[@]}"; do
     root_folder "$service" "$folder"
   done
