@@ -1,8 +1,8 @@
-// Start-or-stop (one button, like on/off below) and restart buttons on tiles
-// backed by a systemd unit; host tiles get, in this order and as configured:
-// terminal, switch (pull the dotfiles and switch to them), tailscale (on/off),
-// restart, and on/off, one button that wakes the host while it's down and
-// powers it off while it's up (controls.nix).
+// Restart and start-or-stop (one button, last, like on/off below) buttons on
+// tiles backed by a systemd unit; host tiles get, in this order and as
+// configured: terminal, switch (pull the dotfiles and switch to them),
+// tailscale (on/off), restart, and on/off, one button that wakes the host
+// while it's down and powers it off while it's up (controls.nix).
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
 // `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host) and
 // `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
@@ -176,7 +176,7 @@
     state.className = "svcctl-state";
     bar.append(state);
     if (kinds.unit) {
-      bar.append(button(name, "run", "play"), button(name, "restart", "restart"));
+      bar.append(button(name, "restart", "restart"), button(name, "run", "play"));
     }
     if (kinds.terminal) bar.append(terminalLink(name));
     if (kinds.switch) bar.append(button(name, "switch", "download"));
