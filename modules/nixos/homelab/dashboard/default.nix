@@ -204,6 +204,11 @@ let
       default = null;
       description = "Host (as in hosts/) whose dotfiles-switch.service the tile's switch button starts (controls.nix).";
     };
+    page = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host (as in hosts/) whose page - generations, diffs, deploy status against master - the tile links to (hosts.nix); it needs my.services.dotfilesSwitch.";
+    };
     address = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
