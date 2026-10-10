@@ -68,6 +68,22 @@ let
   needsKey = !lib.all isLocal pageHosts;
   sshKey = "hostctl/ssh-key";
 
+  svg = import ./_svg.nix;
+  # Static; host.js reads the host from the query string.
+  page = pkgs.linkFarm "host-page" {
+    "index.html" =
+      pkgs.writeText "index.html"
+        (
+          builtins.replaceStrings [ "@favicon@" "@iris@" "@repo@" ] [
+            (svg.iris "#ff9a00")
+            (svg.iris "black")
+            (lib.removeSuffix ".git" upstream)
+          ] (builtins.readFile ./host-page/index.html)
+        );
+    "host.js" = ./host-page/host.js;
+    "host.css" = ./host-page/host.css;
+  };
+
   hostReport = lib.getExe (
     import ../../services/_host-report.nix {
       inherit pkgs;
@@ -197,8 +213,10 @@ in
       };
     };
 
-    services.nginx.virtualHosts.dashboard.locations."/api/hosts/".proxyPass =
-      "http://127.0.0.1:${toString port}";
+    services.nginx.virtualHosts.dashboard.locations = {
+      "/api/hosts/".proxyPass = "http://127.0.0.1:${toString port}";
+      "/hosts/".alias = "${page}/";
+    };
 
     systemd.timers.dotfiles-eval = {
       wantedBy = [ "timers.target" ];

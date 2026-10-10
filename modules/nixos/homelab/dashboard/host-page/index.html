@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- A host page (hosts.nix): /hosts/?host=<host>. hosts.nix fills in the
+     favicon, the header mark and the repo's URL. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aperture Science</title>
+    <link rel="icon" href="@favicon@" />
+    <link rel="stylesheet" href="host.css" />
+    <style>
+      :root {
+        --aperture-iris: url("@iris@");
+      }
+    </style>
+  </head>
+  <body data-repo="@repo@">
+    <header>
+      <a class="back" href="/">&larr; Enrichment Center</a>
+      <h1><span id="title"></span></h1>
+    </header>
+    <main>
+      <section class="card" id="summary"></section>
+      <section class="card">
+        <h2>Generations</h2>
+        <ol id="generations"></ol>
+      </section>
+    </main>
+    <footer>Aperture Science &mdash; We do what we must because we can.</footer>
+    <script src="host.js"></script>
+  </body>
+</html>

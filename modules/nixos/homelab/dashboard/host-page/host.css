@@ -1,0 +1,381 @@
+/*
+ * Host pages, in the dashboard's Aperture Science theme (theme.css) without
+ * Homepage: the same palette, fonts and wall, keyed on the OS preference
+ * directly since there's no Homepage toggle to follow here.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap");
+
+:root {
+  --portal-orange: 255 154 0;
+  --portal-blue: 10 155 255;
+  --green: 16 185 129;
+  --red: 244 63 94;
+  --font-sign: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --text: rgb(27 31 34);
+  --muted: rgb(92 102 110);
+  --card-bg: rgb(255 255 255);
+  --card-border: rgb(222 227 231);
+  --block-bg: rgb(236 239 241);
+
+  color-scheme: light dark;
+}
+
+/* Test chamber: off-white wall panels with seams. */
+html {
+  min-height: 100%;
+  background-color: rgb(236 239 241);
+  background-image:
+    linear-gradient(rgb(0 0 0 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 0 0 / 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgb(255 255 255 / 0.7), transparent 60%);
+  background-size:
+    128px 128px,
+    128px 128px,
+    100% 100%;
+  background-attachment: fixed;
+}
+
+/* Behind the scenes: concrete, large panel seams, vignette. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: rgb(255 228 176);
+    --muted: rgb(150 130 100);
+    --card-bg: linear-gradient(180deg, rgb(33 36 39), rgb(25 27 30));
+    --card-border: rgb(255 255 255 / 0.05);
+    --block-bg: rgb(0 0 0 / 0.35);
+  }
+
+  html {
+    background-color: rgb(17 19 21);
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgb(255 199 118 / 0.06), transparent 60%),
+      radial-gradient(ellipse at 50% 120%, rgb(0 0 0 / 0.7), transparent 70%),
+      linear-gradient(rgb(255 255 255 / 0.025) 2px, transparent 2px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.025) 2px, transparent 2px);
+    background-size:
+      100% 100%,
+      100% 100%,
+      256px 256px,
+      256px 256px;
+  }
+}
+
+body {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  font-family: var(--font-body);
+  color: var(--text);
+}
+
+a {
+  color: rgb(var(--portal-blue));
+}
+
+/* ---------------------------------------------------------------- header */
+
+header {
+  margin-bottom: 1.25rem;
+}
+
+.back {
+  font-family: var(--font-sign);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.back:hover {
+  color: rgb(var(--portal-orange));
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0 0;
+  font-family: var(--font-sign);
+  font-weight: 600;
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+h1::before {
+  content: "";
+  width: 1.4em;
+  height: 1.4em;
+  flex-shrink: 0;
+  background: currentColor;
+  -webkit-mask: var(--aperture-iris) center / contain no-repeat;
+  mask: var(--aperture-iris) center / contain no-repeat;
+}
+
+@media (prefers-color-scheme: dark) {
+  h1 {
+    text-shadow: 0 0 12px rgb(255 199 118 / 0.35);
+  }
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-sign);
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* ----------------------------------------------------------------- cards */
+
+.card {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 3px;
+  background: var(--card-bg);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: rgb(var(--red));
+}
+
+pre.error {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
+  font-size: 0.75rem;
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--muted);
+}
+
+.tag.current {
+  border-color: rgb(var(--green));
+  color: rgb(var(--green));
+}
+
+.tag.master {
+  border-color: rgb(var(--portal-orange));
+  color: rgb(var(--portal-orange));
+}
+
+.tag.warn,
+.tag.dirty {
+  border-color: rgb(var(--red));
+  color: rgb(var(--red));
+}
+
+.commit {
+  font-family: var(--font-mono);
+}
+
+/* --------------------------------------------------------------- summary */
+
+.status-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.status {
+  font-family: var(--font-sign);
+  font-weight: 600;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.status[data-state="current"] {
+  color: rgb(var(--green));
+}
+
+.status[data-state="pending"] {
+  color: rgb(var(--portal-blue));
+}
+
+.status[data-state="differs"] {
+  color: rgb(var(--portal-orange));
+}
+
+#switch {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--block-bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#switch:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgb(var(--portal-orange));
+}
+
+#switch[data-state="switching"] {
+  color: rgb(var(--portal-blue));
+  cursor: default;
+  animation: switching 1.2s ease-in-out infinite alternate;
+}
+
+#switch[data-state="failed"] {
+  border-color: rgb(var(--red));
+  color: rgb(var(--red));
+}
+
+@keyframes switching {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+dt {
+  font-family: var(--font-sign);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+dd {
+  margin: 0;
+}
+
+/* ----------------------------------------------------------- generations */
+
+#generations {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.generation + .generation {
+  border-top: 1px solid var(--card-border);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 3.5rem 11rem 11rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  cursor: pointer;
+}
+
+.row:hover,
+.row:focus-visible {
+  background: var(--block-bg);
+  outline: none;
+}
+
+.number {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.date,
+.meta {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.tags .tag:first-child {
+  margin-left: 0;
+}
+
+.details {
+  padding: 0.25rem 0.5rem 0.75rem 4.25rem;
+  font-size: 0.9rem;
+}
+
+.details p {
+  margin: 0.25rem 0;
+}
+
+.changes {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.changes li {
+  padding: 0.1rem 0;
+}
+
+.changes .name {
+  margin-right: 0.5rem;
+  font-weight: 600;
+}
+
+.changes .added .name {
+  color: rgb(var(--green));
+}
+
+.changes .removed .name {
+  color: rgb(var(--red));
+}
+
+/* Phones: date, tags and commit wrap under the number. */
+@media (max-width: 40rem) {
+  .row {
+    grid-template-columns: 3rem 1fr auto;
+  }
+
+  .meta,
+  .row > .commit {
+    grid-column: 2 / -1;
+  }
+
+  .details {
+    padding-left: 0.5rem;
+  }
+}
+
+/* ---------------------------------------------------------------- footer */
+
+footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-family: var(--font-sign);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}

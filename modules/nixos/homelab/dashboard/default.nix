@@ -98,7 +98,12 @@ let
       }
       // lib.optionalAttrs (tileCfg.address == null) { statusStyle = "basic"; }
     )
-    // lib.optionalAttrs (tileCfg.href == null && linked) {
+    # In place rather than a new tab: the page leads back here.
+    // lib.optionalAttrs (tileCfg.href == null && tileCfg.page != null) {
+      href = "/hosts/?host=${tileCfg.page}";
+      target = "_self";
+    }
+    // lib.optionalAttrs (tileCfg.href == null && tileCfg.page == null && linked) {
       href = "http://${linkHost}:${toString service.port}";
       siteMonitor = local;
       statusStyle = "basic";
