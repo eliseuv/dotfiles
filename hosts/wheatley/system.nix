@@ -63,6 +63,7 @@ in
     switch = "GLaDOS";
     reboot = "GLaDOS";
     tailscale = "GLaDOS";
+    page = "GLaDOS";
   };
   # For the dashboard's power-off (over mDNS) and switch (over the tailnet),
   # which SSH to her with strict host key checking.
@@ -129,6 +130,7 @@ in
     reboot = "wheatley";
     switch = "wheatley";
     terminal = "/wheatley/terminal/";
+    page = "wheatley";
   };
 
   # Wake, switch and restart buttons for rattmann, the old laptop that serves
