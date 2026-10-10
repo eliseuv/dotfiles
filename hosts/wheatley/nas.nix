@@ -58,7 +58,6 @@ in
     name = "Companion Cube";
     group = "Hosts";
     order = 1;
-    description = "Synology NAS (DSM)";
     # Drawn over with the cube face; the dashboard theme CSS matches this name.
     icon = "synology.png";
     href = "https://${nasAddress}:5001";

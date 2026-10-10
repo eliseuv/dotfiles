@@ -80,7 +80,10 @@ let
         // lib.optionalAttrs (tileCfg.widgetKey != null) { key = "{{${keyVar name}}}"; };
     in
     {
-      inherit (tileCfg) description icon;
+      inherit (tileCfg) icon;
+    }
+    // lib.optionalAttrs (tileCfg.description != null) {
+      inherit (tileCfg) description;
     }
     // lib.optionalAttrs (tileCfg.href != null) {
       inherit (tileCfg) href;
@@ -136,7 +139,10 @@ let
       default = 0;
       description = "Position within the group, lowest first; ties sort by service name.";
     };
-    description = lib.mkOption { type = lib.types.str; };
+    description = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+    };
     icon = lib.mkOption { type = lib.types.str; };
     link = lib.mkOption {
       type = lib.types.bool;

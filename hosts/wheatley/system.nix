@@ -55,7 +55,6 @@ in
     name = "GLaDOS";
     group = "Hosts";
     order = 2;
-    description = "Genetic Lifeform and Disk Operating System";
     icon = "mdi-robot-industrial";
     link = false;
     wake = "GLaDOS";
@@ -81,7 +80,6 @@ in
     name = "pop-os";
     group = "Hosts";
     order = 3;
-    description = "Pop!_OS desktop";
     icon = "mdi-desktop-tower";
     link = false;
     wake = "pop-os";
@@ -126,7 +124,6 @@ in
     name = "Wheatley";
     group = "Hosts";
     order = 0;
-    description = "Headless server; hosts this dashboard";
     icon = "mdi-server";
     link = false;
     reboot = "wheatley";
@@ -141,7 +138,6 @@ in
     name = "Rattmann";
     group = "Hosts";
     order = 4;
-    description = "Kiosk showing this dashboard";
     icon = "mdi-laptop";
     link = false;
     wake = "rattmann";
