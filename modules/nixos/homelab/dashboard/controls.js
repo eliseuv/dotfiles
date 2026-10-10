@@ -1,8 +1,8 @@
-// Start/stop/restart buttons on tiles backed by a systemd unit; host tiles
-// get, in this order and as configured: terminal, switch (pull the dotfiles
-// and switch to them), tailscale (on/off), restart, and on/off, one button
-// that wakes the host
-// while it's down and powers it off while it's up (controls.nix).
+// Start-or-stop (one button, like on/off below) and restart buttons on tiles
+// backed by a systemd unit; host tiles get, in this order and as configured:
+// terminal, switch (pull the dotfiles and switch to them), tailscale (on/off),
+// restart, and on/off, one button that wakes the host while it's down and
+// powers it off while it's up (controls.nix).
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
 // `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host) and
 // `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
@@ -61,8 +61,12 @@
   const settlePoweroff = () =>
     [60, 75, 90, 120, 150, 180].forEach((s) => setTimeout(refresh, s * 1000));
 
+  const unitActive = (state) =>
+    state === "active" || state === "activating" || state === "reloading";
+
   const act = (name, action) => {
     if (action === "power") action = displayState(name) === "up" ? "poweroff" : "wake";
+    if (action === "run") action = unitActive(displayState(name)) ? "stop" : "start";
     if (action === "stop" && !confirm(`Stop ${name}?`)) return;
     if (
       action === "poweroff" &&
@@ -129,14 +133,16 @@
     power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>',
   };
 
+  const iconSvg = (icon) =>
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+    `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[icon]}</svg>`;
+
   const button = (name, action, icon) => {
     const element = document.createElement("button");
     element.type = "button";
     element.className = `svcctl-${action}`;
     element.title = `${action[0].toUpperCase()}${action.slice(1)} ${name}`;
-    element.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
-      `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[icon]}</svg>`;
+    element.innerHTML = iconSvg(icon);
     element.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -170,11 +176,7 @@
     state.className = "svcctl-state";
     bar.append(state);
     if (kinds.unit) {
-      bar.append(
-        button(name, "start", "play"),
-        button(name, "stop", "stop"),
-        button(name, "restart", "restart"),
-      );
+      bar.append(button(name, "run", "play"), button(name, "restart", "restart"));
     }
     if (kinds.terminal) bar.append(terminalLink(name));
     if (kinds.switch) bar.append(button(name, "switch", "download"));
@@ -238,9 +240,10 @@
       // For themes that draw their own label (theme.css).
       label.dataset.ping = ping;
       if (kinds.unit) {
-        const active = state === "active" || state === "activating" || state === "reloading";
-        bar.querySelector(".svcctl-start").disabled = active;
-        bar.querySelector(".svcctl-stop").disabled = !active;
+        const run = bar.querySelector(".svcctl-run");
+        const active = unitActive(state);
+        run.innerHTML = iconSvg(active ? "stop" : "play");
+        run.title = active ? `Stop ${name}` : `Start ${name}`;
       }
       if (kinds.terminal) {
         bar.querySelector(".svcctl-terminal").setAttribute("aria-disabled", String(state !== "up"));

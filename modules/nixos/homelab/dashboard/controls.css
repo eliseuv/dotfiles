@@ -1,5 +1,5 @@
-/* Start/stop/restart bar on unit-backed tiles; terminal, switch, restart and
-   on/off on host tiles (controls.js). */
+/* Start-or-stop and restart bar on unit-backed tiles; terminal, switch,
+   restart and on/off on host tiles (controls.js). */
 
 .svcctl {
   display: flex;
