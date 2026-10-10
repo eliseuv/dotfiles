@@ -1,8 +1,9 @@
 # Lets the homelab dashboard (svcctl on wheatley, dashboard/controls.nix)
 # power this host off, reboot it, switch it to the latest dotfiles, turn
-# Tailscale on and off, and start and stop the units in `remoteUnits`. svcctl
-# logs in over SSH as a dedicated user whose only key is pinned to one forced
-# command, so the key can't open a shell, forward anything or run anything
+# Tailscale on and off, and start and stop the units in `remoteUnits`; and
+# lets its host pages (hostctl, dashboard/hosts.nix) read this host's
+# generations, along with the switch. Both log in over SSH, with the same key,
+# as a dedicated user whose only key is pinned to one forced command, so the key can't open a shell, forward anything or run anything
 # else, whatever the client asks for. The forced command reads the requested
 # verb from SSH_ORIGINAL_COMMAND and accepts only the ones this host enables.
 # polkit lets that user, and only it, do exactly those; no sudo.
@@ -27,6 +28,12 @@ let
     || services.remoteTailscale.enable
     || services.remoteUnits != [ ];
   tailscale = lib.getExe config.services.tailscale.package;
+  hostReport = lib.getExe (
+    import ./_host-report.nix {
+      inherit pkgs;
+      inherit (services.dotfilesSwitch) revisionsDir;
+    }
+  );
   # The tailscale CLI only obeys its operator, the primary user (see
   # services/tailscale.nix), so these root units run it on remote-control's
   # behalf; polkit lets that user start them and nothing else.
@@ -44,6 +51,9 @@ let
     ${lib.optionalString services.dotfilesSwitch.enable ''
       switch) exec ${systemctl} start --no-block ${switchUnit} ;;
       switch-status) exec ${systemctl} show --property=ActiveState,Result --value ${switchUnit} ;;
+      generations) exec ${hostReport} generations ;;
+      # host-report checks the number itself.
+      diff\ *) exec ${hostReport} diff "''${SSH_ORIGINAL_COMMAND#diff }" ;;
     ''}
     ${lib.optionalString services.remoteTailscale.enable ''
       tailscale-on) exec ${systemctl} start --no-block ${tailscaleUnits.up} ;;

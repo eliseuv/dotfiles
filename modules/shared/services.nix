@@ -14,7 +14,15 @@
       containers.enable = lib.mkEnableOption "Docker (rootless) and Podman";
       virtualisation.enable = lib.mkEnableOption "libvirt/QEMU virtual machines";
       remotePowerOff.enable = lib.mkEnableOption "power-off and reboot over SSH from the homelab dashboard";
-      dotfilesSwitch.enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, for the homelab dashboard";
+      dotfilesSwitch = {
+        enable = lib.mkEnableOption "dotfiles-switch.service, which pulls origin/master and switches to it, and the generation reports of the homelab dashboard's host pages";
+        revisionsDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/dotfiles-revisions";
+          readOnly = true;
+          description = "Where the commit each system was built from is recorded, one file per system store hash (services/dotfiles-switch.nix); the Justfile's record-gen hardcodes it.";
+        };
+      };
       remoteTailscale.enable = lib.mkEnableOption "turning Tailscale on and off over SSH from the homelab dashboard (needs my.services.tailscale)";
       remoteUnits = lib.mkOption {
         type = lib.types.listOf lib.types.str;
