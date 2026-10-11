@@ -66,14 +66,19 @@ let
   tailscaleTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiled
   );
-  # Tile name -> {host, ports: [{name, port}]}, by port; `host` null for
-  # this one.
+  # Tile name -> {host, ports: [{name, port, href, unit}]}, by port; `host`
+  # null for this one, `unit` the name svcctl knows the entry's unit by
+  # (controls.nix).
   portTiles = lib.mapAttrs' (
     _: service:
     lib.nameValuePair service.dashboard.name {
       host = service.dashboard.portsHost;
       ports = lib.sort (a: b: a.port < b.port) (
-        lib.mapAttrsToList (name: port: { inherit name port; }) service.dashboard.ports
+        lib.mapAttrsToList (name: entry: {
+          inherit name;
+          inherit (entry) port href;
+          unit = if entry.unit != null then "${name} · ${service.dashboard.name}" else null;
+        }) service.dashboard.ports
       );
     }
   ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiled);
@@ -140,6 +145,25 @@ let
         if orderA != orderB then orderA < orderB else a < b
       ) (lib.attrNames (lib.filterAttrs (_: service: service.dashboard.group == group) tiled))
     );
+
+  portEntry = lib.types.submodule {
+    options = {
+      port = lib.mkOption {
+        type = lib.types.port;
+        description = "Port probed for open/closed, and linked to unless `href` is set.";
+      };
+      href = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Path on this dashboard to link to instead, for servers it proxies; it gets the actions' login (controls.nix).";
+      };
+      unit = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "systemd unit, on the tile's `portsHost`, the entry's start/stop button controls; as `unit`/`unitHost` for tiles (controls.nix).";
+      };
+    };
+  };
 
   tileOptions = {
     name = lib.mkOption {
@@ -236,9 +260,9 @@ let
       description = "User svcctl logs in as for this host's buttons; the default is the forced-command user of services/remote-control.nix (controls.nix).";
     };
     ports = lib.mkOption {
-      type = lib.types.attrsOf lib.types.port;
+      type = lib.types.attrsOf (lib.types.coercedTo lib.types.port (port: { inherit port; }) portEntry);
       default = { };
-      description = "Label -> TCP port the tile's ports menu links to, each shown open or closed (controls.nix); for ad-hoc servers with no tile of their own.";
+      description = "Label -> TCP port (or entry) the tile's ports menu links to, each shown open or closed (controls.nix); for servers with no tile of their own.";
     };
     portsHost = lib.mkOption {
       type = lib.types.nullOr lib.types.str;

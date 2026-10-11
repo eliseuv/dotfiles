@@ -27,6 +27,9 @@
 # Tiles with `dashboard.ports` get a menu linking to those ports on
 # `portsHost` (this host when null), each marked open or closed by a TCP
 # connect from here; for ad-hoc dev servers, which are rarely all running.
+# An entry with an `href` links to that dashboard path instead, behind the
+# login; one with a `unit` gets a start/stop button, the unit registered like
+# a tile's under "<label> · <tile>".
 # Buttons combine: one tile can wake, power off, reboot, switch and toggle
 # Tailscale.
 {
@@ -42,17 +45,32 @@ let
     _: service: service.dashboard != null && service.dashboard.unit != null
   ) config.homelab.services;
   # Tile name -> {unit, hosts}; the API addresses units by the name on the
-  # tile. `hosts` is empty for units on this host.
-  units = lib.mapAttrs' (
-    _: service:
-    lib.nameValuePair service.dashboard.name {
-      inherit (service.dashboard) unit;
-      hosts = lib.optionals (service.dashboard.unitHost != null) (
-        sshTargets service service.dashboard.unitHost
-      );
-      user = service.dashboard.sshUser;
-    }
-  ) controlled;
+  # tile, or "<label> · <tile>" for ports menu entries. `hosts` is empty for
+  # units on this host.
+  units =
+    lib.mapAttrs' (
+      _: service:
+      lib.nameValuePair service.dashboard.name {
+        inherit (service.dashboard) unit;
+        hosts = lib.optionals (service.dashboard.unitHost != null) (
+          sshTargets service service.dashboard.unitHost
+        );
+        user = service.dashboard.sshUser;
+      }
+    ) controlled
+    // lib.listToAttrs (
+      lib.concatMap (
+        service:
+        lib.mapAttrsToList (
+          label: entry:
+          lib.nameValuePair "${label} · ${service.dashboard.name}" {
+            inherit (entry) unit;
+            hosts = portsHosts service;
+            user = service.dashboard.sshUser;
+          }
+        ) (lib.filterAttrs (_: entry: entry.unit != null) service.dashboard.ports)
+      ) (lib.attrValues tiles)
+    );
   localUnits = lib.mapAttrsToList (_: target: target.unit) (
     lib.filterAttrs (_: target: target.hosts == [ ]) units
   );
@@ -89,6 +107,11 @@ let
         "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
         "${lib.toLower host}.local"
       ];
+  portsHosts =
+    service:
+    lib.optionals (service.dashboard.portsHost != null) (
+      sshTargets service service.dashboard.portsHost
+    );
   # Tile name -> {hosts} for tiles whose `option` names a host.
   hostActions =
     option:
@@ -120,10 +143,8 @@ let
       lib.mapAttrs' (
         _: service:
         lib.nameValuePair service.dashboard.name {
-          hosts = lib.optionals (service.dashboard.portsHost != null) (
-            sshTargets service service.dashboard.portsHost
-          );
-          ports = lib.attrValues service.dashboard.ports;
+          hosts = portsHosts service;
+          ports = map (entry: entry.port) (lib.attrValues service.dashboard.ports);
         }
       ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles)
     )
@@ -132,10 +153,14 @@ let
   # Dashboard paths of tile terminals and links (e.g. a proxied Pluto), which
   # get the actions' login.
   loginPaths = lib.filter (path: path != null && lib.hasPrefix "/" path) (
-    lib.concatMap (service: [
-      service.dashboard.terminal
-      service.dashboard.href
-    ]) (lib.attrValues tiles)
+    lib.concatMap (
+      service:
+      [
+        service.dashboard.terminal
+        service.dashboard.href
+      ]
+      ++ map (entry: entry.href) (lib.attrValues service.dashboard.ports)
+    ) (lib.attrValues tiles)
   );
   basicAuth = ''
     auth_basic "Aperture Science";
@@ -151,6 +176,13 @@ let
     lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
     || !lib.all isLocal (
       targetHosts "reboot" ++ targetHosts "switch" ++ targetHosts "tailscale" ++ targetHosts "unitHost"
+      ++ lib.concatMap (
+        service:
+        lib.optional (
+          service.dashboard.portsHost != null
+          && lib.any (entry: entry.unit != null) (lib.attrValues service.dashboard.ports)
+        ) service.dashboard.portsHost
+      ) (lib.attrValues tiles)
     );
 in
 {

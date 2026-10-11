@@ -101,7 +101,8 @@ html.dark .svcctl a {
 }
 
 /* The ports menu, in flow below the bar: one row per port, its dot lit while
-   something listens there. */
+   something listens there, with a start-or-stop button for entries with a
+   unit. */
 .svcctl-ports-menu {
   display: flex;
   flex-direction: column;
@@ -117,7 +118,17 @@ html.dark .svcctl a {
   display: none;
 }
 
-.svcctl-ports-menu a {
+.svcctl-ports-row {
+  display: flex;
+  align-items: center;
+}
+
+.svcctl-ports-row + .svcctl-ports-row {
+  border-top: 1px solid var(--card-border);
+}
+
+.svcctl-ports-row a {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -126,23 +137,40 @@ html.dark .svcctl a {
   text-decoration: none;
 }
 
-html.dark .svcctl-ports-menu a {
+.svcctl-ports-row button {
+  margin-right: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--block-bg);
+  color: rgb(var(--color-700));
+  cursor: pointer;
+}
+
+.svcctl-ports-row button svg {
+  display: block;
+  width: 1.2em;
+  height: 1.2em;
+}
+
+html.dark .svcctl-ports-row a,
+html.dark .svcctl-ports-row button {
   color: rgb(var(--color-200));
 }
 
-.svcctl-ports-menu a + a {
-  border-top: 1px solid var(--card-border);
-}
-
-.svcctl-ports-menu a:hover {
+.svcctl-ports-row a:hover {
   box-shadow: inset 0 0 0 1px rgb(var(--portal-orange));
 }
 
-.svcctl-ports-menu a span:nth-child(2) {
+.svcctl-ports-row button:hover {
+  box-shadow: 0 0 0 1px rgb(var(--portal-orange));
+}
+
+.svcctl-ports-row a span:nth-child(2) {
   flex: 1;
 }
 
-.svcctl-ports-menu a span:nth-child(3) {
+.svcctl-ports-row a span:nth-child(3) {
   color: rgb(var(--color-500));
 }
 
@@ -154,7 +182,7 @@ html.dark .svcctl-ports-menu a {
   opacity: 0.4;
 }
 
-.svcctl-ports-menu a[data-open="true"] .svcctl-ports-dot {
+.svcctl-ports-row[data-open="true"] .svcctl-ports-dot {
   background: rgb(16 185 129);
   opacity: 1;
 }

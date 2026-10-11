@@ -1,14 +1,15 @@
 // Restart and start-or-stop (one button, last, like on/off below) buttons on
 // tiles backed by a systemd unit; host tiles get, in this order and as
-// configured: ports (a menu of its dev servers, each open or closed),
+// configured: ports (a menu of its dev servers, each open or closed, some
+// with their own start-or-stop),
 // terminal, switch (pull the dotfiles and switch to them), tailscale
 // (on/off), restart, and on/off, one button that wakes the host while it's
 // down and powers it off while it's up (controls.nix).
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
 // `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host),
 // `svcctlTerminals` (tile name -> URL), `svcctlPorts` (tile name ->
-// {host, ports: [{name, port}]}) and `svcctlTailnet` ({domain, address}) are
-// defined ahead of this file by default.nix.
+// {host, ports: [{name, port, href, unit}]}) and `svcctlTailnet` ({domain,
+// address}) are defined ahead of this file by default.nix.
 (() => {
   const api = "/api/svc";
   const headers = { "X-Svcctl": "1" };
@@ -180,23 +181,32 @@
   };
 
   // Below the bar rather than over the tiles next to it, and outside it so
-  // its links don't take the bar's button styles.
+  // its links don't take the bar's button styles. A row is its link, plus a
+  // start-or-stop button for entries with a unit, which svcctl knows by the
+  // entry's `unit` name.
   const portsMenu = (name) => {
     const { host, ports } = svcctlPorts[name];
     const menu = document.createElement("div");
     menu.className = "svcctl-ports-menu";
     menu.hidden = true;
-    for (const { name: label, port } of ports) {
+    for (const { name: label, port, href, unit } of ports) {
+      const row = document.createElement("div");
+      row.className = "svcctl-ports-row";
+      row.dataset.port = port;
       const link = document.createElement("a");
-      link.href = `http://${portsHost(host)}:${port}`;
+      link.href = href || `http://${portsHost(host)}:${port}`;
       link.target = "_blank";
       link.rel = "noopener";
-      link.dataset.port = port;
       link.innerHTML = '<span class="svcctl-ports-dot"></span><span></span><span></span>';
       link.children[1].textContent = label;
-      link.children[2].textContent = `:${port}`;
-      link.addEventListener("click", (event) => event.stopPropagation());
-      menu.append(link);
+      link.children[2].textContent = href || `:${port}`;
+      row.append(link);
+      if (unit) {
+        const run = button(unit, "run", "play");
+        run.dataset.unit = unit;
+        row.append(run);
+      }
+      menu.append(row);
     }
     menu.addEventListener("click", (event) => event.stopPropagation());
     return menu;
@@ -292,7 +302,13 @@
       const switchState = kinds.switch ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
       const ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
-      const portState = kinds.ports ? JSON.stringify(portStates[name] || {}) : "";
+      // Its ports, and its entries' units.
+      const portState = kinds.ports
+        ? JSON.stringify([
+            portStates[name] || {},
+            svcctlPorts[name].ports.map(({ unit }) => unit && displayState(unit)),
+          ])
+        : "";
       if (
         (bar.dataset.ports || "") === portState &&
         bar.dataset.ping === ping &&
@@ -337,7 +353,15 @@
         bar.dataset.ports = portState;
         const open = portStates[name] || {};
         const menu = card.querySelector(":scope > .svcctl-ports-menu");
-        for (const link of menu.children) link.dataset.open = String(!!open[link.dataset.port]);
+        for (const row of menu.children) {
+          row.dataset.open = String(!!open[row.dataset.port]);
+          const run = row.querySelector("button");
+          if (!run) continue;
+          const unit = run.dataset.unit;
+          const active = unitActive(displayState(unit));
+          run.innerHTML = iconSvg(active ? "stop" : "play");
+          run.title = active ? `Stop ${unit}` : `Start ${unit}`;
+        }
         const element = bar.querySelector(".svcctl-ports");
         element.disabled = state !== "up";
         if (element.disabled) {
