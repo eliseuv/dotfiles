@@ -203,20 +203,15 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usag
 
 /* GLaDOS (her wake tile, see hosts/wheatley/system.nix): her mask with the
    faceplate and optic drawn in, the optic lit yellow while she answers pings,
-   dark while she sleeps, flickering while she boots. Keyed on the tile name and the wake
+   dim while she sleeps, flickering while she boots. Keyed on the tile name and the wake
    bar's state (controls.js), since the icon itself is a placeholder. */
 :root {
-  --glados-yellow: 222 160 0;
-  --glados-chassis: rgb(var(--color-700));
-}
-
-html.dark {
   --glados-yellow: 255 204 51;
-  --glados-chassis: rgb(var(--color-200));
+  --glados-chassis: #fff;
 }
 
 li.service[data-name="GLaDOS"] {
-  --eye: rgb(var(--color-500) / 0.6);
+  --eye: rgb(var(--glados-yellow) / 0.6);
   --eye-glow: transparent;
 }
 

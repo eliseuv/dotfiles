@@ -298,7 +298,7 @@ let
   # tall head and the disc behind it, kept apart by a gap cut around the head,
   # as a CSS mask for her wake tile. The faceplate is drawn separately, as a
   # dark layer under the optic (theme.css), since a mask has one colour; its
-  # light rim keeps it apart from the dark chassis of the light theme.
+  # light rim outlines it against the white chassis.
   glados =
     let
       head = "M9.4 9C9.4 6 11 5.2 16 4.8C21 5.2 22.6 6 22.6 9C22 13 22 19 22.6 23C22.6 26.5 19.5 28.4 16 28.4C12.5 28.4 9.4 26.5 9.4 23C10 19 10 13 9.4 9z";
