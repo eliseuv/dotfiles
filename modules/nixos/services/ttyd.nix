@@ -75,7 +75,7 @@ in
           ExecStart = pkgs.writeShellScript "ttyd-start.sh" ''
             exec ${pkgs.ttyd}/bin/ttyd \
               -t 'theme=${builtins.toJSON theme}' \
-              -t 'fontFamily=${config.my.theme.monoFont.name}' \
+              -t 'fontFamily=${config.my.theme.monoFont.name}, IosevkaTerm NF, monospace' \
               -p ${toString cfg.port} -W${
                 lib.optionalString (cfg.basePath != "/") " -b ${lib.escapeShellArg cfg.basePath}"
               }${lib.optionalString (cfg.interface != null) " -i ${lib.escapeShellArg cfg.interface}"} \
