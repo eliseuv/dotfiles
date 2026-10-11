@@ -11,7 +11,7 @@
         "zellij"
       ]
     );
-    default = "zellij";
+    default = "tmux";
     description = "Multiplexer to auto-attach on interactive SSH logins; null for none.";
   };
 
