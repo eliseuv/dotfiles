@@ -24,43 +24,13 @@
   color-scheme: light dark;
 }
 
-/* Test chamber: off-white wall panels with seams. */
-html {
-  min-height: 100%;
-  background-color: rgb(236 239 241);
-  background-image:
-    linear-gradient(rgb(0 0 0 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(0 0 0 / 0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgb(255 255 255 / 0.7), transparent 60%);
-  background-size:
-    128px 128px,
-    128px 128px,
-    100% 100%;
-  background-attachment: fixed;
-}
-
-/* Behind the scenes: concrete, large panel seams, vignette. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: rgb(255 228 176);
-    --muted: rgb(150 130 100);
-    --card-bg: linear-gradient(180deg, rgb(33 36 39), rgb(25 27 30));
-    --card-border: rgb(255 255 255 / 0.05);
-    --block-bg: rgb(0 0 0 / 0.35);
-  }
-
-  html {
-    background-color: rgb(17 19 21);
-    background-image:
-      radial-gradient(ellipse at 50% 0%, rgb(255 199 118 / 0.06), transparent 60%),
-      radial-gradient(ellipse at 50% 120%, rgb(0 0 0 / 0.7), transparent 70%),
-      linear-gradient(rgb(255 255 255 / 0.025) 2px, transparent 2px),
-      linear-gradient(90deg, rgb(255 255 255 / 0.025) 2px, transparent 2px);
-    background-size:
-      100% 100%,
-      100% 100%,
-      256px 256px,
-      256px 256px;
+    --text: #edf0ed;
+    --muted: #a0ada8;
+    --card-bg: #1c2325;
+    --card-border: #343c3d;
+    --block-bg: #151c1e;
   }
 }
 
@@ -116,11 +86,6 @@ h1::before {
   mask: var(--aperture-iris) center / contain no-repeat;
 }
 
-@media (prefers-color-scheme: dark) {
-  h1 {
-    text-shadow: 0 0 12px rgb(255 199 118 / 0.35);
-  }
-}
 
 h2 {
   margin: 0 0 0.75rem;
@@ -411,4 +376,49 @@ footer {
   text-transform: uppercase;
   letter-spacing: 0.2em;
   color: var(--muted);
+}
+
+/* Share the facility navigation without clipping generation details. */
+body[data-repo].facility-layout {
+  max-width: none;
+  margin: 0;
+  padding: 2rem;
+  padding-left: calc(var(--facility-width) + 2rem);
+}
+body[data-repo] main, body[data-repo] header, body[data-repo] footer {
+  max-width: 76rem;
+}
+body[data-repo] header { border-bottom: 1px solid var(--facility-line); padding-bottom: 1.5rem; }
+body[data-repo] .card { background: var(--facility-panel); border-color: var(--facility-line); }
+body[data-repo] .card h2 { color: rgb(var(--portal-orange)); }
+body[data-repo] h1 { text-transform: none; letter-spacing: 0; font-family: var(--font-body); }
+body[data-repo] h1::before { display: none; }
+body[data-repo] .status-line { flex-wrap: wrap; }
+body[data-repo] dd { min-width: 0; overflow-wrap: anywhere; }
+.changes .detail { overflow-wrap: anywhere; }
+#switch[data-state="switching"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  margin-right: 0.5rem;
+  border: 2px solid rgb(var(--portal-blue) / 0.25);
+  border-top-color: rgb(var(--portal-blue));
+  border-radius: 50%;
+  animation: switch-spin 1s linear infinite;
+}
+@keyframes switch-spin { to { transform: rotate(360deg); } }
+@media (max-width: 70rem) {
+  .row { grid-template-columns: 3.5rem 1fr auto; }
+  .meta, .row > .commit { grid-column: 2 / -1; }
+}
+@media (max-width: 55rem) {
+  body[data-repo].facility-layout { padding: 0; }
+  body[data-repo] header, body[data-repo] main, body[data-repo] footer { margin: 1rem; }
+  .changes li { grid-template-columns: 4.5rem minmax(0, 1fr) auto; }
+  .changes .detail { grid-column: 2 / -1; }
+  dl { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #switch[data-state="switching"], #switch[data-state="switching"]::before { animation: none; }
 }

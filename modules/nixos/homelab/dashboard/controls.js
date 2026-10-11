@@ -113,6 +113,10 @@
           tailscaleStates[name] = action === "tailscale-on" ? "on" : "off";
           return render();
         }
+        if (action === "switch") {
+          switchStates[name] = "switching";
+          render();
+        }
         settle();
       })
       .catch((status) => {
@@ -146,6 +150,14 @@
     const element = document.createElement("button");
     element.type = "button";
     element.className = `svcctl-${action}`;
+    element.dataset.label = {
+      run: "Start",
+      reboot: "Restart",
+      power: "Wake",
+      switch: "Switch",
+      tailscale: "Tailnet",
+      restart: "Restart",
+    }[action] || action;
     element.title = `${action[0].toUpperCase()}${action.slice(1)} ${name}`;
     element.innerHTML = iconSvg(icon);
     element.addEventListener("click", (event) => {
@@ -161,6 +173,7 @@
   const configLink = (name) => {
     const element = document.createElement("a");
     element.className = "svcctl-config";
+    element.dataset.label = "Config";
     element.href = `/hosts/?host=${encodeURIComponent(svcctlPages[name])}`;
     element.title = `Config page of ${name}`;
     element.innerHTML = iconSvg("config");
@@ -227,6 +240,7 @@
     const element = document.createElement("button");
     element.type = "button";
     element.className = "svcctl-ports";
+    element.dataset.label = "Ports";
     element.title = `Ports on ${name}`;
     element.setAttribute("aria-expanded", "false");
     element.innerHTML = iconSvg("socket");
@@ -258,6 +272,11 @@
     const state = document.createElement("span");
     state.className = "svcctl-state";
     bar.append(state);
+    const switching = document.createElement("span");
+    switching.className = "svcctl-switch-status";
+    switching.hidden = true;
+    switching.setAttribute("role", "status");
+    bar.append(switching);
     if (kinds.unit) {
       bar.append(button(name, "restart", "restart"), button(name, "run", "play"));
     }
@@ -310,7 +329,7 @@
         if (menu) card.append(menu);
       }
       const state = displayState(name);
-      const switchState = kinds.switch ? switchStates[name] || "unknown" : "";
+      const switchState = kinds.switch || kinds.config ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
       const ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
       // Its ports, and its entries' units.
@@ -329,16 +348,22 @@
       )
         continue;
       bar.dataset.state = state;
+      bar.dataset.switch = switchState;
       bar.dataset.ping = ping;
       // Hosts read on/off, units their systemd state; anything in between
       // shows as is. controls.css uppercases it.
       const words = kinds.unit ? {} : { up: "on", down: "off" };
       bar.querySelector(".svcctl-state").textContent = (words[state] || state) + ping;
+      const switching = bar.querySelector(".svcctl-switch-status");
+      switching.hidden = switchState !== "switching" && switchState !== "failed";
+      switching.textContent =
+        switchState === "switching" ? "Switching\u2026" : switchState === "failed" ? "Switch failed" : "";
       if (kinds.unit) {
         const run = bar.querySelector(".svcctl-run");
         const active = unitActive(state);
         run.innerHTML = iconSvg(active ? "stop" : "play");
         run.title = active ? `Stop ${name}` : `Start ${name}`;
+        run.dataset.label = active ? "Stop" : "Start";
       }
       if (kinds.wake) {
         const power = bar.querySelector(".svcctl-power");
@@ -349,11 +374,13 @@
           state === "shutting-down" ||
           state === "rebooting";
         power.title = up ? `Power off ${name}` : `Wake ${name}`;
+        power.dataset.label = up && svcctlPoweroffTiles.includes(name) ? "Off" : "Wake";
       }
       if (kinds.tailscale) {
         bar.dataset.tailscale = tailscaleState;
         const element = bar.querySelector(".svcctl-tailscale");
         element.disabled = state !== "up" || tailscaleState === "unknown";
+        element.dataset.label = `Tail ${tailscaleState === "unknown" ? "?" : tailscaleState}`;
         element.title =
           tailscaleState === "on" ? `Turn Tailscale off on ${name}` : `Turn Tailscale on on ${name}`;
       }
@@ -369,6 +396,7 @@
           const active = unitActive(displayState(unit));
           run.innerHTML = iconSvg(active ? "stop" : "play");
           run.title = active ? `Stop ${unit}` : `Start ${unit}`;
+          run.dataset.label = active ? "Stop" : "Start";
         }
         const element = bar.querySelector(".svcctl-ports");
         element.disabled = state !== "up";
@@ -379,7 +407,6 @@
       }
       if (kinds.reboot) bar.querySelector(".svcctl-reboot").disabled = state !== "up";
       if (kinds.switch) {
-        bar.dataset.switch = switchState;
         const element = bar.querySelector(".svcctl-switch");
         element.disabled = state !== "up" || switchState === "switching";
         element.title =

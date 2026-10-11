@@ -71,17 +71,20 @@ let
   svg = import ./_svg.nix;
   # Static; host.js reads the host from the query string.
   page = pkgs.linkFarm "host-page" {
-    "index.html" =
-      pkgs.writeText "index.html"
-        (
-          builtins.replaceStrings [ "@favicon@" "@iris@" "@repo@" ] [
-            (svg.iris "#ff9a00")
-            (svg.iris "black")
-            (lib.removeSuffix ".git" upstream)
-          ] (builtins.readFile ./host-page/index.html)
-        );
+    "index.html" = pkgs.writeText "index.html" (
+      builtins.replaceStrings
+        [ "@favicon@" "@iris@" "@repo@" ]
+        [
+          (svg.iris "#ff9a00")
+          (svg.iris "black")
+          (lib.removeSuffix ".git" upstream)
+        ]
+        (builtins.readFile ./host-page/index.html)
+    );
     "host.js" = ./host-page/host.js;
     "host.css" = ./host-page/host.css;
+    "facility.css" = ./facility.css;
+    "facility.js" = ./facility.js;
   };
 
   hostReport = lib.getExe (

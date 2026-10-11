@@ -39,6 +39,21 @@
   const panel = document.createElement("section");
   panel.id = "tasks-panel";
   panel.hidden = true;
+  panel.setAttribute("role", "region");
+  panel.setAttribute("aria-labelledby", "tasks-title");
+  toggle.setAttribute("aria-controls", "tasks-panel");
+  toggle.setAttribute("aria-expanded", "false");
+  const heading = document.createElement("div");
+  heading.className = "tasks-heading";
+  const title = document.createElement("h2");
+  title.id = "tasks-title";
+  title.textContent = "Service resource usage";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "tasks-close";
+  close.textContent = "Close";
+  close.addEventListener("click", () => setOpen(false));
+  heading.append(title, close);
 
   const summary = document.createElement("div");
   summary.className = "tasks-summary";
@@ -46,7 +61,7 @@
   more.type = "button";
   more.className = "tasks-more";
   const table = document.createElement("table");
-  panel.append(summary, table, more);
+  panel.append(heading, summary, table, more);
 
   const sortValue = (row, key) => (key === "label" ? displayName(row).toLowerCase() : row[key]);
 
@@ -109,6 +124,7 @@
   const setOpen = (open) => {
     panel.hidden = !open;
     toggle.setAttribute("aria-expanded", String(open));
+    document.querySelector('.facility-nav [aria-controls="tasks-panel"]')?.setAttribute("aria-expanded", String(open));
     clearInterval(timer);
     if (open) {
       poll();

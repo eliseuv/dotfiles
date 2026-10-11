@@ -27,7 +27,7 @@
   right: 1rem;
   bottom: 3.4rem;
   z-index: 50;
-  width: min(34rem, calc(100vw - 2rem));
+  width: min(64rem, calc(100vw - var(--facility-width, 0px) - 3rem));
   max-height: calc(100vh - 5rem);
   overflow: auto;
   padding: 0.6rem 0.75rem;
@@ -36,7 +36,7 @@
   background: var(--card-bg);
   color: rgb(var(--color-700));
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 #tasks-panel[hidden] {
@@ -111,4 +111,13 @@ html.dark #tasks-panel {
 
 .tasks-more[hidden] {
   display: none;
+}
+
+.tasks-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.tasks-heading h2 { font: 600 1.2rem var(--font-sign); text-transform: uppercase; letter-spacing: 0.08em; }
+.tasks-close { padding: 0.3rem 0.6rem; border: 1px solid var(--card-border); background: var(--block-bg); color: inherit; font: inherit; cursor: pointer; }
+#tasks-panel th, #tasks-panel td { padding: 0.5rem; }
+#tasks-panel { box-sizing: border-box; border-top: 2px solid rgb(var(--portal-orange)); }
+@media (max-width: 55rem) {
+  #tasks-panel { width: calc(100vw - 2rem); }
 }

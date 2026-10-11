@@ -1,7 +1,7 @@
 /*
  * Aperture Science theme for Homepage.
  *
- * Light mode is a test chamber, dark mode is behind the scenes. Everything is
+ * Light mode uses laboratory panels, dark mode an operations console. Everything is
  * keyed on Homepage's own `html.dark` class rather than a media query so its
  * `dark:` utilities never disagree with this file; theme.js keeps
  * that class in sync with the OS.
@@ -43,65 +43,25 @@ html.theme-zinc:not(.dark) {
 }
 
 html.theme-zinc.dark {
-  --color-50: 255 238 206;
-  --color-100: 255 228 176;
-  --color-200: 255 199 118;
-  --color-300: 205 160 104;
-  --color-400: 150 130 100;
-  --color-500: 112 102 88;
-  --color-600: 62 64 68;
-  --color-700: 40 43 47;
-  --color-800: 17 19 21;
-  --color-900: 6 7 8;
-  --card-bg: linear-gradient(180deg, rgb(33 36 39), rgb(25 27 30));
-  --card-border: rgb(255 255 255 / 0.05);
-  --block-bg: rgb(0 0 0 / 0.35);
+  --color-50: 237 240 237;
+  --color-100: 219 226 221;
+  --color-200: 237 240 237;
+  --color-300: 194 207 200;
+  --color-400: 162 179 169;
+  --color-500: 160 173 168;
+  --color-600: 84 101 94;
+  --color-700: 42 54 49;
+  --color-800: 16 20 22;
+  --color-900: 10 14 15;
+  --card-bg: #1c2325;
+  --card-border: #343c3d;
+  --block-bg: #151c1e;
 }
 
-/* ------------------------------------------------------------- background */
-
-html,
-body,
-#__next {
-  font-family: var(--font-body);
-}
-
-body,
-#__next {
-  background: transparent !important;
-}
-
-/* Test chamber: off-white wall panels with seams. */
-html:not(.dark) {
-  background-color: rgb(var(--color-50));
-  background-image:
-    linear-gradient(rgb(0 0 0 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(0 0 0 / 0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgb(255 255 255 / 0.7), transparent 60%);
-  background-size:
-    128px 128px,
-    128px 128px,
-    100% 100%;
-  background-attachment: fixed;
-}
-
-/* Behind the scenes: noisy concrete, large panel seams, vignette. */
-html.dark {
-  background-color: rgb(var(--color-800));
-  background-image:
-    radial-gradient(ellipse at 50% 0%, rgb(255 199 118 / 0.06), transparent 60%),
-    radial-gradient(ellipse at 50% 120%, rgb(0 0 0 / 0.7), transparent 70%),
-    linear-gradient(rgb(255 255 255 / 0.025) 2px, transparent 2px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.025) 2px, transparent 2px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size:
-    100% 100%,
-    100% 100%,
-    256px 256px,
-    256px 256px,
-    220px 220px;
-  background-attachment: fixed;
-}
+html, body, #__next { font-family: var(--font-body); }
+body, #__next { background: transparent !important; }
+html:not(.dark) { background: #eef1ef; }
+html.dark { background: #101416; }
 
 /* --------------------------------------------------------------- header */
 

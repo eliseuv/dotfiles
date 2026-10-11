@@ -45,7 +45,8 @@
   cursor: pointer;
 }
 
-.svcctl button svg {
+.svcctl button svg,
+.svcctl a svg {
   display: block;
   width: 1.2em;
   height: 1.2em;
@@ -73,6 +74,43 @@ html.dark .svcctl a {
 }
 
 /* The switch button carries its own state, separate from the host's. */
+.svcctl-switch-status {
+  font: 0.65rem var(--font-mono);
+}
+
+.svcctl-switch-status[hidden] { display: none; }
+
+.svcctl[data-switch="failed"] .svcctl-switch-status { color: rgb(244 63 94); }
+
+.svcctl[data-switch="switching"] .svcctl-switch-status {
+  color: rgb(var(--host-accent, var(--portal-blue)));
+}
+
+/* Also visible when the switch was started from a host's config page. */
+li.service:has(.svcctl[data-switch="switching"]) .service-icon {
+  position: relative;
+}
+
+li.service:has(.svcctl[data-switch="switching"]) .service-icon::after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  top: 50%;
+  left: 50%;
+  margin: -20px 0 0 -20px;
+  box-sizing: border-box;
+  border: 2px solid rgb(var(--host-accent, var(--portal-blue)) / 0.2);
+  border-top-color: rgb(var(--host-accent, var(--portal-blue)));
+  border-radius: 50%;
+  pointer-events: none;
+  animation: svcctl-switch-spin 1s linear infinite;
+}
+
+@keyframes svcctl-switch-spin {
+  to { transform: rotate(360deg); }
+}
+
 .svcctl[data-switch="switching"] button.svcctl-switch {
   color: rgb(var(--portal-blue));
   animation: svcctl-switching 1.2s ease-in-out infinite alternate;
@@ -81,6 +119,14 @@ html.dark .svcctl a {
 @keyframes svcctl-switching {
   from { opacity: 1; }
   to { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  li.service:has(.svcctl[data-switch="switching"]) .service-icon::after,
+  .svcctl[data-switch="switching"] button.svcctl-switch {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .svcctl[data-switch="failed"] button.svcctl-switch {

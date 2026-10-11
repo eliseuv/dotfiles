@@ -373,7 +373,7 @@ in
       widgets = [
         {
           greeting = {
-            text = "Aperture Science Enrichment Center";
+            text = "Enrichment Control";
             text_size = "xl";
           };
         }
@@ -436,7 +436,8 @@ in
         };
       ''
       + builtins.readFile ./controls.js
-      + builtins.readFile ./tasks.js;
+      + builtins.readFile ./tasks.js
+      + builtins.readFile ./facility.js;
 
       # @import must stay first, so the icon URLs are appended.
       customCSS =
@@ -456,7 +457,8 @@ in
           }
         ''
         + builtins.readFile ./controls.css
-        + builtins.readFile ./tasks.css;
+        + builtins.readFile ./tasks.css
+        + builtins.readFile ./facility.css;
     };
 
     services.nginx = {
