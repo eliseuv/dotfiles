@@ -2,12 +2,14 @@
 // tiles backed by a systemd unit; host tiles get, in this order and as
 // configured: ports (a menu of its dev servers, each open or closed, some
 // with their own start-or-stop),
-// terminal, switch (pull the dotfiles and switch to them), tailscale
+// switch (pull the dotfiles and switch to them; a config page button instead
+// where the host has a page, which switches from there), tailscale
 // (on/off), restart, and on/off, one button that wakes the host while it's
 // down and powers it off while it's up (controls.nix).
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
 // `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host),
-// `svcctlTerminals` (tile name -> URL), `svcctlPorts` (tile name ->
+// `svcctlTerminals` (tile name -> URL, what the tile itself opens),
+// `svcctlPages` (tile name -> host whose page the config button opens), `svcctlPorts` (tile name ->
 // {host, ports: [{name, port, href, unit}]}) and `svcctlTailnet` ({domain,
 // address}) are defined ahead of this file by default.nix.
 (() => {
@@ -132,6 +134,9 @@
       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
       '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>',
+    config:
+      '<circle cx="12" cy="12" r="3"/>' +
+      '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
     socket: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 8v4M15 8v4M9 17h6"/>',
   };
 
@@ -153,23 +158,31 @@
     return element;
   };
 
-  // A link rather than a button so it opens like one (new tab, middle click);
-  // links can't be disabled, so render() toggles aria-disabled, which
-  // controls.css makes inert to the pointer and this guards for the keyboard.
-  const terminalLink = (name) => {
+  // A link rather than a button so it opens like one (middle click); in
+  // place, as the page leads back here.
+  const configLink = (name) => {
     const element = document.createElement("a");
-    element.className = "svcctl-terminal";
-    element.href = svcctlTerminals[name];
-    element.target = "_blank";
-    element.rel = "noopener";
-    element.title = `Terminal on ${name}`;
-    element.textContent = ">_";
-    element.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (element.getAttribute("aria-disabled") === "true") event.preventDefault();
-    });
+    element.className = "svcctl-config";
+    element.href = `/hosts/?host=${encodeURIComponent(svcctlPages[name])}`;
+    element.title = `Config page of ${name}`;
+    element.innerHTML = iconSvg("config");
+    element.addEventListener("click", (event) => event.stopPropagation());
     return element;
   };
+
+  // The tile's own link opens the terminal, which only answers while the
+  // host is up.
+  document.addEventListener(
+    "click",
+    (event) => {
+      const tile = event.target.closest?.("li.service[data-name]");
+      if (!tile || !(tile.dataset.name in svcctlTerminals)) return;
+      const link = event.target.closest("a");
+      if (!link || link.closest(".svcctl")) return;
+      if (displayState(tile.dataset.name) !== "up") event.preventDefault();
+    },
+    true,
+  );
 
   // Another host by the name the dashboard was reached with: its MagicDNS
   // name over the tailnet, its mDNS one on the LAN; this host as the page is.
@@ -251,7 +264,7 @@
       bar.append(button(name, "restart", "restart"), button(name, "run", "play"));
     }
     if (kinds.ports) bar.append(portsButton(name, menu));
-    if (kinds.terminal) bar.append(terminalLink(name));
+    if (kinds.config) bar.append(configLink(name));
     if (kinds.switch) bar.append(button(name, "switch", "download"));
     if (kinds.tailscale) bar.append(button(name, "tailscale", "link"));
     if (kinds.reboot) bar.append(button(name, "reboot", "restart"));
@@ -284,7 +297,7 @@
         wake: svcctlWakeTiles.includes(name),
         reboot: name in svcctlRebootTiles,
         switch: svcctlSwitchTiles.includes(name),
-        terminal: name in svcctlTerminals,
+        config: name in svcctlPages,
         tailscale: svcctlTailscaleTiles.includes(name),
         ports: name in svcctlPorts,
       };
@@ -328,9 +341,6 @@
         const active = unitActive(state);
         run.innerHTML = iconSvg(active ? "stop" : "play");
         run.title = active ? `Stop ${name}` : `Start ${name}`;
-      }
-      if (kinds.terminal) {
-        bar.querySelector(".svcctl-terminal").setAttribute("aria-disabled", String(state !== "up"));
       }
       if (kinds.wake) {
         const power = bar.querySelector(".svcctl-power");

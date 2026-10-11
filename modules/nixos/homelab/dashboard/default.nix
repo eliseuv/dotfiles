@@ -59,9 +59,15 @@ let
     _: service:
     lib.nameValuePair service.dashboard.name (service.dashboard.reboot == config.my.host.name)
   ) (lib.filterAttrs (_: service: service.dashboard.reboot != null) tiled);
+  # Tiles with a host page switch from there (its config page button) rather
+  # than from a button of their own.
   switchTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.switch != null) tiled
+    lib.filterAttrs (_: service: service.dashboard.switch != null && service.dashboard.page == null) tiled
   );
+  # Tile name -> host whose page the tile's config page button opens.
+  pageTiles = lib.mapAttrs' (
+    _: service: lib.nameValuePair service.dashboard.name service.dashboard.page
+  ) (lib.filterAttrs (_: service: service.dashboard.page != null) tiled);
   tailscaleTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiled
   );
@@ -113,12 +119,19 @@ let
       }
       // lib.optionalAttrs (tileCfg.address == null) { statusStyle = "basic"; }
     )
+    # A host's tile opens its terminal; controls.js keeps the click from
+    # reaching a host that's down.
+    // lib.optionalAttrs (tileCfg.href == null && tileCfg.terminal != null) {
+      href = tileCfg.terminal;
+    }
     # In place rather than a new tab: the page leads back here.
-    // lib.optionalAttrs (tileCfg.href == null && tileCfg.page != null) {
+    // lib.optionalAttrs (tileCfg.href == null && tileCfg.terminal == null && tileCfg.page != null) {
       href = "/hosts/?host=${tileCfg.page}";
       target = "_self";
     }
-    // lib.optionalAttrs (tileCfg.href == null && tileCfg.page == null && linked) {
+    // lib.optionalAttrs (
+      tileCfg.href == null && tileCfg.terminal == null && tileCfg.page == null && linked
+    ) {
       href = "http://${linkHost}:${toString service.port}";
       siteMonitor = local;
       statusStyle = "basic";
@@ -231,7 +244,7 @@ let
     terminal = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Web terminal URL for the tile's terminal button, live while the host is up (controls.js); a path is served by this dashboard's nginx, behind its login.";
+      description = "Web terminal URL the tile itself opens, live while the host is up (controls.js); a path is served by this dashboard's nginx, behind its login.";
     };
     reboot = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
@@ -246,7 +259,7 @@ let
     page = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Host (as in hosts/) whose page - generations, diffs, deploy status against master - the tile links to (hosts.nix); it needs my.services.dotfilesSwitch.";
+      description = "Host (as in hosts/) whose page - generations, diffs, deploy status against master - the tile's config page button opens, in place of its switch button (hosts.nix); it needs my.services.dotfilesSwitch.";
     };
     address = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
@@ -426,6 +439,7 @@ in
         const svcctlTerminals = ${builtins.toJSON terminalTiles};
         const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
         const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
+        const svcctlPages = ${builtins.toJSON pageTiles};
         const svcctlTailscaleTiles = ${builtins.toJSON tailscaleTiles};
         const svcctlPorts = ${builtins.toJSON portTiles};
         const svcctlTailnet = ${

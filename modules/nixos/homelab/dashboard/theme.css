@@ -285,25 +285,6 @@ li.service[data-name="GLaDOS"] .svcctl a:hover:not([aria-disabled="true"]) {
   box-shadow: 0 0 0 1px rgb(var(--glados-yellow));
 }
 
-/* Her terminal: a prompt lit in her optic's yellow while she's online, as
-   if typed straight into her console. */
-li.service[data-name="GLaDOS"] .svcctl-terminal {
-  font-weight: 600;
-}
-
-li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-terminal {
-  border-color: rgb(var(--glados-yellow) / 0.6);
-  color: rgb(var(--glados-yellow));
-  text-shadow: 0 0 6px rgb(var(--glados-yellow) / 0.55);
-}
-
-li.service[data-name="GLaDOS"] .svcctl[data-state="up"] .svcctl-terminal:hover {
-  background: rgb(var(--glados-yellow) / 0.12);
-  box-shadow:
-    0 0 0 1px rgb(var(--glados-yellow)),
-    0 0 10px -2px rgb(var(--glados-yellow) / 0.8);
-}
-
 /* Wheatley (his reboot tile, see hosts/wheatley/system.nix): the core mask
    with his optic drawn in, lit blue while he serves the dashboard and
    flickering while he reboots. Keyed on the tile name and the reboot bar's
@@ -367,24 +348,6 @@ li.service[data-name="Wheatley"] .svcctl:is([data-state="up"], [data-state="rebo
 li.service[data-name="Wheatley"] .svcctl button:hover:not(:disabled),
 li.service[data-name="Wheatley"] .svcctl a:hover:not([aria-disabled="true"]) {
   box-shadow: 0 0 0 1px rgb(var(--wheatley-blue));
-}
-
-/* His terminal, lit in his optic's blue like GLaDOS's is in her yellow. */
-li.service[data-name="Wheatley"] .svcctl-terminal {
-  font-weight: 600;
-}
-
-li.service[data-name="Wheatley"] .svcctl[data-state="up"] .svcctl-terminal {
-  border-color: rgb(var(--wheatley-blue) / 0.6);
-  color: rgb(var(--wheatley-blue));
-  text-shadow: 0 0 6px rgb(var(--wheatley-blue) / 0.55);
-}
-
-li.service[data-name="Wheatley"] .svcctl[data-state="up"] .svcctl-terminal:hover {
-  background: rgb(var(--wheatley-blue) / 0.12);
-  box-shadow:
-    0 0 0 1px rgb(var(--wheatley-blue)),
-    0 0 10px -2px rgb(var(--wheatley-blue) / 0.8);
 }
 
 /* The OS drives light/dark now (theme.js). */

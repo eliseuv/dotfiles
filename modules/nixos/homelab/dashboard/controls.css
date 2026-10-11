@@ -1,5 +1,5 @@
-/* Start-or-stop and restart bar on unit-backed tiles; ports menu, terminal,
-   switch, restart and on/off on host tiles (controls.js). */
+/* Start-or-stop and restart bar on unit-backed tiles; ports menu, config
+   page, switch, restart and on/off on host tiles (controls.js). */
 
 .svcctl {
   display: flex;
@@ -58,7 +58,7 @@ html.dark .svcctl a {
 }
 
 .svcctl button:hover:not(:disabled),
-.svcctl a:hover:not([aria-disabled="true"]) {
+.svcctl a:hover {
   box-shadow: 0 0 0 1px rgb(var(--portal-orange));
 }
 
@@ -67,16 +67,9 @@ html.dark .svcctl a {
   box-shadow: 0 0 0 1px rgb(var(--portal-blue));
 }
 
-.svcctl button:disabled,
-.svcctl a[aria-disabled="true"] {
+.svcctl button:disabled {
   opacity: 0.35;
   cursor: default;
-}
-
-/* Links can't be disabled; this also stops middle clicks, which controls.js's
-   click guard (for keyboard activation) never sees. */
-.svcctl a[aria-disabled="true"] {
-  pointer-events: none;
 }
 
 /* The switch button carries its own state, separate from the host's. */
