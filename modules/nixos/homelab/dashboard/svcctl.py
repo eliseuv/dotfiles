@@ -237,16 +237,14 @@ def port_open(host, port):
 
 def watch_ports(name, target):
     # Another host's ports only while it answers pings, so a sleeping one
-    # isn't asked for each port in turn; the first name that has any open
-    # stands for all, as they're one host.
-    hosts = target["hosts"] or ["127.0.0.1"]
+    # isn't asked for each port in turn; and only by its first name, the
+    # tailnet one: its firewall drops the rest from the mDNS name, so trying
+    # that too when nothing's open costs a timeout per port.
+    host = target["hosts"][0] if target["hosts"] else "127.0.0.1"
     while True:
         state = {str(port): False for port in target["ports"]}
         if not target["hosts"] or reachable.get(name) == "up":
-            for host in hosts:
-                state = {str(port): port_open(host, port) for port in target["ports"]}
-                if any(state.values()):
-                    break
+            state = {str(port): port_open(host, port) for port in target["ports"]}
         port_state[name] = state
         time.sleep(5)
 
