@@ -66,6 +66,17 @@ let
   tailscaleTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiled
   );
+  # Tile name -> {host, ports: [{name, port}]}, by port; `host` null for
+  # this one.
+  portTiles = lib.mapAttrs' (
+    _: service:
+    lib.nameValuePair service.dashboard.name {
+      host = service.dashboard.portsHost;
+      ports = lib.sort (a: b: a.port < b.port) (
+        lib.mapAttrsToList (name: port: { inherit name port; }) service.dashboard.ports
+      );
+    }
+  ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiled);
   keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
 
   tile =
@@ -223,6 +234,16 @@ let
       type = lib.types.str;
       default = "remote-control";
       description = "User svcctl logs in as for this host's buttons; the default is the forced-command user of services/remote-control.nix (controls.nix).";
+    };
+    ports = lib.mkOption {
+      type = lib.types.attrsOf lib.types.port;
+      default = { };
+      description = "Label -> TCP port the tile's ports menu links to, each shown open or closed (controls.nix); for ad-hoc servers with no tile of their own.";
+    };
+    portsHost = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Host (as in hosts/) `ports` are on, reached over the tailnet or mDNS as the dashboard was; null for this host.";
     };
     tailscale = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
@@ -383,6 +404,13 @@ in
         const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
         const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
         const svcctlTailscaleTiles = ${builtins.toJSON tailscaleTiles};
+        const svcctlPorts = ${builtins.toJSON portTiles};
+        const svcctlTailnet = ${
+          builtins.toJSON {
+            domain = network.tailnetDomain;
+            address = network.tailnetAddress;
+          }
+        };
       ''
       + builtins.readFile ./controls.js
       + builtins.readFile ./tasks.js;

@@ -24,6 +24,9 @@
 # Tiles with `dashboard.tailscale` get a button that turns that host's
 # Tailscale on or off, over the same SSH login (the other host must be on the
 # LAN to be reached again once it's off). It shows on/off, read over SSH.
+# Tiles with `dashboard.ports` get a menu linking to those ports on
+# `portsHost` (this host when null), each marked open or closed by a TCP
+# connect from here; for ad-hoc dev servers, which are rarely all running.
 # Buttons combine: one tile can wake, power off, reboot, switch and toggle
 # Tailscale.
 {
@@ -110,6 +113,21 @@ let
   canSwitchHere = lib.any isLocal (targetHosts "switch");
 
   tailscaleFile = pkgs.writeText "svcctl-tailscale.json" (builtins.toJSON (hostActions "tailscale"));
+
+  # Tile name -> {hosts, ports}; `hosts` empty for this host.
+  portsFile = pkgs.writeText "svcctl-ports.json" (
+    builtins.toJSON (
+      lib.mapAttrs' (
+        _: service:
+        lib.nameValuePair service.dashboard.name {
+          hosts = lib.optionals (service.dashboard.portsHost != null) (
+            sshTargets service service.dashboard.portsHost
+          );
+          ports = lib.attrValues service.dashboard.ports;
+        }
+      ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles)
+    )
+  );
 
   # Dashboard paths of tile terminals and links (e.g. a proxied Pluto), which
   # get the actions' login.
@@ -232,6 +250,7 @@ in
             "${rebootFile}"
             "${switchFile}"
             "${tailscaleFile}"
+            "${portsFile}"
           ]
           ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
         );

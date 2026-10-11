@@ -1,4 +1,4 @@
-"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON TAILSCALE_JSON [SSH_KEY]:
+"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON TAILSCALE_JSON PORTS_JSON [SSH_KEY]:
 start/stop/restart a fixed set of systemd units for the dashboard's tile
 buttons (controls.nix).
 UNITS_JSON maps tile names to {unit, hosts, user}; nothing else can be
@@ -12,7 +12,9 @@ REBOOT_JSON and SWITCH_JSON map tile names to {hosts} for hosts that can be
 rebooted, or whose dotfiles-switch.service can be started: here when `hosts`
 is empty, otherwise through the same SSH login, trying each name in turn until
 one connects. TAILSCALE_JSON likewise maps tiles to {hosts} whose Tailscale can
-be turned on and off, always through that login.
+be turned on and off, always through that login. PORTS_JSON maps tiles to
+{hosts, ports}: TCP ports reported open or closed, on this host when `hosts`
+is empty.
 Also serves per-service resource usage, read from the cgroup tree."""
 
 import json
@@ -38,7 +40,9 @@ with open(sys.argv[5]) as file:
     switchable = json.load(file)
 with open(sys.argv[6]) as file:
     tailscalable = json.load(file)
-ssh_key = sys.argv[7] if len(sys.argv) > 7 else None
+with open(sys.argv[7]) as file:
+    port_targets = json.load(file)
+ssh_key = sys.argv[8] if len(sys.argv) > 8 else None
 
 ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
@@ -50,7 +54,7 @@ remote_units = {name: target for name, target in units.items() if target["hosts"
 # Tile name -> hosts to ping for up/down, up if any answers: wake tiles, and
 # remote reboot, switch, tailscale and unit tiles that aren't also wake tiles.
 probed = {name: [target["host"]] for name, target in wakeable.items()}
-for targets in (rebootable, switchable, tailscalable, remote_units):
+for targets in (rebootable, switchable, tailscalable, remote_units, port_targets):
     for name, target in targets.items():
         if target["hosts"] and name not in probed:
             probed[name] = target["hosts"]
@@ -78,6 +82,12 @@ remote_unit_poke = {name: threading.Event() for name in remote_units}
 
 # Tile name -> round-trip time in ms of the last answered ping, None while down.
 latency = {name: None for name in probed}
+
+
+# Tile name -> {port: open?}, from watch_ports().
+port_state = {
+    name: {str(port): False for port in target["ports"]} for name, target in port_targets.items()
+}
 
 
 CGROUP_ROOT = Path("/sys/fs/cgroup")
@@ -214,6 +224,30 @@ def probe(name, hosts):
         rtt = next((r for r in map(ping, hosts) if r is not None), None)
         latency[name] = rtt
         reachable[name] = "up" if rtt is not None else "down"
+        time.sleep(5)
+
+
+def port_open(host, port):
+    try:
+        socket.create_connection((host, port), timeout=1).close()
+        return True
+    except OSError:
+        return False
+
+
+def watch_ports(name, target):
+    # Another host's ports only while it answers pings, so a sleeping one
+    # isn't asked for each port in turn; the first name that has any open
+    # stands for all, as they're one host.
+    hosts = target["hosts"] or ["127.0.0.1"]
+    while True:
+        state = {str(port): False for port in target["ports"]}
+        if not target["hosts"] or reachable.get(name) == "up":
+            for host in hosts:
+                state = {str(port): port_open(host, port) for port in target["ports"]}
+                if any(state.values()):
+                    break
+        port_state[name] = state
         time.sleep(5)
 
 
@@ -429,7 +463,14 @@ class Handler(BaseHTTPRequestHandler):
             if reachable.get(name) == "up"
         )
         self.reply(
-            200, {"tiles": states, "switch": switch, "tailscale": tailscale_state, "ping": latency}
+            200,
+            {
+                "tiles": states,
+                "switch": switch,
+                "tailscale": tailscale_state,
+                "ping": latency,
+                "ports": port_state,
+            },
         )
 
     def do_POST(self):
@@ -500,6 +541,8 @@ class Handler(BaseHTTPRequestHandler):
 threading.Thread(target=sample_usage, daemon=True).start()
 for name, hosts in probed.items():
     threading.Thread(target=probe, args=(name, hosts), daemon=True).start()
+for name, target in port_targets.items():
+    threading.Thread(target=watch_ports, args=(name, target), daemon=True).start()
 if ssh_key:
     for name in remote_switch:
         threading.Thread(target=watch_switch, args=(name, False), daemon=True).start()

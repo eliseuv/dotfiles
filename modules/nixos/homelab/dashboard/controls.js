@@ -1,12 +1,14 @@
 // Restart and start-or-stop (one button, last, like on/off below) buttons on
 // tiles backed by a systemd unit; host tiles get, in this order and as
-// configured: terminal, switch (pull the dotfiles and switch to them),
-// tailscale (on/off), restart, and on/off, one button that wakes the host
-// while it's down and powers it off while it's up (controls.nix).
+// configured: ports (a menu of its dev servers, each open or closed),
+// terminal, switch (pull the dotfiles and switch to them), tailscale
+// (on/off), restart, and on/off, one button that wakes the host while it's
+// down and powers it off while it's up (controls.nix).
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
-// `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host) and
-// `svcctlTerminals` (tile name -> URL) are defined ahead of this file by
-// default.nix.
+// `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host),
+// `svcctlTerminals` (tile name -> URL), `svcctlPorts` (tile name ->
+// {host, ports: [{name, port}]}) and `svcctlTailnet` ({domain, address}) are
+// defined ahead of this file by default.nix.
 (() => {
   const api = "/api/svc";
   const headers = { "X-Svcctl": "1" };
@@ -17,6 +19,8 @@
   let tailscaleStates = {};
   // Tile name -> round-trip ms of the host's last answered ping, or null.
   let pings = {};
+  // Tile name -> {port: open?} for ports tiles.
+  let portStates = {};
   // Tile name -> when its wake was sent; shown as "waking" until the host
   // answers pings or the window lapses (a cold boot takes a while).
   const wakeSent = {};
@@ -43,6 +47,7 @@
         switchStates = next.switch;
         tailscaleStates = next.tailscale;
         pings = next.ping;
+        portStates = next.ports;
         if (apiWentDown) {
           for (const name in rebootSent) if (svcctlRebootTiles[name]) delete rebootSent[name];
         }
@@ -126,6 +131,7 @@
       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
       '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>',
+    socket: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 8v4M15 8v4M9 17h6"/>',
   };
 
   const iconSvg = (icon) =>
@@ -164,7 +170,68 @@
     return element;
   };
 
-  const build = (name, kinds) => {
+  // Another host by the name the dashboard was reached with: its MagicDNS
+  // name over the tailnet, its mDNS one on the LAN; this host as the page is.
+  const portsHost = (host) => {
+    if (!host) return location.hostname;
+    const here = location.hostname;
+    const tailnet = here.endsWith(`.${svcctlTailnet.domain}`) || here === svcctlTailnet.address;
+    return `${host.toLowerCase()}.${tailnet ? svcctlTailnet.domain : "local"}`;
+  };
+
+  // Below the bar rather than over the tiles next to it, and outside it so
+  // its links don't take the bar's button styles.
+  const portsMenu = (name) => {
+    const { host, ports } = svcctlPorts[name];
+    const menu = document.createElement("div");
+    menu.className = "svcctl-ports-menu";
+    menu.hidden = true;
+    for (const { name: label, port } of ports) {
+      const link = document.createElement("a");
+      link.href = `http://${portsHost(host)}:${port}`;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.dataset.port = port;
+      link.innerHTML = '<span class="svcctl-ports-dot"></span><span></span><span></span>';
+      link.children[1].textContent = label;
+      link.children[2].textContent = `:${port}`;
+      link.addEventListener("click", (event) => event.stopPropagation());
+      menu.append(link);
+    }
+    menu.addEventListener("click", (event) => event.stopPropagation());
+    return menu;
+  };
+
+  const portsButton = (name, menu) => {
+    const element = document.createElement("button");
+    element.type = "button";
+    element.className = "svcctl-ports";
+    element.title = `Ports on ${name}`;
+    element.setAttribute("aria-expanded", "false");
+    element.innerHTML = iconSvg("socket");
+    element.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = menu.hidden;
+      closePorts();
+      menu.hidden = !open;
+      element.setAttribute("aria-expanded", String(open));
+    });
+    return element;
+  };
+
+  const closePorts = () => {
+    for (const menu of document.querySelectorAll(".svcctl-ports-menu")) menu.hidden = true;
+    for (const element of document.querySelectorAll(".svcctl-ports")) {
+      element.setAttribute("aria-expanded", "false");
+    }
+  };
+  document.addEventListener("click", closePorts);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closePorts();
+  });
+
+  const build = (name, kinds, menu) => {
     const bar = document.createElement("div");
     bar.className = "svcctl";
     const state = document.createElement("span");
@@ -173,6 +240,7 @@
     if (kinds.unit) {
       bar.append(button(name, "restart", "restart"), button(name, "run", "play"));
     }
+    if (kinds.ports) bar.append(portsButton(name, menu));
     if (kinds.terminal) bar.append(terminalLink(name));
     if (kinds.switch) bar.append(button(name, "switch", "download"));
     if (kinds.tailscale) bar.append(button(name, "tailscale", "link"));
@@ -208,20 +276,25 @@
         switch: svcctlSwitchTiles.includes(name),
         terminal: name in svcctlTerminals,
         tailscale: svcctlTailscaleTiles.includes(name),
+        ports: name in svcctlPorts,
       };
       if (!Object.values(kinds).some(Boolean)) continue;
       const card = tile.firstElementChild;
       if (!card) continue;
       let bar = card.querySelector(":scope > .svcctl");
       if (!bar) {
-        bar = build(name, kinds);
+        const menu = kinds.ports ? portsMenu(name) : null;
+        bar = build(name, kinds, menu);
         card.append(bar);
+        if (menu) card.append(menu);
       }
       const state = displayState(name);
       const switchState = kinds.switch ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
       const ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
+      const portState = kinds.ports ? JSON.stringify(portStates[name] || {}) : "";
       if (
+        (bar.dataset.ports || "") === portState &&
         bar.dataset.ping === ping &&
         bar.dataset.state === state &&
         (bar.dataset.switch || "") === switchState &&
@@ -259,6 +332,18 @@
         element.disabled = state !== "up" || tailscaleState === "unknown";
         element.title =
           tailscaleState === "on" ? `Turn Tailscale off on ${name}` : `Turn Tailscale on on ${name}`;
+      }
+      if (kinds.ports) {
+        bar.dataset.ports = portState;
+        const open = portStates[name] || {};
+        const menu = card.querySelector(":scope > .svcctl-ports-menu");
+        for (const link of menu.children) link.dataset.open = String(!!open[link.dataset.port]);
+        const element = bar.querySelector(".svcctl-ports");
+        element.disabled = state !== "up";
+        if (element.disabled) {
+          menu.hidden = true;
+          element.setAttribute("aria-expanded", "false");
+        }
       }
       if (kinds.reboot) bar.querySelector(".svcctl-reboot").disabled = state !== "up";
       if (kinds.switch) {
