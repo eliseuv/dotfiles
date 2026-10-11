@@ -183,162 +183,87 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usag
   box-shadow: 0 0 6px rgb(var(--cube-pink) / 0.6);
 }
 
-/* Homepage only loads icons from URLs or its CDNs, so the tile keeps
-   synology.png as a fallback and matches on it: the icon link's aria-label is
-   the configured icon name. */
-.service-icon[aria-label="synology.png"] > * {
-  display: none;
+/* Flat host portraits share explicit on, off and unknown artwork.
+   controls.js supplies reachability through the control bar's data-state. */
+li.service[data-name="Wheatley"] {
+  --host-on: var(--host-wheatley-on);
+  --host-off: var(--host-wheatley-off);
+  --host-unknown: var(--host-wheatley-unknown);
+  --host-accent: 95 195 255;
 }
 
-.service-icon[aria-label="synology.png"]::before {
-  content: "";
-  width: 32px;
-  height: 32px;
-  background: var(--companion-cube) center / contain no-repeat;
-}
-
-/* GLaDOS (her wake tile, see hosts/wheatley/system.nix): her mask with the
-   faceplate and optic drawn in, the optic lit yellow while she answers pings,
-   dim while she sleeps, flickering while she boots. Keyed on the tile name and the wake
-   bar's state (controls.js), since the icon itself is a placeholder. */
-:root {
-  --glados-yellow: 255 204 51;
-  --glados-chassis: #fff;
+li.service[data-name="Companion Cube"] {
+  --host-on: var(--host-cube-on);
+  --host-off: var(--host-cube-off);
+  --host-unknown: var(--host-cube-unknown);
+  --host-accent: 244 140 190;
 }
 
 li.service[data-name="GLaDOS"] {
-  --eye: rgb(var(--glados-yellow) / 0.6);
-  --eye-glow: transparent;
+  --host-on: var(--host-glados-on);
+  --host-off: var(--host-glados-off);
+  --host-unknown: var(--host-glados-unknown);
+  --host-accent: 255 204 51;
 }
 
-li.service[data-name="GLaDOS"]:has(.svcctl[data-state="up"]) {
-  --eye: rgb(var(--glados-yellow));
-  --eye-glow: rgb(var(--glados-yellow) / 0.55);
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) {
+  --host-image: var(--host-unknown);
 }
 
-li.service[data-name="GLaDOS"] .service-card {
-  --ring: var(--glados-yellow);
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl[data-state="down"]) {
+  --host-image: var(--host-off);
 }
 
-li.service[data-name="GLaDOS"] .service-icon > * {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl:is([data-state="up"], [data-state="waking"], [data-state="rebooting"], [data-state="shutting-down"])) {
+  --host-image: var(--host-on);
+}
+
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-card {
+  --ring: var(--host-accent);
+}
+
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-icon > * {
   display: none;
 }
 
-li.service[data-name="GLaDOS"] .service-icon {
-  filter: drop-shadow(0 0 4px var(--eye-glow));
-}
-
-li.service[data-name="GLaDOS"] .service-icon::before {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-icon::before {
   content: "";
   width: 32px;
   height: 32px;
-  background:
-    radial-gradient(circle at 50% 55%, var(--eye) 0 1.6px, #111 1.9px 2.3px, var(--eye) 2.6px 3px, transparent 3.3px),
-    var(--glados-face) center / contain no-repeat,
-    var(--glados-chassis);
-  -webkit-mask: var(--glados) center / contain no-repeat;
-  mask: var(--glados) center / contain no-repeat;
+  background: var(--host-image) center / contain no-repeat;
 }
 
-li.service[data-name="GLaDOS"]:has(.svcctl[data-state="waking"]) .service-icon::before,
-li.service[data-name="GLaDOS"]:has(.svcctl[data-state="rebooting"]) .service-icon::before {
-  --eye: rgb(var(--glados-yellow));
-  animation: glados-boot 1.6s steps(1) infinite;
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl:is([data-state="waking"], [data-state="rebooting"])) .service-icon::before {
+  animation: host-boot 1.6s steps(1) infinite;
 }
 
-@keyframes glados-boot {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl[data-state="shutting-down"]) .service-icon::before {
+  animation: host-fade 2.4s ease-in-out infinite alternate;
+}
+
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .svcctl:is([data-state="up"], [data-state="waking"], [data-state="rebooting"], [data-state="shutting-down"]) .svcctl-state {
+  color: rgb(var(--host-accent));
+}
+
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .svcctl button:hover:not(:disabled),
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .svcctl a:hover:not([aria-disabled="true"]) {
+  box-shadow: 0 0 0 1px rgb(var(--host-accent));
+}
+
+@keyframes host-boot {
   0%, 30%, 55% { opacity: 1; }
   25%, 50%, 85% { opacity: 0.35; }
 }
 
-li.service[data-name="GLaDOS"]:has(.svcctl[data-state="shutting-down"]) .service-icon::before {
-  --eye: rgb(var(--glados-yellow));
-  animation: glados-fade 2.4s ease-in-out infinite alternate;
-}
-
-@keyframes glados-fade {
+@keyframes host-fade {
   from { opacity: 1; }
   to { opacity: 0.35; }
 }
 
-/* The bar's state in her optic's yellow whenever she's anything but off. */
-li.service[data-name="GLaDOS"] .svcctl:is(
-  [data-state="up"],
-  [data-state="waking"],
-  [data-state="shutting-down"],
-  [data-state="rebooting"]
-) .svcctl-state {
-  color: rgb(var(--glados-yellow));
-}
-
-li.service[data-name="GLaDOS"] .svcctl button:hover:not(:disabled),
-li.service[data-name="GLaDOS"] .svcctl a:hover:not([aria-disabled="true"]) {
-  box-shadow: 0 0 0 1px rgb(var(--glados-yellow));
-}
-
-/* Wheatley (his reboot tile, see hosts/wheatley/system.nix): the core mask
-   with his optic drawn in, lit blue while he serves the dashboard and
-   flickering while he reboots. Keyed on the tile name and the reboot bar's
-   state (controls.js), like GLaDOS's tile. */
-:root {
-  --wheatley-blue: 0 132 214;
-  --wheatley-chassis: rgb(var(--color-600));
-}
-
-html.dark {
-  --wheatley-blue: 95 195 255;
-  /* Fixed cool grey: the dark palette's light shades run warm, and his
-     shell is white plastic. */
-  --wheatley-chassis: rgb(196 204 212);
-}
-
-li.service[data-name="Wheatley"] {
-  --eye: rgb(var(--color-500) / 0.6);
-  --eye-glow: transparent;
-}
-
-li.service[data-name="Wheatley"]:has(.svcctl[data-state="up"]) {
-  --eye: rgb(var(--wheatley-blue));
-  --eye-glow: rgb(var(--wheatley-blue) / 0.55);
-}
-
-li.service[data-name="Wheatley"] .service-card {
-  --ring: var(--wheatley-blue);
-}
-
-li.service[data-name="Wheatley"] .service-icon > * {
-  display: none;
-}
-
-li.service[data-name="Wheatley"] .service-icon {
-  filter: drop-shadow(0 0 4px var(--eye-glow));
-}
-
-li.service[data-name="Wheatley"] .service-icon::before {
-  content: "";
-  width: 32px;
-  height: 32px;
-  background:
-    radial-gradient(circle at 50% 53%, var(--eye) 0 4px, #111 4.5px 6.5px, transparent 7px),
-    var(--wheatley-chassis);
-  -webkit-mask: var(--wheatley) center / contain no-repeat;
-  mask: var(--wheatley) center / contain no-repeat;
-}
-
-/* Same stutter as GLaDOS booting. */
-li.service[data-name="Wheatley"]:has(.svcctl[data-state="rebooting"]) .service-icon::before {
-  --eye: rgb(var(--wheatley-blue));
-  animation: glados-boot 1.6s steps(1) infinite;
-}
-
-/* The reboot bar's state in his optic's blue while he's on or rebooting. */
-li.service[data-name="Wheatley"] .svcctl:is([data-state="up"], [data-state="rebooting"]) .svcctl-state {
-  color: rgb(var(--wheatley-blue));
-}
-
-li.service[data-name="Wheatley"] .svcctl button:hover:not(:disabled),
-li.service[data-name="Wheatley"] .svcctl a:hover:not([aria-disabled="true"]) {
-  box-shadow: 0 0 0 1px rgb(var(--wheatley-blue));
+@media (prefers-reduced-motion: reduce) {
+  li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-icon::before {
+    animation: none;
+  }
 }
 
 /* The OS drives light/dark now (theme.js). */

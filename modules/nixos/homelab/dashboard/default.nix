@@ -62,7 +62,9 @@ let
   # Tiles with a host page switch from there (its config page button) rather
   # than from a button of their own.
   switchTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.switch != null && service.dashboard.page == null) tiled
+    lib.filterAttrs (
+      _: service: service.dashboard.switch != null && service.dashboard.page == null
+    ) tiled
   );
   # Tile name -> host whose page the tile's config page button opens.
   pageTiles = lib.mapAttrs' (
@@ -129,13 +131,14 @@ let
       href = "/hosts/?host=${tileCfg.page}";
       target = "_self";
     }
-    // lib.optionalAttrs (
-      tileCfg.href == null && tileCfg.terminal == null && tileCfg.page == null && linked
-    ) {
-      href = "http://${linkHost}:${toString service.port}";
-      siteMonitor = local;
-      statusStyle = "basic";
-    }
+    //
+      lib.optionalAttrs
+        (tileCfg.href == null && tileCfg.terminal == null && tileCfg.page == null && linked)
+        {
+          href = "http://${linkHost}:${toString service.port}";
+          siteMonitor = local;
+          statusStyle = "basic";
+        }
     // lib.optionalAttrs (tileCfg.widget != null && tileCfg.extraWidgets == [ ]) {
       widget = mainWidget;
     }
@@ -290,25 +293,8 @@ let
 
   inherit (import ./_svg.nix) svgUri iris;
 
-  # Companion Cube face: gray panels and pale corner pads with a pink ring
-  # and heart, shared by the NAS storage readout and service tile.
-  companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='20' height='20' rx='3' fill='#92969b' stroke='#62666b' stroke-width='1.8'/><g fill='#d6d8da' stroke='#62666b' stroke-width='0.6'><rect x='2' y='2' width='6' height='6' rx='2'/><rect x='16' y='2' width='6' height='6' rx='2'/><rect x='2' y='16' width='6' height='6' rx='2'/><rect x='16' y='16' width='6' height='6' rx='2'/></g><circle cx='12' cy='12' r='5' fill='#b8bbbf' stroke='#f48cbe' stroke-width='1.6'/><path d='M12 14.6l-2.3-2.2a1.35 1.35 0 0 1 2.3-1.8a1.35 1.35 0 0 1 2.3 1.8z' fill='#f48cbe'/></svg>";
+  hostIcons = import ./_host-icons.nix;
 
-  # GLaDOS from the front, after the usual fan art: her stalk and cables, the
-  # tall head and the disc behind it, kept apart by a gap cut around the head,
-  # as a CSS mask for her wake tile. The faceplate is drawn separately, as a
-  # dark layer under the optic (theme.css), since a mask has one colour; its
-  # light rim outlines it against the white chassis.
-  glados =
-    let
-      head = "M9.4 9C9.4 6 11 5.2 16 4.8C21 5.2 22.6 6 22.6 9C22 13 22 19 22.6 23C22.6 26.5 19.5 28.4 16 28.4C12.5 28.4 9.4 26.5 9.4 23C10 19 10 13 9.4 9z";
-    in
-    svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><mask id='m'><rect width='32' height='32' fill='white'/><path d='${head}' fill='black' stroke='black' stroke-width='1.8'/></mask><g mask='url(#m)'><circle cx='16' cy='16' r='9.6'/><path d='M14 0C14 2 11.6 3 11.2 6.4M18 0C18 2 20.4 3 20.8 6.4' fill='none' stroke='black' stroke-width='1.1'/></g><rect x='14.4' y='0' width='3.2' height='6'/><path d='${head}'/></svg>";
-  gladosFace = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='12.6' y='10.4' width='6.8' height='13.5' rx='2.5' fill='#141414' stroke='#b4b4b4' stroke-width='0.7'/></svg>";
-
-  # Wheatley's personality core: the sphere between its two carry handles, as
-  # a CSS mask for his reboot tile; theme.css draws the optic into it.
-  wheatley = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='17' r='11'/><path fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' d='M5 9A13 13 0 0 1 27 9M5 25A13 13 0 0 0 27 25'/></svg>";
 in
 {
 
@@ -452,16 +438,21 @@ in
       + builtins.readFile ./controls.js
       + builtins.readFile ./tasks.js;
 
-      # @import must stay first in the stylesheet, so the mask is appended.
+      # @import must stay first, so the icon URLs are appended.
       customCSS =
         builtins.readFile ./theme.css
         + ''
           :root {
             --aperture-iris: url("${iris "black"}");
-            --companion-cube: url("${companionCube}");
-            --glados: url("${glados}");
-            --glados-face: url("${gladosFace}");
-            --wheatley: url("${wheatley}");
+            --companion-cube: url("${hostIcons.cube.on}");
+            ${lib.concatStringsSep "\n" (
+              lib.mapAttrsToList (
+                name: states:
+                lib.concatStringsSep "\n" (
+                  lib.mapAttrsToList (state: uri: "--host-${name}-${state}: url(\"${uri}\");") states
+                )
+              ) hostIcons
+            )}
           }
         ''
         + builtins.readFile ./controls.css
