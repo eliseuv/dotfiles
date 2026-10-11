@@ -67,8 +67,8 @@ in
       interfaces.tailscale0.allowedTCPPorts = tcpPorts "tailnet";
       interfaces.tailscale0.allowedUDPPorts = udpPorts "tailnet";
       # Forced so it also drops the 5173 (vite) that the shared
-      # core/network.nix opens to everyone; the homelab keeps that one
-      # LAN-only (wheatley's services/dev.nix).
+      # core/network.nix opens to everyone; the homelab scopes that one to
+      # the LAN and tailnet (wheatley's services/dev.nix).
       allowedTCPPorts = lib.mkForce (tcpPorts "public");
       allowedUDPPorts = udpPorts "public";
     };

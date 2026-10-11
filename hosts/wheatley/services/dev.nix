@@ -5,7 +5,10 @@
 {
 
   homelab.services = {
-    vite.port = 5173;
+    vite = {
+      port = 5173;
+      expose = "tailnet";
+    };
     # Vite's next choice when 5173 is taken.
     vite-fallback.port = 5174;
     zola.port = 1111;
