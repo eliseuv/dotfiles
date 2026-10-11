@@ -36,7 +36,6 @@ let
       name = "Media";
       columns = 3;
     }
-    { name = "Dev"; }
     { name = "Games"; }
   ];
 

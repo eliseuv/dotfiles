@@ -1,17 +1,20 @@
-# Pluto notebooks, here and on GLaDOS, started and stopped from Dev tiles and
-# opened through the dashboard's nginx behind its login (dashboard/controls.nix
-# adds it for the tiles' paths); the units are modules/nixos/services/pluto.
-# nginx hands each Pluto its secret as the cookie Pluto would otherwise set
-# after a ?secret= visit, so the tile is a plain link. Pluto only uses that
+# Pluto notebooks, here and on GLaDOS, started and stopped from their hosts'
+# ports menus and opened through the dashboard's nginx behind its login
+# (dashboard/controls.nix adds it for the entries' paths); the units are
+# modules/nixos/services/pluto. nginx hands each Pluto its secret as the
+# cookie Pluto would otherwise set after a ?secret= visit, so the entry is a
+# plain link. Pluto only uses that
 # cookie, so replacing the browser's Cookie header loses nothing.
 { config, ... }:
 let
   cfg = config.my.services.pluto;
-  glados = {
+  glados = rec {
     basePath = "/glados/pluto/";
+    # Her my.services.pluto.port.
+    port = 1234;
     # Her tailnet address, as for her terminal (system.nix): nginx resolves
-    # upstream names once at startup. Port is her my.services.pluto.port.
-    upstream = "http://100.110.170.42:1234";
+    # upstream names once at startup.
+    upstream = "http://100.110.170.42:${toString port}";
   };
 
   cookieTemplate = secret: {
@@ -54,25 +57,17 @@ in
     ${glados.basePath} = location glados.upstream "pluto-cookie-glados.conf";
   };
 
+  # The menus probe the port itself, which on GLaDOS only wheatley may reach.
   homelab.services = {
-    pluto-wheatley.dashboard = {
-      name = "Pluto · Wheatley";
-      group = "Dev";
-      order = 0;
-      description = "Julia notebooks on Wheatley";
-      icon = "si-julia";
+    wheatley.dashboard.ports.Pluto = {
+      inherit (cfg) port;
       href = cfg.basePath;
       unit = "pluto.service";
     };
-    pluto-glados.dashboard = {
-      name = "Pluto · GLaDOS";
-      group = "Dev";
-      order = 0;
-      description = "Julia notebooks on GLaDOS";
-      icon = "si-julia";
+    glados.dashboard.ports.Pluto = {
+      inherit (glados) port;
       href = glados.basePath;
       unit = "pluto.service";
-      unitHost = "GLaDOS";
     };
   };
 
