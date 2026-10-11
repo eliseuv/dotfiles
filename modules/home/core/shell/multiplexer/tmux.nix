@@ -150,6 +150,13 @@ in
       # Fix Neovim colors
       set -sg terminal-overrides ",*:RGB"
 
+      # Pass modified keys (e.g. Shift+Enter, Shift+Space) through to apps.
+      # Without this tmux collapses them to the plain key. csi-u format is
+      # what Claude Code / kitty-protocol apps expect.
+      set -s extended-keys on
+      set -s extended-keys-format csi-u
+      set -as terminal-features ",*:extkeys"
+
       # Image rendering: let kitty graphics escapes reach the outer terminal.
       # "on" rather than "all" so hidden panes can't leave stray images.
       set -g allow-passthrough on
