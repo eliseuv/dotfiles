@@ -64,6 +64,13 @@ in
     reboot = "GLaDOS";
     tailscale = "GLaDOS";
     page = "GLaDOS";
+    # Mirrors her devPorts (hosts/GLaDOS/system.nix), which open them.
+    portsHost = "GLaDOS";
+    ports = {
+      HTTP = 8080;
+      Zola = 1111;
+      Vite = 5173;
+    };
   };
   # For the dashboard's power-off (over mDNS) and switch (over the tailnet),
   # which SSH to her with strict host key checking.
@@ -132,6 +139,11 @@ in
     switch = "wheatley";
     terminal = "/wheatley/terminal/";
     page = "wheatley";
+    ports = with config.homelab.services; {
+      Vite = vite.port;
+      "Vite (fallback)" = vite-fallback.port;
+      Zola = zola.port;
+    };
   };
 
   # Wake, switch and restart buttons for rattmann, the old laptop that serves
