@@ -12,10 +12,24 @@
 # a server on the default socket, which would make terminal sessions run
 # inside this service's environment (no devshell/direnv PATH). To attach
 # deliberately: `codex --remote unix://$XDG_RUNTIME_DIR/codex-remote-control/app-server.sock`.
-{ config, lib, ... }:
+# Pair with `codex-remote-pair`; see docs/codex-remote-control.md.
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  pairingPython = pkgs.python3.withPackages (ps: [ ps.websocket-client ]);
+  pair = pkgs.writeShellScriptBin "codex-remote-pair" ''
+    exec ${pairingPython}/bin/python3 ${./codex-remote-pair.py} "$@"
+  '';
+in
 {
 
   config = lib.mkIf config.my.home.remoteAccess.enable {
+
+    home.packages = [ pair ];
 
     systemd.user.services.codex-remote-control = {
       Unit = {

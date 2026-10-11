@@ -18,6 +18,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 - **Secrets**: [sops-nix](https://github.com/Mic92/sops-nix)
 - **Editor**: Neovim (Nightly)
 - **Helper Tools**: `nh`, `just`
+- **Codex Remote Control**: private service socket and [app pairing helper](docs/codex-remote-control.md)
 - **Other Inputs**: `spicetify-nix`, `yt-x`, `catppuccin`, `nix-minecraft`
 
 ## Structure
