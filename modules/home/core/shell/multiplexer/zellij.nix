@@ -463,10 +463,11 @@ in
   # Auto-attach on interactive SSH logins. Ordered ahead of zsh.nix's
   # fastfetch, which zellij's screen would otherwise cover. $SSH_TTY is unset
   # for tty-less sessions (scp/rsync/ProxyJump -W) and $ZELLIJ prevents
-  # nesting (also covers wheatley's ttyd). No exec, so detaching drops back
-  # to a plain shell instead of disconnecting.
+  # nesting (also covers wheatley's ttyd). $TMUX is checked too because a tmux
+  # server started over SSH hands $SSH_TTY to every pane it spawns. No exec,
+  # so detaching drops back to a plain shell instead of disconnecting.
   programs.zsh.initContent = lib.mkOrder 200 ''
-    if [[ -n $SSH_TTY && -z $ZELLIJ ]]; then
+    if [[ -n $SSH_TTY && -z $ZELLIJ && -z $TMUX ]]; then
       ${lib.getExe pkgs.zellij} attach --create ssh
     fi
   '';
