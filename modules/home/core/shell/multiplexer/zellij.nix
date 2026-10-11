@@ -460,18 +460,6 @@ in
   # level (see extraConfig above), so Neovim's vim-tmux-navigator should defer
   # to it rather than also claiming those keys.
   # Scroll mode supports vi motion/search; select text with the mouse to copy.
-  # Auto-attach on interactive SSH logins. Ordered ahead of zsh.nix's
-  # fastfetch, which zellij's screen would otherwise cover. $SSH_TTY is unset
-  # for tty-less sessions (scp/rsync/ProxyJump -W) and $ZELLIJ prevents
-  # nesting (also covers wheatley's ttyd). $TMUX is checked too because a tmux
-  # server started over SSH hands $SSH_TTY to every pane it spawns. No exec,
-  # so detaching drops back to a plain shell instead of disconnecting.
-  programs.zsh.initContent = lib.mkOrder 200 ''
-    if [[ -n $SSH_TTY && -z $ZELLIJ && -z $TMUX ]]; then
-      ${lib.getExe pkgs.zellij} attach --create ssh
-    fi
-  '';
-
   home.shellAliases = {
     zj = "zellij attach --create";
     zja = "zellij attach";
