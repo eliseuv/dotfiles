@@ -290,9 +290,9 @@ let
 
   inherit (import ./_svg.nix) svgUri iris;
 
-  # Companion Cube face (corner pads, ring, heart) as a CSS mask for the NAS
-  # storage readout and service tile.
-  companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='20' height='20' rx='3' fill='none' stroke='black' stroke-width='1.8'/><rect x='2' y='2' width='6' height='6' rx='2'/><rect x='16' y='2' width='6' height='6' rx='2'/><rect x='2' y='16' width='6' height='6' rx='2'/><rect x='16' y='16' width='6' height='6' rx='2'/><circle cx='12' cy='12' r='5' fill='none' stroke='black' stroke-width='1.6'/><path d='M12 14.6l-2.3-2.2a1.35 1.35 0 0 1 2.3-1.8a1.35 1.35 0 0 1 2.3 1.8z'/></svg>";
+  # Companion Cube face: gray panels and pale corner pads with a pink ring
+  # and heart, shared by the NAS storage readout and service tile.
+  companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='2' y='2' width='20' height='20' rx='3' fill='#92969b' stroke='#62666b' stroke-width='1.8'/><g fill='#d6d8da' stroke='#62666b' stroke-width='0.6'><rect x='2' y='2' width='6' height='6' rx='2'/><rect x='16' y='2' width='6' height='6' rx='2'/><rect x='2' y='16' width='6' height='6' rx='2'/><rect x='16' y='16' width='6' height='6' rx='2'/></g><circle cx='12' cy='12' r='5' fill='#b8bbbf' stroke='#f48cbe' stroke-width='1.6'/><path d='M12 14.6l-2.3-2.2a1.35 1.35 0 0 1 2.3-1.8a1.35 1.35 0 0 1 2.3 1.8z' fill='#f48cbe'/></svg>";
 
   # GLaDOS from the front, after the usual fan art: her stalk and cables, the
   # tall head and the disc behind it, kept apart by a gap cut around the head,

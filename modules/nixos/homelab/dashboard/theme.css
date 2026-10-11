@@ -146,7 +146,7 @@ html.dark .information-widget-greeting span {
 }
 
 /* Companion Cube (NAS): the storage readout (the last header widget) and the
-   DSM service tile, see default.nix. Both get the cube face, in pink. */
+   DSM service tile, see default.nix. Both use the gray cube with pink accents. */
 :root {
   --cube-pink: 200 64 132;
 }
@@ -168,9 +168,7 @@ html.dark {
   width: 1.25rem;
   height: 1.25rem;
   flex-shrink: 0;
-  background: rgb(var(--cube-pink));
-  -webkit-mask: var(--companion-cube) center / contain no-repeat;
-  mask: var(--companion-cube) center / contain no-repeat;
+  background: var(--companion-cube) center / contain no-repeat;
 }
 
 #widgets-wrap > :nth-last-child(1 of .widget-container) .text-theme-800 {
@@ -196,9 +194,7 @@ html.dark #widgets-wrap > :nth-last-child(1 of .widget-container) .resource-usag
   content: "";
   width: 32px;
   height: 32px;
-  background: rgb(var(--cube-pink));
-  -webkit-mask: var(--companion-cube) center / contain no-repeat;
-  mask: var(--companion-cube) center / contain no-repeat;
+  background: var(--companion-cube) center / contain no-repeat;
 }
 
 /* GLaDOS (her wake tile, see hosts/wheatley/system.nix): her mask with the
