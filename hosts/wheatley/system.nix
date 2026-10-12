@@ -3,7 +3,7 @@ let
   # rattmann's tailnet address, for his terminal. TODO: fill in once he has
   # joined (`tailscale up`); while null he has no terminal button or proxy.
   rattmannAddress = null;
-  # chell's, for her terminal
+  # chell's, for her terminal (`tailscale ip -4` there)
   chellAddress = "100.100.96.14";
 in
 {
@@ -186,29 +186,37 @@ in
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMSS/e/drunmk5UHJ5mplGg0hIKznGeZWL/eL7QRlYKU";
   };
 
-  # Switch and tailscale buttons for chell, the shared family workstation
-  # (hosts/chell); no power buttons, as someone else may be using it.
+  # The same buttons as GLaDOS's for chell, the shared family workstation
+  # (hosts/chell). Dual-booted with pop-os, whose tile wakes the same machine.
   homelab.services.chell.dashboard = {
     name = "Chell";
     group = "Hosts";
     order = 5;
     icon = "mdi-desktop-tower";
     link = false;
+    wake = "chell";
+    poweroff = true;
+    terminal = "/chell/terminal/";
     switch = "chell";
+    reboot = "chell";
     tailscale = "chell";
     page = "chell";
-    terminal = lib.mkIf (chellAddress != null) "/chell/terminal/";
+    # Mirrors her devPorts (hosts/chell/system.nix), which open them.
+    portsHost = "chell";
+    ports = {
+      HTTP = 8080;
+      Zola = 1111;
+      Vite = 5173;
+    };
   };
-  # Her ttyd, proxied and firewalled as rattmann's
-  services.nginx.virtualHosts.dashboard.locations."/chell/terminal/" =
-    lib.mkIf (chellAddress != null)
-      {
-        proxyPass = "http://${chellAddress}:3000";
-        proxyWebsockets = true;
-        extraConfig = ''
-          proxy_read_timeout 1d;
-        '';
-      };
+  # Her ttyd, proxied by tailnet address and firewalled as GLaDOS's
+  services.nginx.virtualHosts.dashboard.locations."/chell/terminal/" = {
+    proxyPass = "http://${chellAddress}:3000";
+    proxyWebsockets = true;
+    extraConfig = ''
+      proxy_read_timeout 1d;
+    '';
+  };
   programs.ssh.knownHosts."chell.local" = {
     extraHostNames = [ "chell.${config.homelab.network.tailnetDomain}" ];
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOJ7vohSNKj77Q/2SrcKtNsWgFa/FCnx++p8rL/W+WYk";
