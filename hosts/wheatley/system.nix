@@ -3,6 +3,8 @@ let
   # rattmann's tailnet address, for his terminal. TODO: fill in once he has
   # joined (`tailscale up`); while null he has no terminal button or proxy.
   rattmannAddress = null;
+  # chell's, likewise. TODO: fill in after `sudo tailscale up` on chell.
+  chellAddress = null;
 in
 {
 
@@ -182,6 +184,34 @@ in
   programs.ssh.knownHosts."rattmann.local" = {
     extraHostNames = [ "rattmann.${config.homelab.network.tailnetDomain}" ];
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMSS/e/drunmk5UHJ5mplGg0hIKznGeZWL/eL7QRlYKU";
+  };
+
+  # Switch and tailscale buttons for chell, the shared family workstation
+  # (hosts/chell); no power buttons, as someone else may be using it.
+  homelab.services.chell.dashboard = {
+    name = "Chell";
+    group = "Hosts";
+    order = 5;
+    icon = "mdi-desktop-tower";
+    link = false;
+    switch = "chell";
+    tailscale = "chell";
+    page = "chell";
+    terminal = lib.mkIf (chellAddress != null) "/chell/terminal/";
+  };
+  # Her ttyd, proxied and firewalled as rattmann's
+  services.nginx.virtualHosts.dashboard.locations."/chell/terminal/" =
+    lib.mkIf (chellAddress != null)
+      {
+        proxyPass = "http://${chellAddress}:3000";
+        proxyWebsockets = true;
+        extraConfig = ''
+          proxy_read_timeout 1d;
+        '';
+      };
+  programs.ssh.knownHosts."chell.local" = {
+    extraHostNames = [ "chell.${config.homelab.network.tailnetDomain}" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOJ7vohSNKj77Q/2SrcKtNsWgFa/FCnx++p8rL/W+WYk";
   };
 
   # Remove bootloader timeout
