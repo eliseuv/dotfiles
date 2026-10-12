@@ -1,4 +1,10 @@
-update *inputs:
+# Best-effort `git pull --rebase`, so a recipe that commits or pushes starts
+# from the remote's tip. Failure (offline, dirty tree, conflicts) is not fatal.
+[private]
+pull:
+    -git pull --rebase
+
+update *inputs: pull
     nix flake update {{inputs}} --verbose
     git restore --staged .
     git add flake.lock
@@ -126,14 +132,14 @@ home-switch-others except=env('USER'):
 
 after-switch: record-gen commit-gen home-switch gc
 
-system-test: sudo-keepalive && home-switch
+system-test: pull sudo-keepalive && home-switch
     nh os test .
 
-system-switch: sudo-keepalive && after-switch
+system-switch: pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os switch .
 
-system-boot: sudo-keepalive && after-switch
+system-boot: pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os boot .
 
@@ -148,7 +154,7 @@ update-home:
 # Pin a locally-packaged service (pkgs/<pkg>/pin.json) to the current HEAD
 # of the repo it points at, and commit that. No-op when already pinned
 # there, so re-running after a partial failure is safe.
-pin-service pkg:
+pin-service pkg: pull
     #!/usr/bin/env bash
     set -euo pipefail
     pin="pkgs/{{pkg}}/pin.json"
