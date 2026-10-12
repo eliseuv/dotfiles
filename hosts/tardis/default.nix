@@ -18,11 +18,8 @@
 
   my.services = {
     tailscale.enable = true;
-    nas = {
-      enable = true;
-      # For `nas mount tailnet`, away from home
-      tailnetAddress = "100.109.162.27";
-    };
+    # Its tailnet address is in system.nix
+    nas.enable = true;
   };
 
   my.secrets.user.enable = true;

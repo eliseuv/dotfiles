@@ -1,10 +1,10 @@
 # Service registry: each service declares its port and who may reach it once,
 # next to its own config. firewall.nix opens ports from it; the dashboard adds
 # a `dashboard` sub-option and builds its tiles from it (dashboard/).
-# Also the network facts several modules need (values set by the host).
+# Also the network facts several modules need (values in network.nix).
 # Declarations only; the modules that act on them are gated by
 # `my.homelab.enable`.
-{ lib, ... }:
+{ config, lib, ... }:
 let
   str = description: lib.mkOption { type = lib.types.str; inherit description; };
 in
@@ -14,7 +14,13 @@ in
     lanSubnet = str "LAN IPv4 subnet, CIDR; the firewall's LAN tier.";
     nasAddress = str "The Synology NAS's LAN name, resolved over mDNS.";
     tailnetDomain = str "The tailnet's MagicDNS suffix.";
-    tailnetAddress = str "This host's Tailscale IPv4 address.";
+    tailnet = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.nullOr lib.types.str);
+      description = "Tailscale IPv4 addresses by machine (hosts/ names, and others'); null for one not yet joined. The router hands out no fixed LAN addresses, so hosts reach each other by these.";
+    };
+    tailnetAddress = str "This host's Tailscale IPv4 address." // {
+      default = config.homelab.network.tailnet.${config.my.host.name};
+    };
   };
 
   options.homelab.services = lib.mkOption {

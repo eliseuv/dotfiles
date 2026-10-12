@@ -135,7 +135,7 @@ the forced command and sudoers line above.
 
 ttyd comes from apt. wheatley's nginx proxies `/pop-os/terminal/` to
 `100.68.2.108:3000`, pop-os's tailnet address. If that address ever changes,
-update `hosts/wheatley/system.nix`. `/etc/systemd/system/ttyd.service`:
+update `homelab.network.tailnet` in `modules/nixos/homelab/network.nix`. `/etc/systemd/system/ttyd.service`:
 
 ```ini
 [Unit]

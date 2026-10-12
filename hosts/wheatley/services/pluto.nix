@@ -8,19 +8,19 @@
 { config, ... }:
 let
   cfg = config.my.services.pluto;
+  inherit (config.homelab.network) tailnet;
   glados = rec {
     basePath = "/glados/pluto/";
     # Her my.services.pluto.port.
     port = 1234;
-    # Her tailnet address, as for her terminal (system.nix): nginx resolves
+    # By tailnet address, as for her terminal (system.nix): nginx resolves
     # upstream names once at startup.
-    upstream = "http://100.110.170.42:${toString port}";
+    upstream = "http://${tailnet.GLaDOS}:${toString port}";
   };
   chell = rec {
     basePath = "/chell/pluto/";
     port = 1234;
-    # Her chellAddress (system.nix)
-    upstream = "http://100.100.96.14:${toString port}";
+    upstream = "http://${tailnet.chell}:${toString port}";
   };
 
   cookieTemplate = secret: {

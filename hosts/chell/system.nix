@@ -6,6 +6,7 @@ let
     1111
     5173
   ];
+  network = config.homelab.network;
 in
 {
 
@@ -19,11 +20,11 @@ in
   # source address) and the tailnet. Both as for GLaDOS
   # (hosts/GLaDOS/system.nix).
   networking.firewall.extraCommands = ''
-    iptables -A nixos-fw -i tailscale0 -s 100.97.1.97 -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
-    iptables -A nixos-fw -i tailscale0 -s 100.97.1.97 -p tcp --dport ${toString config.my.services.pluto.port} -j nixos-fw-accept
+    iptables -A nixos-fw -i tailscale0 -s ${network.tailnet.wheatley} -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
+    iptables -A nixos-fw -i tailscale0 -s ${network.tailnet.wheatley} -p tcp --dport ${toString config.my.services.pluto.port} -j nixos-fw-accept
   ''
   + lib.concatMapStrings (port: ''
-    iptables -A nixos-fw -s 192.168.0.0/24 -p tcp --dport ${toString port} -j nixos-fw-accept
+    iptables -A nixos-fw -s ${network.lanSubnet} -p tcp --dport ${toString port} -j nixos-fw-accept
     iptables -A nixos-fw -i tailscale0 -p tcp --dport ${toString port} -j nixos-fw-accept
   '') devPorts;
 

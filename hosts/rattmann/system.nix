@@ -48,7 +48,7 @@ in
   # Its ttyd runs a shell as evf, so only wheatley (its reverse proxy) may
   # reach it, over the tailnet; as for GLaDOS (hosts/GLaDOS/system.nix).
   networking.firewall.extraCommands = ''
-    iptables -A nixos-fw -i tailscale0 -s 100.97.1.97 -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
+    iptables -A nixos-fw -i tailscale0 -s ${config.homelab.network.tailnet.wheatley} -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
   '';
 
   # No swap partition; Firefox plus a local switch can outgrow 8GB

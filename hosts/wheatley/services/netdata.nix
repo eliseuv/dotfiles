@@ -11,13 +11,10 @@
   ...
 }:
 let
-  # Tailnet addresses of the children, as for GLaDOS's terminal and Pluto: the
-  # router hands out no fixed LAN addresses. A null one (not yet on the
-  # tailnet) is left out of the allow list and the firewall.
+  # Tailnet addresses of the children. A null one (not yet on the tailnet) is
+  # left out of the allow list and the firewall.
   children = lib.filterAttrs (_: address: address != null) {
-    GLaDOS = "100.110.170.42";
-    # TODO: rattmann's tailnet address once he has joined (`tailscale up`)
-    rattmann = null;
+    inherit (config.homelab.network.tailnet) GLaDOS rattmann;
   };
 
   # Charts for the tile's second row, all fetched in one allmetrics request:

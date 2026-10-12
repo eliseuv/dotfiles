@@ -1,10 +1,7 @@
 { config, lib, ... }:
 let
-  # rattmann's tailnet address, for his terminal. TODO: fill in once he has
-  # joined (`tailscale up`); while null he has no terminal button or proxy.
-  rattmannAddress = null;
-  # chell's, for her terminal (`tailscale ip -4` there); also in services/pluto.nix
-  chellAddress = "100.100.96.14";
+  # While rattmann's is null he has no terminal button or proxy.
+  inherit (config.homelab.network) tailnet;
 in
 {
 
@@ -29,14 +26,7 @@ in
     settings.connection."ipv4.dhcp-client-id" = "mac";
   };
 
-  # The router hands out no fixed addresses, so hosts are reached by mDNS name
-  # on the LAN and by tailnet address elsewhere.
-  homelab.network = {
-    lanSubnet = "192.168.0.0/24";
-    nasAddress = config.my.services.nas.address;
-    tailnetDomain = "taild628c9.ts.net";
-    tailnetAddress = "100.97.1.97";
-  };
+  homelab.network.nasAddress = config.my.services.nas.address;
 
   # Here rather than in the tailscale module, which hosts without the
   # homelab registry share.
@@ -113,7 +103,7 @@ in
   # Its ttyd, proxied by tailnet address for the same reasons as GLaDOS's
   # below; only wheatley may reach it (ufw there).
   services.nginx.virtualHosts.dashboard.locations."/pop-os/terminal/" = {
-    proxyPass = "http://100.68.2.108:3000";
+    proxyPass = "http://${tailnet.pop-os}:3000";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_read_timeout 1d;
@@ -127,7 +117,7 @@ in
   # asleep (.local) or tailscaled isn't up yet (MagicDNS). Long read
   # timeout so an idle terminal's websocket isn't cut after nginx's default 60s.
   services.nginx.virtualHosts.dashboard.locations."/glados/terminal/" = {
-    proxyPass = "http://100.110.170.42:3000";
+    proxyPass = "http://${tailnet.GLaDOS}:3000";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_read_timeout 1d;
@@ -167,15 +157,15 @@ in
     wake = "rattmann";
     reboot = "rattmann";
     switch = "rattmann";
-    terminal = lib.mkIf (rattmannAddress != null) "/rattmann/terminal/";
+    terminal = lib.mkIf (tailnet.rattmann != null) "/rattmann/terminal/";
   };
   # His ttyd (my.services.ttyd in hosts/rattmann), proxied by tailnet address
   # for the same reasons as GLaDOS's; his firewall only admits wheatley. Port
   # is his my.services.ttyd.port.
   services.nginx.virtualHosts.dashboard.locations."/rattmann/terminal/" =
-    lib.mkIf (rattmannAddress != null)
+    lib.mkIf (tailnet.rattmann != null)
       {
-        proxyPass = "http://${rattmannAddress}:3000";
+        proxyPass = "http://${tailnet.rattmann}:3000";
         proxyWebsockets = true;
         extraConfig = ''
           proxy_read_timeout 1d;
@@ -211,7 +201,7 @@ in
   };
   # Her ttyd, proxied by tailnet address and firewalled as GLaDOS's
   services.nginx.virtualHosts.dashboard.locations."/chell/terminal/" = {
-    proxyPass = "http://${chellAddress}:3000";
+    proxyPass = "http://${tailnet.chell}:3000";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_read_timeout 1d;

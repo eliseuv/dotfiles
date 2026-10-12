@@ -18,15 +18,14 @@
   };
 
   # Shared with wheatley through secrets/shared/netdata.yaml. The destination
-  # is wheatley's tailnet address (homelab.network.tailnetAddress in
-  # his system.nix), whose firewall accepts this stream only over the
+  # is her tailnet address, as her firewall accepts this stream only over the
   # tailnet.
   sops.secrets."netdata/stream-key".sopsFile = ../../secrets/shared/netdata.yaml;
   sops.templates."netdata-stream.conf" = {
     content = ''
       [stream]
           enabled = yes
-          destination = 100.97.1.97:19999
+          destination = ${config.homelab.network.tailnet.wheatley}:19999
           api key = ${config.sops.placeholder."netdata/stream-key"}
     '';
     owner = config.services.netdata.user;
