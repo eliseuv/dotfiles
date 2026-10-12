@@ -28,7 +28,7 @@ in
         Type = "oneshot";
         # Skipped, not failed, on a node that has never logged in: `up` there
         # only prints a login URL and times out, failing every switch until
-        # someone runs `sudo tailscale up` by hand.
+        # someone runs `tailscale up --operator=<user>` by hand.
         ExecCondition = pkgs.writeShellScript "tailscale-logged-in" ''
           state=$(${lib.getExe config.services.tailscale.package} status --json | ${lib.getExe pkgs.jq} -r .BackendState)
           [ "$state" != NeedsLogin ]

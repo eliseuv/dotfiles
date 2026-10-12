@@ -46,7 +46,7 @@ home-manager switch --flake /etc/dotfiles#<username>@chell
 
 Once, after the first switch:
 
-1. `sudo tailscale up` on chell.
+1. `tailscale up --operator=evf` on chell (it refuses without repeating the operator set by `extraSetFlags`; no sudo needed, evf is the operator).
 2. Set `chellAddress` in `hosts/wheatley/system.nix` to chell's tailnet address, so the dashboard gets a terminal button and proxy, and switch wheatley.
 
 ### Git Safe Directory
