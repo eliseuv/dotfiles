@@ -73,6 +73,9 @@ let
         sharedModules hostName
         ++ importTree ../modules/home
         ++ ifExists ../hosts/${hostName}/home.nix
+        # One user's departures from the host spec, which is otherwise every
+        # user's (and what NixOS installs). Values the spec sets need mkForce.
+        ++ ifExists ../hosts/${hostName}/home-${user}.nix
         ++ [
           {
             home = {
