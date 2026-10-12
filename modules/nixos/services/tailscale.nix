@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.my.services.tailscale;
 in
@@ -21,6 +26,13 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
+        # Skipped, not failed, on a node that has never logged in: `up` there
+        # only prints a login URL and times out, failing every switch until
+        # someone runs `sudo tailscale up` by hand.
+        ExecCondition = pkgs.writeShellScript "tailscale-logged-in" ''
+          state=$(${lib.getExe config.services.tailscale.package} status --json | ${lib.getExe pkgs.jq} -r .BackendState)
+          [ "$state" != NeedsLogin ]
+        '';
         # Bounded so a node that needs a login can't hang the unit. `up` as
         # root refuses unless it repeats every non-default setting, i.e. the
         # operator from extraSetFlags.
