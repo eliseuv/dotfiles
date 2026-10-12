@@ -50,6 +50,7 @@
     virtualisation.enable = true;
     dotfilesSwitch.enable = true;
     remoteTailscale.enable = true;
+    remotePowerOff.enable = true;
     # Served through wheatley's dashboard nginx, which proxies this subpath to
     # it (hosts/wheatley/system.nix).
     ttyd = {
