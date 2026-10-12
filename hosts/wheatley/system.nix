@@ -1,6 +1,5 @@
-{ config, lib, ... }:
+{ config, ... }:
 let
-  # While rattmann's is null he has no terminal button or proxy.
   inherit (config.homelab.network) tailnet;
 in
 {
@@ -45,8 +44,8 @@ in
   # The icon is a placeholder the dashboard theme draws over with her head.
   homelab.services.glados.dashboard = {
     name = "GLaDOS";
-    group = "Hosts";
-    order = 2;
+    group = "Desktops";
+    order = 0;
     icon = "mdi-robot-industrial";
     link = false;
     wake = "GLaDOS";
@@ -79,8 +78,8 @@ in
   # the tailnet, then mDNS.
   homelab.services.pop-os.dashboard = {
     name = "pop-os";
-    group = "Hosts";
-    order = 3;
+    group = "Desktops";
+    order = 2;
     icon = "/icons/pop-os.svg";
     link = false;
     wake = "pop-os";
@@ -125,12 +124,12 @@ in
   };
 
   # Terminal, switch and restart buttons for wheatley himself; no on/off, as
-  # nothing here could turn him back on. First in Hosts, followed by the
-  # Companion Cube and GLaDOS, so the Aperture machines fill the first row.
+  # nothing here could turn him back on. First in Headless servers, followed
+  # by Companion Cube.
   # The icon is a placeholder the dashboard theme draws over with his core.
   homelab.services.wheatley.dashboard = {
     name = "Wheatley";
-    group = "Hosts";
+    group = "Headless servers";
     order = 0;
     icon = "mdi-server";
     link = false;
@@ -145,43 +144,12 @@ in
     };
   };
 
-  # Wake, switch and restart buttons for rattmann, the old laptop that serves
-  # as this dashboard's kiosk (hosts/rattmann). No on/off: it's a screen
-  # someone is looking at, switched off by hand and woken from here.
-  homelab.services.rattmann.dashboard = {
-    name = "Rattmann";
-    group = "Hosts";
-    order = 4;
-    icon = "mdi-laptop";
-    link = false;
-    wake = "rattmann";
-    reboot = "rattmann";
-    switch = "rattmann";
-    terminal = lib.mkIf (tailnet.rattmann != null) "/rattmann/terminal/";
-  };
-  # His ttyd (my.services.ttyd in hosts/rattmann), proxied by tailnet address
-  # for the same reasons as GLaDOS's; his firewall only admits wheatley. Port
-  # is his my.services.ttyd.port.
-  services.nginx.virtualHosts.dashboard.locations."/rattmann/terminal/" =
-    lib.mkIf (tailnet.rattmann != null)
-      {
-        proxyPass = "http://${tailnet.rattmann}:3000";
-        proxyWebsockets = true;
-        extraConfig = ''
-          proxy_read_timeout 1d;
-        '';
-      };
-  programs.ssh.knownHosts."rattmann.local" = {
-    extraHostNames = [ "rattmann.${config.homelab.network.tailnetDomain}" ];
-    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMSS/e/drunmk5UHJ5mplGg0hIKznGeZWL/eL7QRlYKU";
-  };
-
   # The same buttons as GLaDOS's for chell, the shared family workstation
   # (hosts/chell). Dual-booted with pop-os, whose tile wakes the same machine.
   homelab.services.chell.dashboard = {
     name = "Chell";
-    group = "Hosts";
-    order = 5;
+    group = "Desktops";
+    order = 1;
     icon = "/icons/chell.svg";
     link = false;
     wake = "chell";

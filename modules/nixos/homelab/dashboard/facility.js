@@ -2,8 +2,9 @@
 // ownership of every service, widget, icon and control inside its root.
 (() => {
   const hostPage = document.body.hasAttribute("data-repo");
-  const groups = ["Hosts", "Tools", "Media", "Games"];
-  const slug = (name) => `facility-${name.toLowerCase()}`;
+  const groups = ["Headless servers", "Desktops", "Tools", "Media", "Games"];
+  const hostGroup = new URLSearchParams(location.search).get("host") === "wheatley" ? "Headless servers" : "Desktops";
+  const slug = (name) => `facility-${name.toLowerCase().replace(/\s+/g, "-")}`;
   const element = (tag, className, content) => {
     const node = document.createElement(tag);
     node.className = className;
@@ -23,12 +24,12 @@
     const link = element("a", "facility-nav-link");
     link.href = name === "Overview" ? "/" : `${hostPage ? "/" : ""}#${slug(name)}`;
     link.dataset.section = name;
-    if (name === (hostPage ? "Hosts" : "Overview")) link.setAttribute("aria-current", "page");
+    if (name === (hostPage ? hostGroup : "Overview")) link.setAttribute("aria-current", "page");
     link.append(element("span", "facility-nav-number", String(index).padStart(2, "0")), element("span", "", name));
     nav.append(link);
   }
   const tasks = element(hostPage ? "a" : "button", "facility-nav-link");
-  tasks.append(element("span", "facility-nav-number", "05"), element("span", "", "Tasks"));
+  tasks.append(element("span", "facility-nav-number", String(groups.length + 1).padStart(2, "0")), element("span", "", "Tasks"));
   if (hostPage) tasks.href = "/?tasks=1";
   else {
     tasks.type = "button";

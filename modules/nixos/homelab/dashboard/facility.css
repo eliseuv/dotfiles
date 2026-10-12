@@ -227,22 +227,22 @@ html.dark .facility-layout .service-block > div:first-child { text-shadow: none;
 
 /* Hosts become rows. All controls wrap rather than disappear, and expanded
    port menus span the full row. Service widget layouts remain Homepage's. */
-.facility-layout [data-facility-group="Hosts"] .services-list { display: flex; flex-direction: column; gap: 0; }
-[data-facility-group="Hosts"] li.service { margin: 0; padding: 0; }
-[data-facility-group="Hosts"] .service-card {
+.facility-layout :is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .services-list { display: flex; flex-direction: column; gap: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) li.service { margin: 0; padding: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .service-card {
   display: grid;
   grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 2fr);
   align-items: center;
   min-height: 4.5rem;
   padding: 0.5rem;
 }
-[data-facility-group="Hosts"] li.service + li.service .service-card { border-top: 0; }
-[data-facility-group="Hosts"] .service-title { align-items: center; min-width: 0; }
-[data-facility-group="Hosts"] .service-title-text { min-width: 0; }
-[data-facility-group="Hosts"] .service-tags { position: static; margin: 0; }
-[data-facility-group="Hosts"] .svcctl { flex-wrap: wrap; padding: 0.35rem; }
-[data-facility-group="Hosts"] .svcctl-state { min-width: 7rem; }
-[data-facility-group="Hosts"] .svcctl-ports-menu { grid-column: 1 / -1; margin-top: 0.5rem; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) li.service + li.service .service-card { border-top: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .service-title { align-items: center; min-width: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .service-title-text { min-width: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .service-tags { position: static; margin: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .svcctl { flex-wrap: wrap; padding: 0.35rem; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .svcctl-state { min-width: 7rem; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .svcctl-ports-menu { grid-column: 1 / -1; margin-top: 0.5rem; }
 li.service:has(.svcctl[data-switch="switching"]) .service-card {
   border-left: 3px solid rgb(var(--portal-blue));
   background: rgb(var(--portal-blue) / 0.06) !important;
@@ -250,7 +250,7 @@ li.service:has(.svcctl[data-switch="switching"]) .service-card {
 li.service[data-facility-filtered="true"] { display: none !important; }
 
 .facility-layout .svcctl { border-top: 1px solid var(--facility-line); margin-top: 0.25rem; gap: 0.4rem; }
-[data-facility-group="Hosts"] .svcctl { border-top: 0; margin-top: 0; }
+:is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .svcctl { border-top: 0; margin-top: 0; }
 .facility-layout .svcctl button,
 .facility-layout .svcctl a { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 1.9rem; }
 .facility-layout .svcctl [data-label]::after { content: attr(data-label); font: 0.65rem var(--font-body); }
@@ -263,8 +263,8 @@ li.service[data-facility-filtered="true"] { display: none !important; }
 }
 
 @media (max-width: 70rem) {
-  [data-facility-group="Hosts"] .service-card { grid-template-columns: 1fr; }
-  [data-facility-group="Hosts"] .svcctl { padding-left: 3rem; }
+  :is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .service-card { grid-template-columns: 1fr; }
+  :is([data-facility-group="Headless servers"], [data-facility-group="Desktops"]) .svcctl { padding-left: 3rem; }
   .facility-eyebrow { max-width: 13rem; }
 }
 

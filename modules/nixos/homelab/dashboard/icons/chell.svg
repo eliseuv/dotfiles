@@ -1,12 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <path d="M20 4q8-1 7 7l-3 5-3-6z" fill="#49392f"/>
-  <path d="M10 10V7q0-6 6-6t6 6v5H10" fill="#49392f"/>
-  <path d="M12 7h8v5q0 5-4 5t-4-5z" fill="#e7bc97"/>
-  <path d="M10 8q0-6 6-6t6 6l-5-3-4 3z" fill="#49392f"/>
-  <path d="M14 15h4v4h-4z" fill="#d9ac87"/>
-  <path d="M10 18l4-1 2 2 2-2 4 1 3 8-4 2H11l-4-2z" fill="#fff"/>
-  <path d="M9 23l5 2h4l5-2-1 8H10z" fill="#ff9a00"/>
-  <path d="M16 26v5" stroke="#bb6500" stroke-width="1.2"/>
-  <path d="M10 18L6 27m16-9 4 9" stroke="#e7bc97" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="16" cy="22" r="1.5" fill="#69747e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Chell">
+  <!-- Vector portrait: ponytail, white tank top and an orange portal gun. -->
+  <path d="M51 14C43-2 24 2 20 22c-2 13-13 16-14 31-1 15 5 25 18 29L41 56z" fill="#392319"/>
+  <path d="M43 13C27 5 27 26 20 39 12 51 12 63 20 72c-3-13 5-21 10-29 6-8 7-20 13-30" fill="#583526"/>
+  <path d="M36 42c-9 14-9 28-2 35l9-20z" fill="#261b17"/>
+  <path d="M53 60v15l-17 7 5 33h53l6-28-22-12V59z" fill="#f5ad73"/>
+  <path d="M54 60l22 1-2 14-8-2-12-9z" fill="#d48550"/>
+  <path d="M38 80c-10 0-14 11-17 23l-8 12c-2 6 1 10 8 10l27-1 4-12-25 2 14-21z" fill="#ffba80"/>
+  <path d="M90 81c10 2 14 10 17 23l6 13-12 7-17-25z" fill="#f5ad73"/>
+  <path d="M48 77l-8 3-2 22 9 17h43l10-21-14-19-8-3c-2 16-25 16-30 1" fill="#fafafa"/>
+  <path d="M48 77c5 23 34 23 30-1l6 2c3 29-38 27-42 1z" fill="#697585"/>
+  <path d="M40 97c12 13 34 18 54 6l-4 16H47z" fill="#d9d9df"/>
+  <path d="M40 118h51l6 10H34z" fill="#ff890a"/>
+  <ellipse cx="41" cy="43" rx="5" ry="9" fill="#f5ad73"/>
+  <ellipse cx="87" cy="43" rx="5" ry="9" fill="#e99b65"/>
+  <path d="M42 29c0-20 41-24 45 1l-2 21c-1 14-12 24-20 25-9-1-22-12-23-25z" fill="#ffba80"/>
+  <path d="M43 48c2 13 11 23 22 28-12-1-23-13-23-25l-1-18z" fill="#f0a169"/>
+  <path d="M39 49C30 26 42 12 60 10c22-3 36 14 30 37l-5-14-4-9-10 1-14 14-12 11 1-13-9 29c-4-6-4-11 2-17" fill="#2b1d18"/>
+  <path d="M40 34c3-18 21-23 35-18-16-1-24 12-32 24l-6 13z" fill="#503123"/>
+  <path d="M74 20c12-2 18 12 15 25l-4-12-4-9-9 1z" fill="#392319"/>
+  <path d="M84 43l2 17c1 7-1 13-5 17l2-18z" fill="#2b1d18"/>
+  <path d="M46 43l12-4 5 4-8-1-9 3zm22 0l12-5 5 4-6-1-11 4z" fill="#251b17"/>
+  <path d="M46 47q8-7 15 1-8 7-15-1m23 1q7-8 15-2-6 8-15 2" fill="#fff"/>
+  <ellipse cx="54" cy="47" rx="4" ry="4.5" fill="#3b271d"/>
+  <ellipse cx="76" cy="47" rx="4" ry="4.5" fill="#3b271d"/>
+  <path d="M46 47q8-7 15 1m8 0q7-8 15-2" fill="none" stroke="#251b17" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M62 57l5 1-3 2z" fill="#c77d4d"/>
+  <path d="M58 65l5-3 4 1 4 3-6 3z" fill="#a75d46"/>
+  <path d="M59 65h11l-5 3z" fill="#ca7d60"/>
+  <g transform="translate(66 103)">
+    <circle r="7" fill="#242426"/>
+    <path d="M-1-7l4 6-5-2m8-1l-3 6 1-5m3 9l-7-1 5-2m-3 8l-4-6 5 2m-8 1l3-6-1 5m-3-9l7 1-5 2" fill="#fafafa"/>
+  </g>
+  <!-- Simplified portal gun stays readable at dashboard icon sizes. -->
+  <path d="M43 110l20-3 5 15-23 3-13-2 1-12z" fill="#242428"/>
+  <path d="M51 109l7-1 5 15-8 1z" fill="#4c4c54"/>
+  <path d="M62 108c6-8 21-10 35-8l17 10-10 15-31 2-12-7z" fill="#232327"/>
+  <path d="M60 113c3-13 14-18 29-15l-11 10-3 16c-10 1-17-3-15-11" fill="#fafafa"/>
+  <path d="M60 117l15 3v4c-8 0-13-2-15-7" fill="#d5d5db"/>
+  <path d="M91 117c4-6 11-6 17-2l-5 10-23 1z" fill="#fafafa"/>
+  <path d="M83 105l13-2v8l-13 3z" fill="#ff9a00"/>
+  <ellipse cx="108" cy="109" rx="12" ry="16" fill="#45454d"/>
+  <ellipse cx="109" cy="109" rx="9" ry="13" fill="#191b23"/>
+  <ellipse cx="110" cy="109" rx="6" ry="10" fill="#ff890a"/>
+  <ellipse cx="111" cy="108" rx="4" ry="8" fill="#ffc45c"/>
+  <path d="M94 99l3-12 8-9 15 8 3 8m-9 27l8 4 3-8" fill="none" stroke="#25252a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

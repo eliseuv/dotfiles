@@ -25,7 +25,11 @@ let
   # Tile groups, in display order.
   groups = [
     {
-      name = "Hosts";
+      name = "Headless servers";
+      columns = 2;
+    }
+    {
+      name = "Desktops";
       columns = 3;
     }
     {

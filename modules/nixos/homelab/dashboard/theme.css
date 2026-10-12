@@ -166,47 +166,61 @@ li.service[data-name="GLaDOS"] {
   --host-accent: 255 204 51;
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) {
+/* Chell's vector portrait and controls use orange Portal accents. */
+li.service[data-name="Chell"] {
+  --host-on: url("/icons/chell.svg");
+  --host-off: var(--host-on);
+  --host-unknown: var(--host-on);
+  --host-accent: var(--portal-orange);
+  --portal-blue: var(--portal-orange);
+}
+
+li.service[data-name="Chell"]:has(.svcctl[data-state="down"]) .service-icon::before {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) {
   --host-image: var(--host-unknown);
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl[data-state="down"]) {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]):has(.svcctl[data-state="down"]) {
   --host-image: var(--host-off);
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl:is([data-state="up"], [data-state="waking"], [data-state="rebooting"], [data-state="shutting-down"])) {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]):has(.svcctl:is([data-state="up"], [data-state="waking"], [data-state="rebooting"], [data-state="shutting-down"])) {
   --host-image: var(--host-on);
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-card {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .service-card {
   --ring: var(--host-accent);
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-icon > * {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .service-icon > * {
   display: none;
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-icon::before {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .service-icon::before {
   content: "";
   width: 32px;
   height: 32px;
   background: var(--host-image) center / contain no-repeat;
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl:is([data-state="waking"], [data-state="rebooting"])) .service-icon::before {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]):has(.svcctl:is([data-state="waking"], [data-state="rebooting"])) .service-icon::before {
   animation: host-boot 1.6s steps(1) infinite;
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]):has(.svcctl[data-state="shutting-down"]) .service-icon::before {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]):has(.svcctl[data-state="shutting-down"]) .service-icon::before {
   animation: host-fade 2.4s ease-in-out infinite alternate;
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .svcctl:is([data-state="up"], [data-state="waking"], [data-state="rebooting"], [data-state="shutting-down"]) .svcctl-state {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .svcctl:is([data-state="up"], [data-state="waking"], [data-state="rebooting"], [data-state="shutting-down"]) .svcctl-state {
   color: rgb(var(--host-accent));
 }
 
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .svcctl button:hover:not(:disabled),
-li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .svcctl a:hover:not([aria-disabled="true"]) {
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .svcctl button:hover:not(:disabled),
+li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .svcctl a:hover:not([aria-disabled="true"]) {
   box-shadow: 0 0 0 1px rgb(var(--host-accent));
 }
 
@@ -221,7 +235,7 @@ li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="
 }
 
 @media (prefers-reduced-motion: reduce) {
-  li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"]) .service-icon::before {
+  li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="GLaDOS"], [data-name="Chell"]) .service-icon::before {
     animation: none;
   }
 }
