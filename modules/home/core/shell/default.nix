@@ -35,7 +35,7 @@
     dots = ''cd $DOTFILES && nvim "+lua Snacks.picker.files()"'';
 
     # Update flake
-    up = "pushd $DOTFILES && just update && popd";
+    up = "dj update";
 
   };
 
