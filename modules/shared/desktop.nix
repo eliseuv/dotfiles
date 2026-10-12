@@ -30,6 +30,15 @@ in
       description = "Session the display manager starts by default.";
     };
 
+    userSessions = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      example = {
+        evf = "hyprland-uwsm";
+      };
+      description = "Session preselected for each user until they pick one at the display manager (desktop/accounts.nix); others get defaultSession.";
+    };
+
     displayManager = lib.mkOption {
       type = lib.types.enum [
         "gdm"

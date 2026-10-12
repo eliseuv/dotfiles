@@ -22,6 +22,13 @@
               default = null;
             };
 
+            language = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              example = "pt_BR.UTF-8";
+              description = "UI locale given to the user's account until they pick one themselves (desktop/accounts.nix); null for the system's.";
+            };
+
             linger = lib.mkOption {
               type = lib.types.bool;
               default = false;
