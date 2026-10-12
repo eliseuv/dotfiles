@@ -30,6 +30,7 @@ in
   };
 
   home.packages = with pkgs; [
+    (callPackage ../../pkgs/chatgpt-linux { })
     libreoffice-fresh
     hunspellDicts.pt_BR
   ];
