@@ -3,8 +3,8 @@ let
   # rattmann's tailnet address, for his terminal. TODO: fill in once he has
   # joined (`tailscale up`); while null he has no terminal button or proxy.
   rattmannAddress = null;
-  # chell's, likewise. TODO: fill in after `tailscale up --operator=evf` on chell.
-  chellAddress = null;
+  # chell's, for her terminal
+  chellAddress = "100.100.96.14";
 in
 {
 
