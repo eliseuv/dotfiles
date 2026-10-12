@@ -79,7 +79,7 @@ in
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/zYzxZZv+cAVbffNG59reLWlJeKjA7g92eAi0VVdS9";
   };
 
-  # Wake, restart, on/off, Tailscale and terminal buttons for the Pop!_OS
+  # Wake, restart, on/off, Tailscale, terminal and ports buttons for the Pop!_OS
   # desktop, which isn't a host here: its remote-control login, forced
   # command, ttyd unit and firewall rule are set up by hand to mirror
   # services/remote-control.nix, services/ttyd.nix and GLaDOS's firewall,
@@ -96,6 +96,13 @@ in
     reboot = "pop-os";
     tailscale = "pop-os";
     terminal = "/pop-os/terminal/";
+    # The same dev ports as GLaDOS's, opened by hand in ufw (docs/pop-os.md).
+    portsHost = "pop-os";
+    ports = {
+      HTTP = 8080;
+      Zola = 1111;
+      Vite = 5173;
+    };
   };
   programs.ssh.knownHosts."pop-os.local" = {
     extraHostNames = [ "pop-os.${config.homelab.network.tailnetDomain}" ];

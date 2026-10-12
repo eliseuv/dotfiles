@@ -10,7 +10,7 @@ by hand, mirroring these NixOS modules:
 |---|---|
 | `remote-control` user, forced command, sudoers, polkit, PAM | `modules/nixos/services/remote-control.nix` |
 | `tailscale-up-at-boot.service` | `modules/nixos/services/tailscale.nix` |
-| `ttyd.service`, ufw rule | `modules/nixos/services/ttyd.nix`, GLaDOS's firewall |
+| `ttyd.service`, ufw rules (terminal, dev ports) | `modules/nixos/services/ttyd.nix`, GLaDOS's firewall |
 | Wake-on-LAN on the NIC | `modules/shared/wake-on-lan.nix` |
 
 When one of those modules changes, re-check this host against it. Verbs that
@@ -164,6 +164,19 @@ reach it:
 
 ```sh
 ufw allow in on tailscale0 from 100.97.1.97 to any port 3000 proto tcp
+```
+
+## Dev ports
+
+The tile's ports menu links to the same dev servers as GLaDOS's (8080, zola's
+1111, vite's 5173; `devPorts` in `hosts/GLaDOS/system.nix`). Like hers, they
+are open to the LAN (`wheatley`'s `homelab.network.lanSubnet`) and the tailnet:
+
+```sh
+for port in 8080 1111 5173; do
+  ufw allow from 192.168.0.0/24 to any port $port proto tcp
+  ufw allow in on tailscale0 to any port $port proto tcp
+done
 ```
 
 ## Wake-on-LAN
