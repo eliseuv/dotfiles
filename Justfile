@@ -126,9 +126,8 @@ pin-service pkg:
 # and switch this host onto it. Run on the target host itself, after
 # `git push <host-remote> <branch>` in the service's own repo. `nh os
 # switch` needs a real sudo prompt, so over ssh use `-t` (no askpass
-# helper is configured): ssh -t <host> -- 'cd ~/dotfiles && just
-# deploy-service <pkg>'.
-# Usage: just deploy-service ledger-web
+# helper is configured): ssh -t <host> -- dj deploy-service <pkg>.
+# Usage: dj deploy-service ledger-web
 deploy-service pkg:
     {{just_executable()}} pin-service {{pkg}}
     {{just_executable()}} system-switch
