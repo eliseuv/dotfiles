@@ -5,6 +5,7 @@
 let
   papers = [ "org.gnome.Papers.desktop" ];
   loupe = [ "org.gnome.Loupe.desktop" ];
+  chatgpt = pkgs.callPackage ../../pkgs/chatgpt-linux { defaultWorkspace = "/etc/dotfiles"; };
 in
 {
 
@@ -30,11 +31,16 @@ in
   };
 
   home.packages = with pkgs; [
-    (callPackage ../../pkgs/chatgpt-linux { })
+    chatgpt
     bitwarden-desktop
     libreoffice
+    obs-studio
     hunspellDicts.pt_BR
   ];
+
+  home.activation.chatgptDefaultWorkspace = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${chatgpt.configureWorkspace}
+  '';
 
   programs.gnome-shell = {
     enable = true;

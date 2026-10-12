@@ -1,5 +1,8 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, defaultWorkspace ? null, ... }:
 let
+  configureWorkspace = pkgs.writeShellScript "chatgpt-default-workspace" ''
+    ${pkgs.python3.withPackages (p: [ p.tomlkit ])}/bin/python ${./configure-workspace.py} ${lib.escapeShellArg (if defaultWorkspace == null then "" else defaultWorkspace)}
+  '';
   # Nixpkgs' chatgpt package currently only provides the macOS app.
   # Keep OpenAI's Linux binaries intact in an FHS environment, including
   # the bundled browser, Node runtime and Codex subprocesses.
@@ -31,12 +34,15 @@ pkgs.buildFHSEnv {
     libpulseaudio wayland pipewire vulkan-loader
     xdg-utils git bash coreutils xz zlib
   ];
-  runScript = "${app}/lib/chatgpt/codex-launcher";
+  runScript = if defaultWorkspace == null then "${app}/lib/chatgpt/codex-launcher" else pkgs.writeShellScript "chatgpt-launcher" ''
+    ${configureWorkspace}
+    exec ${app}/lib/chatgpt/codex-launcher "$@"
+  '';
   extraBwrapArgs = [ "--bind-try" "/etc/dotfiles" "/etc/dotfiles" ];
   extraInstallCommands = ''
     ln -s ${app}/share "$out/share"
   '';
-  passthru = { inherit app; };
+  passthru = { inherit app configureWorkspace; };
   meta = {
     description = "Official ChatGPT desktop app for Linux";
     homepage = "https://learn.chatgpt.com/docs/linux/linux-app";
