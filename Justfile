@@ -23,7 +23,19 @@ commit-gen:
     git tag --annotate "$tag" \
         --message "$(hostname) @ ${gen}" \
         --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
-    git push --follow-tags
+    # A user without push access (dani on chell) keeps the tag local; the
+    # next push by someone with access carries it along, as --follow-tags
+    # pushes every missing annotated tag reachable from what it pushes. Any
+    # other failure (network, non-fast-forward) still stops the switch.
+    if ! out="$(git push --follow-tags 2>&1)"; then
+        echo "$out" >&2
+        if echo "$out" | rg -q 'Permission denied \(publickey\)|Permission to \S+ denied'; then
+            echo "commit-gen: no push access, $tag kept local" >&2
+            exit 0
+        fi
+        exit 1
+    fi
+    echo "$out"
 
 # Record the commit the newest system was built from, for the homelab
 # dashboard's host pages (as dotfiles-switch.service does; see
