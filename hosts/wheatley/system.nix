@@ -3,7 +3,7 @@ let
   # rattmann's tailnet address, for his terminal. TODO: fill in once he has
   # joined (`tailscale up`); while null he has no terminal button or proxy.
   rattmannAddress = null;
-  # chell's, for her terminal (`tailscale ip -4` there)
+  # chell's, for her terminal (`tailscale ip -4` there); also in services/pluto.nix
   chellAddress = "100.100.96.14";
 in
 {
