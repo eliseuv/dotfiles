@@ -8,7 +8,10 @@
   ];
 
   # The dotfiles repository is shared between users on this machine
-  my.dotfiles.path = "/etc/dotfiles";
+  my.dotfiles = {
+    path = "/etc/dotfiles";
+    shared = true;
+  };
 
   my.desktop = {
     gnome.enable = true;
