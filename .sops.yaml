@@ -7,6 +7,7 @@ keys:
   - &wheatley age1rhyfer4n7lrx3640j7n5jp3kxz245q0j9034agu06ju87ve2zanse3u59q
   - &GLaDOS age1hf0tz972zkzl7lp3qft94jccx0x0nxq9wgpgkmvw2ljqfkxxaejsr96hvj
   - &rattmann age1wc2y9gc3nm884cj52q28w5k2pc66306ymul2w2ejvq558pypwc8qt0006e
+  - &chell age1grm7gmmxslc73gwtuherp3uzs7rewa35kxhj4s8h02n0grg823lq4qacj6
 creation_rules:
   - path_regex: secrets/hosts/wheatley\.yaml$
     key_groups:
@@ -37,6 +38,13 @@ creation_rules:
     - age:
       - *primary
       - *GLaDOS
+      - *wheatley
+  # chell's Pluto, likewise
+  - path_regex: secrets/shared/pluto-chell\.yaml$
+    key_groups:
+    - age:
+      - *primary
+      - *chell
       - *wheatley
   - path_regex: secrets/users/[^/]+\.yaml$
     key_groups:

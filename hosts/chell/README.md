@@ -47,7 +47,10 @@ home-manager switch --flake /etc/dotfiles#<username>@chell
 Once, after the first switch:
 
 1. `tailscale up --operator=evf` on chell (it refuses without repeating the operator set by `extraSetFlags`; no sudo needed, evf is the operator).
-2. `chellAddress` in `hosts/wheatley/system.nix` is chell's tailnet address (`tailscale ip -4`), for the dashboard's terminal button and proxy; update it if chell ever rejoins with a new one, and switch wheatley.
+2. `chellAddress` in `hosts/wheatley/system.nix` is chell's tailnet address (`tailscale ip -4`), for the dashboard's terminal button and proxy; update it if chell ever rejoins with a new one, and switch wheatley. Her Pluto proxy (`hosts/wheatley/services/pluto.nix`) repeats it.
+3. `julia-env-update` as evf, so `~/.julia` has Pluto for `pluto.service`.
+
+Pluto is in chell's ports menu on the dashboard, served at `/chell/pluto/`; its secret is `secrets/shared/pluto-chell.yaml`, shared with wheatley, whose nginx hands it over as a cookie. `pluto-connect chell` reaches it over SSH instead.
 
 ### Git Safe Directory
 

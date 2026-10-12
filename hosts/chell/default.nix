@@ -57,9 +57,20 @@
       enable = true;
       basePath = "/chell/terminal";
     };
+    # Likewise proxied by wheatley (hosts/wheatley/services/pluto.nix), which
+    # starts and stops it from the dashboard over the remote-control login.
+    pluto = {
+      enable = true;
+      basePath = "/chell/pluto/";
+      bindAddress = "0.0.0.0";
+    };
+    remoteUnits = [ "pluto.service" ];
   };
 
   my.gaming.enable = true;
+
+  # For Pluto's secret
+  my.secrets.system.enable = true;
 
   my.home = {
     apps.enable = true;
