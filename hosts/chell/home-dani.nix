@@ -31,6 +31,7 @@ in
 
   home.packages = with pkgs; [
     (callPackage ../../pkgs/chatgpt-linux { })
+    bitwarden-desktop
     libreoffice-fresh
     hunspellDicts.pt_BR
   ];
