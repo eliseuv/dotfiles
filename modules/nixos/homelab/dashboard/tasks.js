@@ -141,4 +141,5 @@
     if (event.key === "Escape" && !panel.hidden) setOpen(false);
   });
   document.body.append(toggle, panel);
+  if (new URLSearchParams(location.search).get("tasks") === "1") setOpen(true);
 })();
