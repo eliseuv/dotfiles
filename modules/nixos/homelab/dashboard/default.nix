@@ -22,26 +22,16 @@ let
   network = config.homelab.network;
   homepagePort = config.services.homepage-dashboard.listenPort;
 
-  # Tile groups, in display order.
-  groups = [
-    {
-      name = "Headless servers";
-      columns = 2;
-    }
-    {
-      name = "Desktops";
-      columns = 3;
-    }
-    {
-      name = "Tools";
-      columns = 3;
-    }
-    {
-      name = "Media";
-      columns = 3;
-    }
-    { name = "Games"; }
+  # Tile groups, in display order. All share one column count so tiles line
+  # up across groups as one grid (theme.css evens out the rows).
+  groups = map (name: { inherit name; }) [
+    "Headless servers"
+    "Desktops"
+    "Tools"
+    "Media"
+    "Games"
   ];
+  columns = 3;
 
   tiled = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
   withKey = lib.filterAttrs (_: service: service.dashboard.widgetKey != null) tiled;
@@ -367,9 +357,9 @@ in
         # A list, not an attrset: Homepage orders groups by layout keys, and
         # an attrset would serialize them alphabetically.
         layout = map (group: {
-          ${group.name} = lib.optionalAttrs (group ? columns) {
+          ${group.name} = {
             style = "row";
-            inherit (group) columns;
+            inherit columns;
           };
         }) groups;
       };
