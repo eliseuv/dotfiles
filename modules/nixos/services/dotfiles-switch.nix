@@ -1,13 +1,15 @@
 # dotfiles-switch.service: pull and switch, for the homelab dashboard
 # (started locally by svcctl on wheatley, or over SSH through
 # services/remote-control.nix). Pulls origin/master, builds and activates
-# this host's system, then runs the Justfile's home-switch. Unlike
+# this host's system, then runs the Justfile's home-switch (the primary
+# user's home as them, the other users' as root, through sudo). Unlike
 # `just system-switch` it neither tags the generation (commit-gen pushes,
 # which would need a GitHub credential on every host) nor collects garbage.
 #
 # Builds, git and Home Manager run as the primary user in their own checkout;
-# only activation runs as root, through systemd's `+` prefix rather than
-# sudo, so the user gains no passwordless sudo from this.
+# only activation and becoming the other users run as root, through systemd's
+# `+` prefix rather than sudo, so the user gains no passwordless sudo from
+# this.
 #
 # Each switch records the commit it built in `revisionsDir`, keyed by the
 # system's store hash, for the dashboard's host pages (_host-report.nix); the
@@ -80,7 +82,10 @@ in
         pkgs.bash
         pkgs.coreutils
         pkgs.git
+        pkgs.jq
         pkgs.nh
+        # sudo, for home-switch-others
+        "/run/wrappers"
       ];
       serviceConfig = {
         Type = "oneshot";
@@ -93,7 +98,8 @@ in
           build
           "+${activate}"
           record
-          "${lib.getExe pkgs.just} home-switch"
+          "${lib.getExe pkgs.just} home-switch-self"
+          "+${lib.getExe pkgs.just} home-switch-others ${user}"
         ];
       };
     };

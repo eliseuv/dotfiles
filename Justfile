@@ -90,8 +90,37 @@ vpn:
     sudo tailscale up
     tailscale status
 
-home-switch:
+# The current user's home, then every other user's on this host.
+home-switch: home-switch-self (home-switch-others)
+
+[private]
+home-switch-self:
     nh home switch .
+
+# Switch every <user>@<host> home of this host but `except`'s, through sudo,
+# so a shared host's other users never have to run Home Manager themselves.
+# dotfiles-switch.service runs it as root after the primary user's switch.
+# nh is resolved to its store path: the other user can't read this one's
+# home, where it is installed. The user's runtime dir, when they are logged
+# in, lets Home Manager restart their services and write dconf live.
+[private]
+home-switch-others except=env('USER'):
+    #!/usr/bin/env bash
+    set -euo pipefail
+    host=$(uname -n)
+    others=$(nix eval --json .#homeConfigurations --apply builtins.attrNames \
+        | jq -r --arg host "$host" --arg except "{{except}}" \
+            '.[] | select(endswith("@" + $host) and (startswith($except + "@") | not))')
+    [ -n "$others" ] || exit 0
+    nh=$(readlink -f "$(command -v nh)")
+    for config in $others; do
+        user=${config%@*}
+        runtime=/run/user/$(id -u "$user")
+        session=()
+        [ -d "$runtime" ] && session=(XDG_RUNTIME_DIR="$runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus")
+        echo "home-switch-others: $config"
+        sudo -u "$user" -H env PATH="$PATH" "${session[@]}" "$nh" home switch . --configuration "$config"
+    done
 
 after-switch: record-gen commit-gen home-switch gc
 
