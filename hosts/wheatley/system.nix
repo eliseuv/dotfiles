@@ -70,45 +70,6 @@ in
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/zYzxZZv+cAVbffNG59reLWlJeKjA7g92eAi0VVdS9";
   };
 
-  # Wake, restart, on/off, Tailscale, terminal and ports buttons for the Pop!_OS
-  # desktop, which isn't a host here: its remote-control login, forced
-  # command, ttyd unit and firewall rule are set up by hand to mirror
-  # services/remote-control.nix, services/ttyd.nix and GLaDOS's firewall,
-  # as docs/pop-os.md records. No `address`, so like GLaDOS it's reached over
-  # the tailnet, then mDNS.
-  homelab.services.pop-os.dashboard = {
-    name = "pop-os";
-    group = "Desktops";
-    order = 2;
-    icon = "/icons/pop-os.svg";
-    link = false;
-    wake = "pop-os";
-    poweroff = true;
-    reboot = "pop-os";
-    tailscale = "pop-os";
-    terminal = "/pop-os/terminal/";
-    # The same dev ports as GLaDOS's, opened by hand in ufw (docs/pop-os.md).
-    portsHost = "pop-os";
-    ports = {
-      HTTP = 8080;
-      Zola = 1111;
-      Vite = 5173;
-    };
-  };
-  programs.ssh.knownHosts."pop-os.local" = {
-    extraHostNames = [ "pop-os.${config.homelab.network.tailnetDomain}" ];
-    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBPufcEsAPYzlxegM5uUoNAnHmCKuGA3i2XqcXwZrpgN";
-  };
-  # Its ttyd, proxied by tailnet address for the same reasons as GLaDOS's
-  # below; only wheatley may reach it (ufw there).
-  services.nginx.virtualHosts.dashboard.locations."/pop-os/terminal/" = {
-    proxyPass = "http://${tailnet.pop-os}:3000";
-    proxyWebsockets = true;
-    extraConfig = ''
-      proxy_read_timeout 1d;
-    '';
-  };
-
   # Her ttyd (my.services.ttyd in hosts/GLaDOS), proxied so it's reachable
   # wherever the dashboard is, tailnet included; her firewall only admits
   # wheatley, over the tailnet. By her tailnet address rather than a name:
@@ -145,7 +106,7 @@ in
   };
 
   # The same buttons as GLaDOS's for chell, the shared family workstation
-  # (hosts/chell). Dual-booted with pop-os, whose tile wakes the same machine.
+  # (hosts/chell).
   homelab.services.chell.dashboard = {
     name = "Chell";
     group = "Desktops";

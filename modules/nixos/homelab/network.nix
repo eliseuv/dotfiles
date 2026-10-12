@@ -14,7 +14,6 @@
       # TODO: fill in once he has joined (`tailscale up`)
       rattmann = null;
       # Not hosts here
-      pop-os = "100.68.2.108";
       CompanionCube = "100.109.162.27";
     };
   };

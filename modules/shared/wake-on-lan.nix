@@ -14,10 +14,6 @@
         GLaDOS = "b4:2e:99:6e:1a:1e";
         # The Synology NAS: not a host here, but wakeable all the same.
         CompanionCube = "90:09:d0:00:27:19";
-        # Pop!_OS desktop: also not a host here.
-        pop-os = "b4:2e:99:6e:1a:bd";
-        # The same machine as pop-os, dual-booted: the packet wakes whichever
-        # the bootloader picks
         chell = "b4:2e:99:6e:1a:bd";
         wheatley = "20:47:47:08:7c:bd";
         rattmann = "b0:10:41:fd:79:5d";
