@@ -13,6 +13,11 @@ in
       Downloads.SavePath = "${mediaRoot}/downloads";
       # Substituted from sops below, keeping the key out of the Nix store.
       WebUI.APIKey = "@QBT_API_KEY@";
+      # Lidarr's qBittorrent client has no API key field (Sonarr's and
+      # Radarr's do), so it connects unauthenticated over localhost. This
+      # opens the WebUI to every local process; the LAN and tailnet still need
+      # the key. Revisit once Lidarr gains API key support.
+      WebUI.LocalHostAuth = false;
     };
   };
   users.users.qbittorrent.extraGroups = [ "media" ];
@@ -30,7 +35,7 @@ in
   ];
 
   # API key for the WebUI (Authorization: Bearer), used by the dashboard and
-  # by the *arrs (arr-sync.nix). qBittorrent requires the form qbt_ + 28
+  # by Sonarr/Radarr (arr-sync.nix). qBittorrent requires the form qbt_ + 28
   # alphanumerics; anything else is silently ignored.
   sops.secrets."qbittorrent/api-key" = {
     owner = config.services.qbittorrent.user;
