@@ -86,8 +86,10 @@ eval-all:
         stubbed.config.system.build.toplevel.drvPath)' | jq -S .
     nix eval --json .#homeConfigurations --apply 'builtins.mapAttrs (_: c: c.activationPackage.drvPath)' | jq -S .
 
+# `up` refuses unless it repeats every non-default setting, and the operator
+# (my.services.tailscale's extraSetFlags) is one; sudo for the non-operator.
 vpn:
-    sudo tailscale up
+    sudo tailscale up --operator="$(tailscale debug prefs | jq -r .OperatorUser)"
     tailscale status
 
 # The current user's home, then every other user's on this host.
