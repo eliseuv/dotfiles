@@ -192,7 +192,7 @@ in
     name = "Chell";
     group = "Hosts";
     order = 5;
-    icon = "mdi-desktop-tower";
+    icon = "/icons/chell.svg";
     link = false;
     wake = "chell";
     poweroff = true;
