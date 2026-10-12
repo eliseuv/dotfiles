@@ -250,14 +250,23 @@ li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="
 /* Stack every section in the document's vertical scroll. */
 #layout-groups {
   display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
 #layout-groups > .services-group {
-  flex: 0 0 auto;
-  width: 100%;
+  flex: 0 0 100%;
   min-width: 0;
+}
+
+/* Headless servers and Desktops (the first two groups, two columns each, see
+   default.nix) share a row. As halves with no gap between them, their
+   columns land exactly on the four below, since groups pad and lists gap
+   alike. Not below lg, where Homepage drops every group to two columns. */
+@media (min-width: 1024px) {
+  #layout-groups > .services-group:nth-child(-n + 2) {
+    flex-basis: 50%;
+  }
 }
 
 #layout-groups,
