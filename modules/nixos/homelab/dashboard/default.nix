@@ -343,6 +343,12 @@ in
       restartUnits = [ "homepage-dashboard.service" ];
     };
 
+    # Homepage caches its config in process, and a switch only relinks
+    # /etc/homepage-dashboard, so it would keep serving the old layout.
+    systemd.services.homepage-dashboard.restartTriggers = lib.mapAttrsToList (_: entry: entry.source) (
+      lib.filterAttrs (name: _: lib.hasPrefix "homepage-dashboard/" name) config.environment.etc
+    );
+
     services.homepage-dashboard = {
       enable = true;
       # nixos-26.05 ships 1.x, whose qBittorrent widget can only log in with a
