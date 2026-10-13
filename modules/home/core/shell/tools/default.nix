@@ -30,6 +30,9 @@
     # Command cheatsheets
     tldr
 
+    # Bitwarden vault
+    bitwarden-cli
+
   ];
 
   programs = {
