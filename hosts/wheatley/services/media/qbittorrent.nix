@@ -49,7 +49,7 @@ in
       group = "Media";
       order = 3;
       description = "Download client";
-      icon = "qbittorrent.png";
+      icon = "qbittorrent.svg";
       widget.type = "qbittorrent";
       widgetKey = "qbittorrent/api-key";
       unit = "qbittorrent.service";

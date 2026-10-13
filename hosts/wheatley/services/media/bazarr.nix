@@ -38,7 +38,7 @@
       group = "Media";
       order = 8;
       description = "Subtitles";
-      icon = "bazarr.png";
+      icon = "bazarr.svg";
       widget.type = "bazarr";
       widgetKey = "bazarr/api-key";
       unit = "bazarr.service";

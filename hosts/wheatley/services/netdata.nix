@@ -67,7 +67,7 @@ in
       group = "Tools";
       order = 1;
       description = "System metrics";
-      icon = "netdata.png";
+      icon = "netdata.svg";
       widget.type = "netdata";
       extraWidgets = [
         {

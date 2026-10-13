@@ -16,7 +16,7 @@ in
       group = "Media";
       order = 1;
       description = "Media server";
-      icon = "jellyfin.png";
+      icon = "jellyfin.svg";
       widget = {
         type = "jellyfin";
         # Jellyfin 12 dropped the legacy /emby route prefix that the v1 widget

@@ -20,7 +20,7 @@
       port = config.services.${service}.settings.server.port;
       dashboard = tile // {
         group = "Media";
-        icon = "${service}.png";
+        icon = "${service}.svg";
         widget.type = service;
         widgetKey = "${service}/api-key";
         unit = "${service}.service";

@@ -59,7 +59,7 @@ in
     group = "Headless servers";
     order = 1;
     # Drawn over with the cube face; the dashboard theme CSS matches this name.
-    icon = "synology.png";
+    icon = "synology.svg";
     href = "https://${nasAddress}:5001";
     # Wake, restart, power off and Tailscale buttons, over SSH as evf to DSM
     # (see the forced command in the comment below); no terminal or switch.

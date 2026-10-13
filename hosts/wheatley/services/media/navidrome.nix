@@ -24,7 +24,7 @@ in
       group = "Media";
       order = 9;
       description = "Music streaming";
-      icon = "navidrome.png";
+      icon = "navidrome.svg";
       unit = "navidrome.service";
     };
   };

@@ -130,7 +130,7 @@ in
       group = "Games";
       order = 1;
       description = "Fabric server (LAN + Tailscale)";
-      icon = "minecraft.png";
+      icon = "minecraft.svg";
       link = false;
       unit = serverUnit;
       widget = {

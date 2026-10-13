@@ -27,17 +27,6 @@ in
 
   homelab.network.nasAddress = config.my.services.nas.address;
 
-  # Here rather than in the tailscale module, which hosts without the
-  # homelab registry share.
-  homelab.services.tailscale.dashboard = {
-    name = "Tailscale";
-    group = "Tools";
-    order = 3;
-    description = "Tailnet admin console";
-    icon = "tailscale.png";
-    href = "https://login.tailscale.com/admin/machines";
-  };
-
   # Terminal, switch, restart and on/off buttons for GLaDOS, which has no
   # services of its own here; wheatley is the always-on LAN host that can send
   # her the wake packet.

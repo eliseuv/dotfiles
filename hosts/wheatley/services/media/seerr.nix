@@ -15,7 +15,7 @@
       group = "Media";
       order = 2;
       description = "Media requests";
-      icon = "jellyseerr.png";
+      icon = "jellyseerr.svg";
       widget.type = "seerr";
       widgetKey = "seerr/api-key";
       unit = "seerr.service";

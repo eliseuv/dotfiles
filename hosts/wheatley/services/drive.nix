@@ -56,7 +56,7 @@ in
       name = "Drive";
       group = "Tools";
       description = "Files on Companion Cube";
-      icon = "filebrowser.png";
+      icon = "filebrowser.svg";
       unit = "filebrowser.service";
     };
   };
