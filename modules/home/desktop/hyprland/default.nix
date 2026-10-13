@@ -37,6 +37,13 @@ in
       MOZ_ENABLE_WAYLAND = "1";
     };
 
+    # UWSM builds the session environment from a login sh, which never reads
+    # hm-session-vars.sh (~/.profile is unmanaged), so without this none of
+    # home.sessionVariables reach Hyprland or anything it spawns
+    xdg.configFile."uwsm/env".text = ''
+      . "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh"
+    '';
+
     # Hyprland config
     wayland.windowManager.hyprland = {
       enable = true;
