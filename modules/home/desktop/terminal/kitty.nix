@@ -46,6 +46,8 @@ in
         "kitty_mod+p>c" = "kitten hints --type path --program @";
         "kitty_mod+space" = "kitten unicode_input";
 
+      }
+      // lib.optionalAttrs config.programs.neovim.enable {
         # Browse scrollback buffer in nvim
         "kitty_mod+h" = "kitty_scrollback_nvim";
         # Browse output of the last shell command in nvim
@@ -54,7 +56,7 @@ in
         # mouse_map ctrl+shift+right press ungrabbed combine : mouse_select_command_output : kitty_scrollback_nvim --config ksb_builtin_last_visited_cmd_output
       };
 
-      actionAliases = {
+      actionAliases = lib.optionalAttrs config.programs.neovim.enable {
         # kitty-scrollback.nvim Kitten alias
         "kitty_scrollback_nvim" =
           "kitten ${config.home.homeDirectory}/.local/share/nvim/lazy/kitty-scrollback.nvim/python/kitty_scrollback_nvim.py";
