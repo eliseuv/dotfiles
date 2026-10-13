@@ -1,8 +1,9 @@
 # dotfiles-switch.service: pull and switch, for the homelab dashboard
 # (started locally by svcctl on wheatley, or over SSH through
-# services/remote-control.nix). Pulls origin/master, builds and activates
-# this host's system, then runs the Justfile's home-switch (the primary
-# user's home as them, the other users' as root, through sudo). Unlike
+# services/remote-control.nix). Pulls origin/master, rebasing any local
+# commits onto it, builds and activates this host's system, then runs the
+# Justfile's home-switch (the primary user's home as them, the other users'
+# as root, through sudo). Unlike
 # `just system-switch` it neither tags the generation (commit-gen pushes,
 # which would need a GitHub credential on every host) nor collects garbage.
 #
@@ -38,7 +39,14 @@ let
       exit 1
     }
     git fetch ${upstream} master:refs/remotes/origin/master
-    git merge --ff-only origin/master
+    # Unlike the Justfile's pull, a failed rebase is fatal: carrying on would
+    # build whatever happened to be checked out. Abort so the checkout isn't
+    # left mid-rebase for the next run (or the user) to trip over.
+    git rebase origin/master || {
+      git rebase --abort
+      echo "dotfiles-switch: rebase onto origin/master failed, aborted" >&2
+      exit 1
+    }
   '';
 
   build = pkgs.writeShellScript "dotfiles-switch-build" ''
