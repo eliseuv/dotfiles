@@ -110,8 +110,10 @@ in
           # Match SHA256 hashes
           set -g @fingers-pattern-sha256 "sha256-[a-zA-Z0-9+/]{43}="
           bind H run -b "#{@fingers-cli} start #{pane_id} --patterns sha256"
-          # Edit file using nvim in a new tmux window
-          bind E run -b "#{@fingers-cli} start #{pane_id} --patterns path --main-action 'xargs tmux new-window nvim'"
+          # Edit file with the configured editor
+          bind E run -b "#{@fingers-cli} start #{pane_id} --patterns path --main-action '${
+            if config.programs.neovim.enable then "xargs tmux new-window nvim" else "xargs code --wait"
+          }'"
           # Target adjacent panes
           bind -n M-h run -b "#{@fingers-cli} start {left-of}"
           bind -n M-j run -b "#{@fingers-cli} start {down-of}"

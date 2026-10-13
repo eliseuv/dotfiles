@@ -1,6 +1,10 @@
 # ripgrep + fzf
 # https://github.com/junegunn/fzf/blob/master/ADVANCED.md#switching-between-ripgrep-mode-and-fzf-mode-using-a-single-key-binding
-{ pkgs, lib }:
+{
+  pkgs,
+  lib,
+  editor ? "nvim {1} +{2}",
+}:
 pkgs.writeShellScriptBin "rgfzf" ''
   rm -f /tmp/rg-fzf-{r,f}
   RG_PREFIX="${lib.getExe pkgs.ripgrep} --column --line-number --no-heading --color=always --smart-case "
@@ -17,5 +21,5 @@ pkgs.writeShellScriptBin "rgfzf" ''
       --header 'CTRL-T: rg <-> fzf' \
       --preview 'bat --color=always {1} --highlight-line {2}' \
       --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
-      --bind 'enter:become(nvim {1} +{2})'
+      --bind 'enter:become(${editor})'
 ''

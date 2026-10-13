@@ -10,6 +10,8 @@
   home.packages = [
     # ripgrep fzf
     (import ./_rgfzf.nix {
+      editor =
+        if config.programs.neovim.enable then "nvim {1} +{2}" else "code --wait --goto {1}:{2}:{3}";
       inherit pkgs;
       inherit lib;
     })

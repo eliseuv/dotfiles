@@ -32,7 +32,11 @@
     rsrepo = "rsync -Pazvhm --include='**.gitignore' --filter=':- .gitignore' --delete-after";
 
     # Edit configs
-    dots = ''cd $DOTFILES && nvim "+lua Snacks.picker.files()"'';
+    dots =
+      if config.programs.neovim.enable then
+        ''cd $DOTFILES && nvim "+lua Snacks.picker.files()"''
+      else
+        ''code "$DOTFILES"'';
 
     # Update flake
     up = "dj update";
