@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Chell sleeping">
+  <!-- Sleeping variant: tilted head, closed eyes and an idle portal gun. -->
+  <path d="M51 14C43-2 24 2 20 22c-2 13-13 16-14 31-1 15 5 25 18 29L41 56z" fill="#392319"/>
+  <path d="M43 13C27 5 27 26 20 39 12 51 12 63 20 72c-3-13 5-21 10-29 6-8 7-20 13-30" fill="#583526"/>
+  <path d="M36 42c-9 14-9 28-2 35l9-20z" fill="#261b17"/>
+  <path d="M53 60v15l-17 7 5 33h53l6-28-22-12V59z" fill="#f5ad73"/>
+  <path d="M54 60l22 1-2 14-8-2-12-9z" fill="#d48550"/>
+  <path d="M38 80c-10 0-14 11-17 23l-8 12c-2 6 1 10 8 10l27-1 4-12-25 2 14-21z" fill="#ffba80"/>
+  <path d="M90 81c10 2 14 10 17 23l6 13-12 7-17-25z" fill="#f5ad73"/>
+  <path d="M48 77l-8 3-2 22 9 17h43l10-21-14-19-8-3c-2 16-25 16-30 1" fill="#fafafa"/>
+  <path d="M48 77c5 23 34 23 30-1l6 2c3 29-38 27-42 1z" fill="#697585"/>
+  <path d="M40 97c12 13 34 18 54 6l-4 16H47z" fill="#d9d9df"/>
+  <path d="M40 118h51l6 10H34z" fill="#ff890a"/>
+  <g transform="rotate(-9 65 73)">
+  <ellipse cx="41" cy="43" rx="5" ry="9" fill="#f5ad73"/>
+  <ellipse cx="87" cy="43" rx="5" ry="9" fill="#e99b65"/>
+  <path d="M42 29c0-20 41-24 45 1l-2 21c-1 14-12 24-20 25-9-1-22-12-23-25z" fill="#ffba80"/>
+  <path d="M43 48c2 13 11 23 22 28-12-1-23-13-23-25l-1-18z" fill="#f0a169"/>
+  <path d="M39 49C30 26 42 12 60 10c22-3 36 14 30 37l-5-14-4-9-10 1-14 14-12 11 1-13-9 29c-4-6-4-11 2-17" fill="#2b1d18"/>
+  <path d="M40 34c3-18 21-23 35-18-16-1-24 12-32 24l-6 13z" fill="#503123"/>
+  <path d="M74 20c12-2 18 12 15 25l-4-12-4-9-9 1z" fill="#392319"/>
+  <path d="M84 43l2 17c1 7-1 13-5 17l2-18z" fill="#2b1d18"/>
+  <path d="M47 41q6-3 12 0m11 0q6-3 12-1" fill="none" stroke="#503123" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M47 47q7 7 14 0m9 0q7 7 14-1" fill="none" stroke="#251b17" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M62 57l5 1-3 2z" fill="#c77d4d"/>
+  <path d="M60 65q5 3 10-1" fill="none" stroke="#a75d46" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(66 103)">
+    <circle r="7" fill="#242426"/>
+    <path d="M-1-7l4 6-5-2m8-1l-3 6 1-5m3 9l-7-1 5-2m-3 8l-4-6 5 2m-8 1l3-6-1 5m-3-9l7 1-5 2" fill="#fafafa"/>
+  </g>
+  <!-- Simplified portal gun stays readable at dashboard icon sizes. -->
+  <path d="M43 110l20-3 5 15-23 3-13-2 1-12z" fill="#242428"/>
+  <path d="M51 109l7-1 5 15-8 1z" fill="#4c4c54"/>
+  <path d="M62 108c6-8 21-10 35-8l17 10-10 15-31 2-12-7z" fill="#232327"/>
+  <path d="M60 113c3-13 14-18 29-15l-11 10-3 16c-10 1-17-3-15-11" fill="#fafafa"/>
+  <path d="M60 117l15 3v4c-8 0-13-2-15-7" fill="#d5d5db"/>
+  <path d="M91 117c4-6 11-6 17-2l-5 10-23 1z" fill="#fafafa"/>
+  <path d="M83 105l13-2v8l-13 3z" fill="#8a623d"/>
+  <ellipse cx="108" cy="109" rx="12" ry="16" fill="#45454d"/>
+  <ellipse cx="109" cy="109" rx="9" ry="13" fill="#191b23"/>
+  <ellipse cx="110" cy="109" rx="6" ry="10" fill="#74553c"/>
+  <ellipse cx="111" cy="108" rx="4" ry="8" fill="#987758"/>
+  <path d="M94 99l3-12 8-9 15 8 3 8m-9 27l8 4 3-8" fill="none" stroke="#25252a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Staggered sleep marks remain distinct from the ponytail silhouette. -->
+  <g fill="none" stroke="#8a9ba9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M96 39h8l-8 9h8"/>
+    <path d="M105 23h10l-10 11h10"/>
+    <path d="M111 6h12l-12 12h12"/>
+  </g>
+</svg>
