@@ -13,7 +13,7 @@ To ensure both users have the necessary permissions to read the flake and apply 
 `default.nix` is the host spec: what NixOS installs, and every user's home by default. Each user's departures from it live in `home-<user>.nix`, imported into that user's Home Manager only (values the spec sets need `lib.mkForce` there).
 
 - **evf** (`home-evf.nix`): the GLaDOS setup, with Hyprland and waybar across both monitors, tailnet, ttyd and the dashboard's switch button. Caps Lock is Escape per session, because kanata, which would remap every user's keyboard, is off on chell (`system.nix`).
-- **dani** (`home-dani.nix`): GNOME in Portuguese with a dock, tray icons, minimize/maximize buttons, GNOME's own viewers and LibreOffice. It keeps evf's shell and dev environment, and drops evf's Hyprland, Syncthing, rclone and remote access.
+- **dani** (`home-dani.nix`): GNOME in Portuguese with a dock, tray icons, minimize/maximize buttons, GNOME's own viewers and LibreOffice. It keeps the shell, terminals and assistants, with Rust, Git/lazygit, uv, GNU Fortran/fortls, VS Code, just/`dj`, pkg-config and direnv/nix-direnv, plus LaTeX, Typst and Markdown tools. Other user-level dev tools, editors and Distrobox are omitted; system-wide tools remain shared. It drops evf's Hyprland, Syncthing, rclone and remote access.
 
 GDM starts GNOME for anyone without a saved choice. The first time the system boots with this config, `modules/nixos/desktop/accounts.nix` gives dani Portuguese and evf Hyprland, but only if their accounts have no language or session yet. After that, whatever they pick at the GDM gear or in GNOME Settings sticks. evf's account already remembers GNOME, so evf has to pick Hyprland at the gear once.
 
