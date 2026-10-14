@@ -474,6 +474,12 @@ in
           }
           {
             _args = [
+              (inline ''mainMod .. " + B"'')
+              (inline ''hl.dsp.exec_cmd("~/.config/waybar/scripts/bitwarden.sh search")'')
+            ];
+          }
+          {
+            _args = [
               (inline ''mainMod .. " + SHIFT + V"'')
               (inline "hl.dsp.exec_cmd(vim)")
             ];
