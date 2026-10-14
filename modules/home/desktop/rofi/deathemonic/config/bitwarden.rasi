@@ -1,0 +1,27 @@
+// rofi-rbw (modules/home/desktop/bitwarden.nix): networkmenu's look, wider,
+// with the keybinding hints rofi-rbw passes as the message
+@import "networkmenu.rasi"
+
+window {
+    width:                          600px;
+}
+
+mainbox {
+    children:                       [ inputbar, message, listview ];
+}
+
+textbox-prompt-colon {
+    str:                            "󰞀";
+}
+
+message {
+    background-color:               @BG;
+    border:                         0px 0px 2px 0px;
+    border-color:                   @OFF;
+    padding:                        8px 4px 8px 4px;
+}
+
+textbox {
+    background-color:               @BG;
+    text-color:                     @FG;
+}
