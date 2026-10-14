@@ -30,9 +30,6 @@
     # Command cheatsheets
     tldr
 
-    # Bitwarden vault
-    bitwarden-cli
-
   ];
 
   programs = {
@@ -120,20 +117,6 @@
       tldr --list | tr -d "[''']," | tr ' ' '
           ' | fzf --preview "tldr {1}" --preview-window=right,70% | xargs tldr'';
   };
-
-  # Reuse the session the waybar widget saves on unlock (waybar/bitwarden.sh).
-  # Read per call rather than exported at startup, so shells opened before an
-  # unlock pick it up and a lock from the bar takes effect everywhere.
-  programs.zsh.initContent = ''
-    bw() {
-      local session_file="''${XDG_RUNTIME_DIR:-/tmp}/bw-session"
-      if [[ -r $session_file ]]; then
-        BW_SESSION=$(<"$session_file") command bw "$@"
-      else
-        command bw "$@"
-      fi
-    }
-  '';
 
   # tuiboard isn't packaged in nixpkgs; @opentui/core ships prebuilt
   # per-platform native binaries pulled in at install time, so there's
