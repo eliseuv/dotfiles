@@ -1,4 +1,4 @@
-# host-report: this host's system generations as JSON, for the homelab
+# host-report: this host's system generations and uptime as JSON, for the homelab
 # dashboard's host pages (homelab/dashboard/hosts.nix). Run there directly on
 # the dashboard host, and on others through the remote-control forced command
 # (services/remote-control.nix), so it takes only fixed verbs and checks its
@@ -66,7 +66,8 @@ pkgs.writeShellApplication {
           --arg host "$(cat /proc/sys/kernel/hostname)" \
           --arg current "$(readlink -f /run/current-system)" \
           --arg booted "$(readlink -f /run/booted-system)" \
-          '{$host, $current, $booted, generations: .}'
+          --argjson uptime "$(awk '{ print int($1) }' /proc/uptime)" \
+          '{$host, $current, $booted, $uptime, generations: .}'
       ;;
     diff)
       number=''${2:-}

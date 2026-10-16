@@ -53,7 +53,15 @@ def write_atomically(path, data):
 
 # Host -> {report, fetched_at, attempted_at, error, refreshing}.
 state = {
-    host: {**load_cached(host), "attempted_at": None, "error": None, "refreshing": False}
+    host: {
+        **load_cached(host),
+        "attempted_at": None,
+        "error": None,
+        "refreshing": False,
+        # When the host booted, by this clock. Not cached on disk: the host
+        # may have rebooted since, and the tiles count uptime from it.
+        "boot_at": None,
+    }
     for host in hosts
 }
 pokes = {host: threading.Event() for host in hosts}
@@ -117,6 +125,8 @@ def refresh(host):
         entry["error"] = str(error)
     else:
         entry.update(report=report, fetched_at=time.time(), error=None)
+        if "uptime" in report:
+            entry["boot_at"] = entry["fetched_at"] - report["uptime"]
         write_atomically(
             reports_dir / f"{host}.json",
             {"report": report, "fetched_at": entry["fetched_at"]},
@@ -212,6 +222,10 @@ class Handler(BaseHTTPRequestHandler):
                     entry["refreshing"] = True
                     pokes[host].set()
             master = load_master(host)
+            now = time.time()
+            # Seconds since the host booted as of now, and how old the fetch
+            # behind it is; relative, so the tiles needn't share this clock.
+            booted = entry["boot_at"] is not None
             return self.reply(
                 200,
                 {
@@ -219,6 +233,8 @@ class Handler(BaseHTTPRequestHandler):
                     "tile": hosts[host]["tile"],
                     "switch": hosts[host]["switch"],
                     **entry,
+                    "uptime": now - entry["boot_at"] if booted else None,
+                    "uptime_age": now - entry["fetched_at"] if booted else None,
                     "master": master,
                     "status": deploy_status(entry["report"], master),
                 },

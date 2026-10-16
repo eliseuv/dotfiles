@@ -22,6 +22,15 @@
   let tailscaleStates = {};
   // Tile name -> round-trip ms of the host's last answered ping, or null.
   let pings = {};
+  // Tile name -> {seconds, at}: uptime of a page host as of performance.now()
+  // `at`, counted on from there. hostctl fetches it over SSH only every
+  // few minutes; pings say when it has gone stale.
+  const uptimes = {};
+  // Tile name -> performance.now() when its host was last seen down. An
+  // uptime fetched before then is from the previous boot.
+  const downSeen = {};
+  const uptimeResync = 60 * 1000;
+  const lastUptimeFetch = {};
   // Tile name -> {port: open?} for ports tiles.
   let portStates = {};
   // Tile name -> when its wake was sent; shown as "waking" until the host
@@ -51,6 +60,7 @@
         tailscaleStates = next.tailscale;
         pings = next.ping;
         portStates = next.ports;
+        syncUptimes();
         if (apiWentDown) {
           for (const name in rebootSent) if (svcctlRebootTiles[name]) delete rebootSent[name];
         }
@@ -60,6 +70,43 @@
       .catch(() => {
         apiWentDown = true;
       });
+
+  const fetchUptime = (name, poke) => {
+    lastUptimeFetch[name] = performance.now();
+    const query = poke ? "?refresh=1" : "";
+    fetch(`/api/hosts/${encodeURIComponent(svcctlPages[name])}${query}`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
+      .then(({ uptime, uptime_age: age }) => {
+        if (uptime == null) return;
+        // The age is on hostctl's clock and the wait on ours; both are durations.
+        if (name in downSeen && age * 1000 > performance.now() - downSeen[name]) return;
+        delete downSeen[name];
+        uptimes[name] = { seconds: uptime, at: performance.now() };
+        render();
+      })
+      .catch(() => {});
+  };
+
+  const syncUptimes = () => {
+    for (const name in svcctlPages) {
+      if (states[name] !== "up") {
+        delete uptimes[name];
+        downSeen[name] = performance.now();
+      } else if (name in downSeen || !(name in uptimes)) {
+        // Back up: ask hostctl to refetch until it has a post-boot value.
+        fetchUptime(name, true);
+      } else if (performance.now() - lastUptimeFetch[name] >= uptimeResync) {
+        fetchUptime(name, false);
+      }
+    }
+  };
+
+  const formatUptime = (seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+  };
 
   // Several quick polls after an action, since systemctl returns before the
   // unit has actually changed state.
@@ -331,7 +378,11 @@
       const state = displayState(name);
       const switchState = kinds.switch || kinds.config ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
-      const ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
+      let ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
+      if (state === "up" && uptimes[name]) {
+        const { seconds, at } = uptimes[name];
+        ping += ` · up ${formatUptime(seconds + (performance.now() - at) / 1000)}`;
+      }
       // Its ports, and its entries' units.
       const portState = kinds.ports
         ? JSON.stringify([
@@ -425,4 +476,6 @@
   });
   refresh();
   setInterval(refresh, 10000);
+  // Uptime counts up between fetches; render() skips unchanged tiles.
+  setInterval(render, 30000);
 })();
