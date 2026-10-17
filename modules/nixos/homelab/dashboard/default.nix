@@ -411,7 +411,6 @@ in
             memory = true;
             disk = "/";
             expanded = true;
-            uptime = true;
           };
         }
         # Must stay second to last, before the Tailscale link: theme.css
