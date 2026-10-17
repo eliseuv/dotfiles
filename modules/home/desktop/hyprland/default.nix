@@ -1019,7 +1019,8 @@ in
           {
             name = "tag-browser-chromium";
             match = {
-              class = "chromium-browser";
+              # Forced onto XWayland (see browser/default.nix), where WM_CLASS is capitalised
+              class = "^[Cc]hromium-browser$";
             };
             tag = "+browser";
             workspace = 5;
