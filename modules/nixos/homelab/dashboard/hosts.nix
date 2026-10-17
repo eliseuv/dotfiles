@@ -51,7 +51,8 @@ let
         "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
         "${lib.toLower host}.local"
       ];
-  # Host -> {tile, hosts, user, switch}.
+  tailnetAddress = host: config.homelab.network.tailnet.${host} or null;
+  # Host -> {tile, hosts, user, switch, mdns, tailnet}.
   pages = lib.mapAttrs' (
     _: service:
     let
@@ -62,6 +63,8 @@ let
       hosts = sshTargets service host;
       user = service.dashboard.sshUser;
       switch = service.dashboard.switch == host;
+      mdns = "${lib.toLower host}.local";
+      tailnet = tailnetAddress host;
     }
   ) tiles;
   # Tiles of machines that can't run host-report, keyed by their `wake` host:
@@ -78,6 +81,8 @@ let
       user = service.dashboard.sshUser;
       switch = false;
       snmp = true;
+      mdns = service.dashboard.address;
+      tailnet = tailnetAddress service.dashboard.wake;
     }
   ) snmpTiles;
   pagesFile = pkgs.writeText "hostctl-hosts.json" (builtins.toJSON (pages // snmpHosts));

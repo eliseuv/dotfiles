@@ -1,19 +1,22 @@
 """hostctl PORT HOSTS_JSON EVAL_JSON STATE_DIR HOST_REPORT [SSH_KEY]: the API
 behind the dashboard's host pages (hosts.nix). Read-only; the pages' switch
 button goes to svcctl.
-HOSTS_JSON maps host names to {tile, hosts, user, switch}. With `hosts` empty
+HOSTS_JSON maps host names to {tile, hosts, user, switch, mdns, tailnet}. With `hosts` empty
 the host is this one and HOST_REPORT runs here; otherwise it runs there,
 through the remote-control forced command (services/remote-control.nix),
 logged in with SSH_KEY, trying each name in `hosts` until one connects.
 Reports are cached in STATE_DIR, so a page shows the last one while its host
 is off. A host with `snmp` set can't run HOST_REPORT (a Synology): only its
 uptime is read, with snmpget, using the net-snmp client config at
-$HOSTCTL_SNMP_CONF. Closure diffs are cached for good: a generation never changes.
+$HOSTCTL_SNMP_CONF. Each host's LAN address is looked up by its `mdns` name
+(the router hands out no fixed ones) and, like reports, kept for when the host
+is off; its `tailnet` address is static. Closure diffs are cached for good: a generation never changes.
 EVAL_JSON is dotfiles-eval.service's evaluation of master (hosts.nix)."""
 
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import threading
@@ -56,10 +59,21 @@ def load_cached(host):
         return {"report": None, "fetched_at": None}
 
 
+def load_addresses():
+    try:
+        return json.loads((state_dir / "addresses.json").read_text())
+    except (OSError, ValueError):
+        return {}
+
+
 def write_atomically(path, data):
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data))
     tmp.replace(path)
+
+
+# Host -> its last resolved LAN address.
+lan_addresses = load_addresses()
 
 
 # Host -> {report, fetched_at, attempted_at, error, refreshing}.
@@ -148,7 +162,18 @@ def run_report(host, *args):
         raise RuntimeError("unreadable report")
 
 
+def resolve_lan_address(host):
+    try:
+        found = socket.getaddrinfo(hosts[host]["mdns"], None, socket.AF_INET)[0][4][0]
+    except (OSError, KeyError):
+        return
+    if lan_addresses.get(host) != found:
+        lan_addresses[host] = found
+        write_atomically(state_dir / "addresses.json", lan_addresses)
+
+
 def refresh(host):
+    resolve_lan_address(host)
     entry = state[host]
     entry["refreshing"] = True
     entry["attempted_at"] = time.time()
@@ -268,6 +293,10 @@ class Handler(BaseHTTPRequestHandler):
                     **entry,
                     "uptime": now - entry["boot_at"] if booted else None,
                     "uptime_age": now - entry["fetched_at"] if booted else None,
+                    "addresses": {
+                        "lan": lan_addresses.get(host),
+                        "tailnet": hosts[host].get("tailnet"),
+                    },
                     "master": master,
                     "status": deploy_status(entry["report"], master),
                 },

@@ -30,6 +30,9 @@
   // Tile name -> performance.now() when its host was last seen down. An
   // uptime fetched before then is from the previous boot.
   const downSeen = {};
+  // Tile name -> {lan, tailnet} addresses of a page host, for the tile's
+  // tooltip; hostctl keeps the last LAN one while the host is off.
+  const addresses = {};
   const uptimeResync = 60 * 1000;
   const lastUptimeFetch = {};
   // Tile name -> {port: open?} for ports tiles.
@@ -77,7 +80,8 @@
     const query = poke ? "?refresh=1" : "";
     fetch(`/api/hosts/${encodeURIComponent(svcctlUptimes[name])}${query}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
-      .then(({ uptime, uptime_age: age }) => {
+      .then(({ uptime, uptime_age: age, addresses: found }) => {
+        addresses[name] = found;
         if (uptime == null) return;
         // The age is on hostctl's clock and the wait on ours; both are durations.
         if (name in downSeen && age * 1000 > performance.now() - downSeen[name]) return;
@@ -88,8 +92,22 @@
       .catch(() => {});
   };
 
+  const fetchAddresses = (name) => {
+    addresses[name] = null;
+    fetch(`/api/hosts/${encodeURIComponent(svcctlUptimes[name])}`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
+      .then(({ addresses: found }) => {
+        addresses[name] = found;
+        render();
+      })
+      .catch(() => {
+        delete addresses[name];
+      });
+  };
+
   const syncUptimes = () => {
     for (const name in svcctlUptimes) {
+      if (!(name in addresses)) fetchAddresses(name);
       if (states[name] !== "up") {
         delete uptimes[name];
         downSeen[name] = performance.now();
@@ -352,6 +370,14 @@
     return state;
   };
 
+  const addressTooltip = (name) => {
+    const found = addresses[name];
+    if (!found) return "";
+    return [name, found.lan && `LAN ${found.lan}`, found.tailnet && `Tailnet ${found.tailnet}`]
+      .filter(Boolean)
+      .join("\n");
+  };
+
   // Only touches the DOM when something changed: the page's MutationObserver
   // calls this again on every mutation.
   const render = () => {
@@ -376,6 +402,10 @@
         card.append(bar);
         if (menu) card.append(menu);
       }
+      // Only when it differs: the page's MutationObserver calls this again on
+      // every mutation, an identical attribute write included.
+      const tooltip = addressTooltip(name);
+      if (tooltip && card.title !== tooltip) card.title = tooltip;
       const state = displayState(name);
       const switchState = kinds.switch || kinds.config ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
