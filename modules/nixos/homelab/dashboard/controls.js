@@ -382,7 +382,7 @@
       let ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
       if (state === "up" && uptimes[name]) {
         const { seconds, at } = uptimes[name];
-        ping += ` · up ${formatUptime(seconds + (performance.now() - at) / 1000)}`;
+        ping += ` · ${formatUptime(seconds + (performance.now() - at) / 1000)}`;
       }
       // Its ports, and its entries' units.
       const portState = kinds.ports
@@ -402,10 +402,14 @@
       bar.dataset.state = state;
       bar.dataset.switch = switchState;
       bar.dataset.ping = ping;
-      // Hosts read on/off, units their systemd state; anything in between
-      // shows as is. controls.css uppercases it.
+      // Hosts read off, or the ping and uptime alone when up (the readings
+      // already say so); units their systemd state; anything in between shows
+      // as is. controls.css uppercases it.
       const words = kinds.unit ? {} : { up: "on", down: "off" };
-      bar.querySelector(".svcctl-state").textContent = (words[state] || state) + ping;
+      bar.querySelector(".svcctl-state").textContent =
+        !kinds.unit && state === "up" && ping
+          ? ping.slice(" · ".length)
+          : (words[state] || state) + ping;
       const switching = bar.querySelector(".svcctl-switch-status");
       switching.hidden = switchState !== "switching" && switchState !== "failed";
       switching.textContent =
