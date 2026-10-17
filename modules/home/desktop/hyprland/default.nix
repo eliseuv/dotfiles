@@ -1174,7 +1174,7 @@ in
           {
             name = "spotify";
             match = {
-              class = "Spotify";
+              class = "^spotify$";
             };
             opaque = true;
             workspace = 4;
