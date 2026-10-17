@@ -1042,6 +1042,13 @@ in
             tag = "+documents";
           }
           {
+            name = "tag-documents-sioyek";
+            match = {
+              class = "sioyek";
+            };
+            tag = "+documents";
+          }
+          {
             name = "tag-documents-zotero";
             match = {
               class = "Zotero";
