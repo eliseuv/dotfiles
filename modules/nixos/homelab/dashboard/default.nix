@@ -414,21 +414,22 @@ in
             uptime = true;
           };
         }
+        # Must stay second to last, before the Tailscale link: theme.css
+        # themes it by position, since Homepage gives info widgets no id or
+        # class hook.
+        {
+          resources = {
+            label = "Companion Cube";
+            disk = "/mnt/media";
+            expanded = true;
+          };
+        }
         {
           greeting = {
             text = "Tailscale";
             text_size = "sm";
             href = "https://login.tailscale.com/admin/machines";
             target = "_blank";
-          };
-        }
-        # Must stay the last widget: theme.css themes it by position,
-        # since Homepage gives info widgets no id or class hook.
-        {
-          resources = {
-            label = "Companion Cube";
-            disk = "/mnt/media";
-            expanded = true;
           };
         }
       ];
