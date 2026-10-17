@@ -19,6 +19,12 @@
 # input in its build closure is itself suspect; such results are recorded as
 # `inconclusive` instead of `identical`.
 #
+# A local output whose NAR hash equals a binary cache's is not rebuilt: an
+# independent builder producing the same bytes is stronger evidence than a
+# local rebuild, which shares this machine's inputs. A derivation with some
+# outputs missing (e.g. a garbage-collected `dev`) has them realised first,
+# as `--check` refuses partially valid derivations; that only adds paths.
+#
 # Nothing existing is modified: `--check` builds into a temporary output, and
 # keeps a differing one as `<out>.check` (an ordinary, garbage-collectable
 # store path) for comparison, e.g. with diffoscope. --keep-failed, which keeps
@@ -45,11 +51,12 @@ ROOT defaults to /run/current-system plus every readable user profile
 
 Writes, in DIR:
   results.tsv  status, derivation, outputs, cache, cache_nar, note, log
-  summary.txt  counts per status, and every row that is not \`identical\`
+  summary.txt  counts per status, and every row neither \`identical\` nor \`matches-cache\`
   logs/        output of each \`nix-store --realise --check\`
 
 Statuses:
   identical       rebuilt bit-for-bit identical to the existing output
+  matches-cache   not rebuilt: every local output equals a binary cache's
   differs         rebuilt differently; corruption or plain non-reproducibility
   inconclusive    identical, but an input in its build closure is not
   build-failed    the rebuild failed (1xx exit status, see its log)
@@ -107,6 +114,13 @@ fi
 mapfile -t roots < <(readlink -f "${roots[@]}" | sort -u)
 
 mkdir -p "$out_dir/logs"
+# Two runs on one directory would interleave rows and overwrite each other's
+# logs, and their concurrent checks of a derivation fail on its output locks.
+exec 9> "$out_dir/.lock"
+if ! flock --nonblock 9; then
+    echo "error: another audit is running on $out_dir" >&2
+    exit 1
+fi
 results=$out_dir/results.tsv
 printf '%s\n' "${roots[@]}" > "$out_dir/roots.txt"
 echo "roots: ${#roots[@]} (see $out_dir/roots.txt)"
@@ -186,7 +200,7 @@ if [[ -s $results ]]; then
     while IFS=$'\t' read -r status drv _; do
         if [[ $status == status ]]; then continue; fi
         done_drvs[$drv]=1
-        if [[ $status != identical ]]; then suspect[$drv]=1; fi
+        if [[ $status != identical && $status != matches-cache ]]; then suspect[$drv]=1; fi
     done < "$results"
     echo "resuming: ${#done_drvs[@]} derivations already recorded"
 else
@@ -196,7 +210,7 @@ fi
 record() { # status drv note log
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "${outputs_of[$2]}" \
         "$(cache_info has "$2")" "$(cache_info nar "$2")" "$3" "$4" >> "$results"
-    if [[ $1 != identical ]]; then suspect[$2]=1; fi
+    if [[ $1 != identical && $1 != matches-cache ]]; then suspect[$2]=1; fi
     printf '%-14s %s\n' "$1" "${2#/nix/store/}"
 }
 
@@ -217,8 +231,26 @@ for drv in "${drv_order[@]}"; do
     done_drvs[$drv]=1
 
     log=$out_dir/logs/${drv#/nix/store/}.log
+    : > "$log"
+
+    if [[ $(cache_info nar "$drv") =~ ^match(;match)*$ ]]; then
+        record matches-cache "$drv" "" -
+        continue
+    fi
+
+    note=
+    missing=()
+    while read -r output; do
+        if [[ ! -e $output ]]; then missing+=("$output"); fi
+    done < <(nix-store --query --outputs "$drv")
     rc=0
-    nix-store --realise --check --keep-failed "$drv" > "$log" 2>&1 || rc=$?
+    if ((${#missing[@]})); then
+        note="realised missing outputs: ${missing[*]#/nix/store/}"
+        nix-store --realise "$drv" >> "$log" 2>&1 || rc=$?
+    fi
+    if ((rc == 0)); then
+        nix-store --realise --check --keep-failed "$drv" >> "$log" 2>&1 || rc=$?
+    fi
 
     # Going through the daemon, Nix 2.34 exits 1 for all of these, rather
     # than with the 1xx bitmask nix-store-realise(1) documents, so the log is
@@ -233,7 +265,6 @@ for drv in "${drv_order[@]}"; do
         status=error
     fi
 
-    note=
     if ((${#suspect[@]})); then
         suspect_inputs=()
         while read -r input; do
@@ -242,7 +273,7 @@ for drv in "${drv_order[@]}"; do
             fi
         done < <(nix-store --query --requisites "$drv" | grep '\.drv$')
         if ((${#suspect_inputs[@]})); then
-            note="suspect inputs: ${suspect_inputs[*]}"
+            note+="${note:+; }suspect inputs: ${suspect_inputs[*]}"
             if [[ $status == identical ]]; then status=inconclusive; fi
         fi
     fi
@@ -269,8 +300,8 @@ done
     echo "local outputs a cache also has: $(printf '%s\n' "${!cache_has[@]}" | grep -c . || true)," \
         "of which the cache's NAR hash differs: $(printf '%s\n' "${cache_nar[@]}" | grep -c '^differs$' || true)"
     echo
-    echo "not identical:"
-    tail -n +2 "$results" | awk -F'\t' '$1 != "identical"' | sort
+    echo "neither identical nor matching a cache:"
+    tail -n +2 "$results" | awk -F'\t' '$1 != "identical" && $1 != "matches-cache"' | sort
 } > "$out_dir/summary.txt"
 
 echo
