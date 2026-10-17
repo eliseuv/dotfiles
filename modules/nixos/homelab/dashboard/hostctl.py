@@ -100,11 +100,13 @@ def remote(host, verb, user):
 
 
 def snmp_uptime(host):
-    # sysUpTime.0, in hundredths of a second; -Ot prints it as that number.
+    # hrSystemUpTime.0, in hundredths of a second; -Ot prints it as that
+    # number. Not sysUpTime.0, which is the SNMP agent's: it restarts with
+    # the service, e.g. when SNMP settings are applied.
     result = subprocess.run(
         [
             "snmpget", "-m", "", "-t", "3", "-r", "1", "-Oqvt",
-            hosts[host]["hosts"][0], "1.3.6.1.2.1.1.3.0",
+            hosts[host]["hosts"][0], "1.3.6.1.2.1.25.1.1.0",
         ],
         capture_output=True,
         text=True,
