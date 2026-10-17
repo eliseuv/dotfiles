@@ -977,7 +977,7 @@ in
           {
             name = "tag-editor-vscode";
             match = {
-              class = "code-oss";
+              class = "^code$";
             };
             tag = "+editor";
           }
