@@ -64,7 +64,23 @@ let
       switch = service.dashboard.switch == host;
     }
   ) tiles;
-  pagesFile = pkgs.writeText "hostctl-hosts.json" (builtins.toJSON pages);
+  # Tiles of machines that can't run host-report, keyed by their `wake` host:
+  # hostctl reads only their uptime, over SNMP.
+  snmpTiles = lib.filterAttrs (
+    _: service: service.dashboard != null && service.dashboard.snmp != null
+  ) config.homelab.services;
+  snmpSecrets = lib.unique (lib.mapAttrsToList (_: service: service.dashboard.snmp) snmpTiles);
+  snmpHosts = lib.mapAttrs' (
+    _: service:
+    lib.nameValuePair service.dashboard.wake {
+      tile = service.dashboard.name;
+      hosts = [ service.dashboard.address ];
+      user = service.dashboard.sshUser;
+      switch = false;
+      snmp = true;
+    }
+  ) snmpTiles;
+  pagesFile = pkgs.writeText "hostctl-hosts.json" (builtins.toJSON (pages // snmpHosts));
   needsKey = !lib.all isLocal pageHosts;
   sshKey = "hostctl/ssh-key";
 
@@ -138,6 +154,14 @@ in
         assertion = !lib.any isLocal pageHosts || config.my.services.dotfilesSwitch.enable;
         message = "a dashboard.page tile targets this host, which needs my.services.dotfilesSwitch.enable";
       }
+      {
+        assertion =
+          lib.all (service: service.dashboard.wake != null && service.dashboard.address != null) (
+            lib.attrValues snmpTiles
+          )
+          && lib.length snmpSecrets <= 1;
+        message = "homelab.services.*.dashboard.snmp: needs wake and address, and one shared secret";
+      }
     ];
 
     systemd.services.dotfiles-eval = {
@@ -172,15 +196,25 @@ in
 
     # svcctl's key (controls.nix), rendered again for this user: ssh refuses
     # a key its owner shares, so the one copy can't serve both.
-    sops.secrets.${sshKey} = lib.mkIf needsKey {
-      key = "svcctl/poweroff-ssh-key";
-      owner = "hostctl";
-    };
+    sops.secrets = lib.mkMerge [
+      (lib.mkIf needsKey {
+        ${sshKey} = {
+          key = "svcctl/poweroff-ssh-key";
+          owner = "hostctl";
+        };
+      })
+      (lib.genAttrs snmpSecrets (_: {
+        owner = "hostctl";
+      }))
+    ];
 
     systemd.services.hostctl = {
       description = "Dashboard host pages";
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.openssh ];
+      path = [
+        pkgs.openssh
+        pkgs.net-snmp
+      ];
       serviceConfig = {
         ExecStart = lib.concatStringsSep " " (
           [
@@ -197,6 +231,10 @@ in
         User = "hostctl";
         Group = "hostctl";
         StateDirectory = "hostctl";
+        RuntimeDirectory = "hostctl";
+        Environment = map (
+          secret: "HOSTCTL_SNMP_CONF=${config.sops.secrets.${secret}.path}"
+        ) snmpSecrets;
         Restart = "on-failure";
         # Serves on loopback, SSHes to hosts on the LAN and the tailnet, and
         # talks to the Nix daemon (AF_UNIX) for this host's report.

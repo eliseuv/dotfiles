@@ -6,10 +6,13 @@ the host is this one and HOST_REPORT runs here; otherwise it runs there,
 through the remote-control forced command (services/remote-control.nix),
 logged in with SSH_KEY, trying each name in `hosts` until one connects.
 Reports are cached in STATE_DIR, so a page shows the last one while its host
-is off. Closure diffs are cached for good: a generation never changes.
+is off. A host with `snmp` set can't run HOST_REPORT (a Synology): only its
+uptime is read, with snmpget, using the net-snmp client config at
+$HOSTCTL_SNMP_CONF. Closure diffs are cached for good: a generation never changes.
 EVAL_JSON is dotfiles-eval.service's evaluation of master (hosts.nix)."""
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -31,6 +34,14 @@ ssh_key = sys.argv[6] if len(sys.argv) > 6 else None
 # background, sooner when a page asks, but no more often than this.
 REFRESH_INTERVAL = 300
 MIN_REFRESH_GAP = 30
+
+# net-snmp finds its credentials as snmp.conf in SNMPCONFPATH, a directory,
+# and wants a place to keep its engine state.
+snmp_dir = Path(os.environ.get("RUNTIME_DIRECTORY", state_dir)) / "snmp"
+if os.environ.get("HOSTCTL_SNMP_CONF"):
+    snmp_dir.mkdir(exist_ok=True)
+    (snmp_dir / "snmp.conf").unlink(missing_ok=True)
+    (snmp_dir / "snmp.conf").symlink_to(os.environ["HOSTCTL_SNMP_CONF"])
 
 reports_dir = state_dir / "reports"
 diffs_dir = state_dir / "diffs"
@@ -88,6 +99,26 @@ def remote(host, verb, user):
     )
 
 
+def snmp_uptime(host):
+    # sysUpTime.0, in hundredths of a second; -Ot prints it as that number.
+    result = subprocess.run(
+        [
+            "snmpget", "-m", "", "-t", "3", "-r", "1", "-Oqvt",
+            hosts[host]["hosts"][0], "1.3.6.1.2.1.1.3.0",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env={**os.environ, "SNMPCONFPATH": str(snmp_dir), "SNMP_PERSISTENT_DIR": str(snmp_dir)},
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or f"exit {result.returncode}")
+    try:
+        return {"uptime": int(result.stdout.strip()) // 100}
+    except ValueError:
+        raise RuntimeError("unreadable uptime")
+
+
 def run_report(host, *args):
     # host-report's output, raising RuntimeError with the reason it failed.
     target = hosts[host]
@@ -120,7 +151,7 @@ def refresh(host):
     entry["refreshing"] = True
     entry["attempted_at"] = time.time()
     try:
-        report = run_report(host, "generations")
+        report = snmp_uptime(host) if hosts[host].get("snmp") else run_report(host, "generations")
     except RuntimeError as error:
         entry["error"] = str(error)
     else:

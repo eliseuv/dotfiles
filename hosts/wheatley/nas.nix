@@ -69,6 +69,9 @@ in
     tailscale = "CompanionCube";
     address = nasAddress;
     sshUser = "evf";
+    # Its uptime over SNMPv3 (authNoPriv, MD5); the secret is a net-snmp
+    # client config in secrets/hosts/wheatley.yaml. DSM can't run host-report.
+    snmp = "companioncube/snmp";
   };
   # svcctl's SSH to DSM checks this key (taken with ssh-keyscan on first
   # setup; confirm it in DSM's Terminal & SNMP settings if in doubt).

@@ -9,7 +9,8 @@
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
 // `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host),
 // `svcctlTerminals` (tile name -> URL, what the tile itself opens),
-// `svcctlPages` (tile name -> host whose page the config button opens), `svcctlPorts` (tile name ->
+// `svcctlPages` (tile name -> host whose page the config button opens),
+// `svcctlUptimes` (tile name -> hostctl's name for the host whose uptime it shows), `svcctlPorts` (tile name ->
 // {host, ports: [{name, port, href, unit}]}) and `svcctlTailnet` ({domain,
 // address}) are defined ahead of this file by default.nix.
 (() => {
@@ -74,7 +75,7 @@
   const fetchUptime = (name, poke) => {
     lastUptimeFetch[name] = performance.now();
     const query = poke ? "?refresh=1" : "";
-    fetch(`/api/hosts/${encodeURIComponent(svcctlPages[name])}${query}`)
+    fetch(`/api/hosts/${encodeURIComponent(svcctlUptimes[name])}${query}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
       .then(({ uptime, uptime_age: age }) => {
         if (uptime == null) return;
@@ -88,7 +89,7 @@
   };
 
   const syncUptimes = () => {
-    for (const name in svcctlPages) {
+    for (const name in svcctlUptimes) {
       if (states[name] !== "up") {
         delete uptimes[name];
         downSeen[name] = performance.now();

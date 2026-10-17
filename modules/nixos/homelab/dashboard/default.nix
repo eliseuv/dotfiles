@@ -79,6 +79,13 @@ let
   pageTiles = lib.mapAttrs' (
     _: service: lib.nameValuePair service.dashboard.name service.dashboard.page
   ) (lib.filterAttrs (_: service: service.dashboard.page != null) tiled);
+  # Tile name -> hostctl's name for the host, whose uptime the tile shows
+  # (hosts.nix): a page's host, or the `wake` host of an `snmp` tile.
+  uptimeTiles =
+    pageTiles
+    // lib.mapAttrs' (_: service: lib.nameValuePair service.dashboard.name service.dashboard.wake) (
+      lib.filterAttrs (_: service: service.dashboard.snmp != null) tiled
+    );
   tailscaleTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiled
   );
@@ -273,6 +280,11 @@ let
       default = null;
       description = "Host (as in hosts/) whose page - generations, diffs, deploy status against master - the tile's config page button opens, in place of its switch button (hosts.nix); it needs my.services.dotfilesSwitch.";
     };
+    snmp = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "sops secret holding a net-snmp client config (SNMPv3 credentials) with which hostctl reads the `wake` host's uptime, for machines that can't run host-report; needs `address` (hosts.nix).";
+    };
     address = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -449,6 +461,7 @@ in
         const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
         const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
         const svcctlPages = ${builtins.toJSON pageTiles};
+        const svcctlUptimes = ${builtins.toJSON uptimeTiles};
         const svcctlTailscaleTiles = ${builtins.toJSON tailscaleTiles};
         const svcctlPorts = ${builtins.toJSON portTiles};
         const svcctlTailnet = ${
