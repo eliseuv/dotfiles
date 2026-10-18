@@ -110,7 +110,6 @@ in
             "hyprland.start"
             (inline ''
               function()
-                hl.exec_cmd("waybar")
                 hl.exec_cmd("dbus-update-activation-environment --systemd --all")
               end
             '')

@@ -102,6 +102,9 @@ in
 
     programs.waybar = {
       enable = true;
+      # Started with the graphical session (UWSM reaches graphical-session.target)
+      # rather than from Hyprland's autostart
+      systemd.enable = true;
     };
 
     home.packages = with pkgs; [
