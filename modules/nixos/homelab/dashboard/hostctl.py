@@ -74,6 +74,9 @@ def write_atomically(path, data):
 
 # Host -> its last resolved LAN address.
 lan_addresses = load_addresses()
+# The refreshers share one file (and its temp file), and an unhandled error
+# ends a refresher thread for good.
+lan_addresses_lock = threading.Lock()
 
 
 # Host -> {report, fetched_at, attempted_at, error, refreshing}.
@@ -167,9 +170,10 @@ def resolve_lan_address(host):
         found = socket.getaddrinfo(hosts[host]["mdns"], None, socket.AF_INET)[0][4][0]
     except (OSError, KeyError):
         return
-    if lan_addresses.get(host) != found:
-        lan_addresses[host] = found
-        write_atomically(state_dir / "addresses.json", lan_addresses)
+    with lan_addresses_lock:
+        if lan_addresses.get(host) != found:
+            lan_addresses[host] = found
+            write_atomically(state_dir / "addresses.json", lan_addresses)
 
 
 def refresh(host):
