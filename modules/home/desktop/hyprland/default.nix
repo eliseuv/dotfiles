@@ -480,7 +480,7 @@ in
           {
             _args = [
               (inline ''mainMod .. " + SHIFT + D"'')
-              (inline ''hl.dsp.exec_cmd("wheatley-dashboard")'')
+              (inline ''hl.dsp.exec_cmd("~/.config/rofi/bin/wheatleymenu")'')
             ];
           }
           {

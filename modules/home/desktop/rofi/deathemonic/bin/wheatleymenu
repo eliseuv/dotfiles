@@ -27,7 +27,8 @@ if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status"); then
     exit 1
 fi
 
-labels=()
+# First, so Enter alone opens it
+labels=("󰖟  Dashboard")
 for entry in "${HOSTS[@]}"; do
     IFS='|' read -r tile _ _ _ <<< "$entry"
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
@@ -42,7 +43,12 @@ done
 row=$(printf '%s\n' "${labels[@]}" | menu "Homelab")
 [[ -z "$row" || "$row" -lt 0 ]] && exit 0
 
-IFS='|' read -r tile host wake_name has_page <<< "${HOSTS[$row]}"
+if [[ "$row" -eq 0 ]]; then
+    wheatley-dashboard &
+    exit 0
+fi
+
+IFS='|' read -r tile host wake_name has_page <<< "${HOSTS[$((row - 1))]}"
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
 
 actions=()
@@ -58,8 +64,6 @@ if [ "$has_page" = "1" ]; then
     sublabels+=("󰖟  Host page")
     actions+=("page")
 fi
-sublabels+=("󰖟  Dashboard")
-actions+=("dashboard")
 
 sub=$(printf '%s\n' "${sublabels[@]}" | menu "$tile")
 [[ -z "$sub" || "$sub" -lt 0 ]] && exit 0
@@ -74,5 +78,4 @@ wake)
     fi
     ;;
 page) xdg-open "$base/hosts/?host=$host" & ;;
-dashboard) wheatley-dashboard & ;;
 esac
