@@ -9,44 +9,15 @@ ddir="$HOME/.config/rofi/config"
 # password (svcctl/htpasswd on wheatley).
 RBW_ENTRY="Wheatley dashboard"
 
-# Tile name | hostctl name | SSH name | has a host page | icon | controls
-# Controls mirror the tiles' dashboard options in hosts/wheatley/system.nix
-# and nas.nix; svcctl's status doesn't say which a tile has.
-ALL_HOSTS=(
-    "Wheatley|wheatley|wheatley|1|󰈈|reboot,switch,ports"
-    "Chell|chell|chell|1|󰀄|wake,poweroff,reboot,switch,tailscale,ports"
-    "GLaDOS|GLaDOS|GLaDOS|1|󰚩|wake,poweroff,reboot,switch,tailscale,ports"
-    "Companion Cube|CompanionCube|CompanionCube|0|󰆧|wake,poweroff,reboot,tailscale"
+# The hosts, their controls and ports come from svcctl's menu
+# (dashboard/controls.nix); only the glyphs are the menu's own.
+declare -A ICONS=(
+    ["Wheatley"]="󰈈"
+    ["Chell"]="󰀄"
+    ["GLaDOS"]="󰚩"
+    ["Companion Cube"]="󰆧"
 )
-
-# Tile | label | port | dashboard path, linked instead of host:port | has a unit
-# From homelab.network.ports' dev ports and the Pluto entries in
-# hosts/wheatley/services/pluto.nix. svcctl knows a unit as "<label> · <tile>".
-PORTS=(
-    "Wheatley|Vite|5173||0"
-    "Wheatley|Vite (fallback)|5174||0"
-    "Wheatley|Zola|1111||0"
-    "Wheatley|Pluto|1234|/wheatley/pluto/|1"
-    "GLaDOS|HTTP|8080||0"
-    "GLaDOS|Zola|1111||0"
-    "GLaDOS|Vite|5173||0"
-    "GLaDOS|Pluto|1234|/glados/pluto/|1"
-    "Chell|HTTP|8080||0"
-    "Chell|Zola|1111||0"
-    "Chell|Vite|5173||0"
-    "Chell|Pluto|1234|/chell/pluto/|1"
-)
-
-self=$(hostname)
-self=${self,,}
-
-# This machine is not part of what the menu lists. Filtered up front so row
-# indices still map straight onto HOSTS.
-HOSTS=()
-for entry in "${ALL_HOSTS[@]}"; do
-    IFS='|' read -r _ host _ _ _ _ <<< "$entry"
-    [ "${host,,}" = "$self" ] || HOSTS+=("$entry")
-done
+DEFAULT_ICON="󰒋"
 
 show_msg() {
     rofi -theme "$ddir/askpass.rasi" -e "$1"
@@ -74,6 +45,15 @@ if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status"); then
     show_msg "Wheatley unreachable"
     exit 1
 fi
+if ! host_menu=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/menu"); then
+    show_msg "Wheatley serves no host menu; switch him to the current dotfiles"
+    exit 1
+fi
+
+self=$(hostname)
+# One host tile per line, as JSON. This machine is not part of what the menu
+# lists; filtered up front so row indices still map straight onto HOSTS.
+mapfile -t HOSTS < <(jq -c --arg self "${self,,}" '.[] | select((.host | ascii_downcase) != $self)' <<< "$host_menu")
 
 # POSTs an svcctl action on a tile (or a ports entry's unit) with the login
 # from Bitwarden, then notifies `$3` or shows why it failed.
@@ -110,10 +90,11 @@ post() {
 # Open dev servers to open, and start/stop for entries with a unit, as in the
 # tile's ports menu: a starting unit has no open port yet, so it offers stop.
 ports_menu() {
-    local tile=$1 host=$2 ptile label port path unit open state labels=() kinds=() targets=()
-    for entry in "${PORTS[@]}"; do
-        IFS='|' read -r ptile label port path unit <<< "$entry"
-        [ "$ptile" = "$tile" ] || continue
+    local tile=$1 ports_host=$2 label port path unit open state labels=() kinds=() targets=()
+    # A null portsHost is Wheatley himself, by the name reached here.
+    ports_host=${ports_host:-wheatley}
+    # `|`-joined, as read with IFS: tabs would collapse an empty href.
+    while IFS='|' read -r label port path unit; do
         open=$(jq -r --arg tile "$tile" --arg port "$port" '.ports[$tile][$port] // false' <<< "$status")
         if [ "$open" = "true" ]; then
             labels+=("󰏌  $label    ${path:-:$port}")
@@ -121,10 +102,10 @@ ports_menu() {
             if [ -n "$path" ]; then
                 targets+=("$base$path")
             else
-                targets+=("http://${host,,}$domain:$port")
+                targets+=("http://${ports_host,,}$domain:$port")
             fi
         fi
-        if [ "$unit" = "1" ]; then
+        if [ "$unit" = "true" ]; then
             state=$(jq -r --arg name "$label · $tile" '.tiles[$name] // "unknown"' <<< "$status")
             if [ "$open" = "true" ] || [[ "$state" =~ ^(active|activating|reloading)$ ]]; then
                 labels+=("󰓛  Stop $label")
@@ -135,7 +116,7 @@ ports_menu() {
             fi
             targets+=("$label · $tile")
         fi
-    done
+    done < <(jq -r '.ports[] | [.label, .port, .href // "", .unit] | map(tostring) | join("|")' <<< "$entry")
     if [ ${#labels[@]} -eq 0 ]; then
         show_msg "No open ports on $tile"
         return
@@ -154,7 +135,8 @@ ports_menu() {
 # First, so Enter alone opens it
 labels=("󰕮  Dashboard")
 for entry in "${HOSTS[@]}"; do
-    IFS='|' read -r tile _ _ _ icon _ <<< "$entry"
+    tile=$(jq -r '.tile' <<< "$entry")
+    icon=${ICONS[$tile]:-$DEFAULT_ICON}
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
     ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
     if [ "$state" = "up" ]; then
@@ -172,9 +154,12 @@ if [[ "$row" -eq 0 ]]; then
     exit 0
 fi
 
-IFS='|' read -r tile host ssh_name has_page _ controls <<< "${HOSTS[$((row - 1))]}"
+entry=${HOSTS[$((row - 1))]}
+IFS='|' read -r tile ssh_host page ports_host < <(
+    jq -r '[.tile, .address // "\(.host | ascii_downcase).local", .page // "", .portsHost // ""] | join("|")' <<< "$entry"
+)
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
-has() { [[ ",$controls," == *",$1,"* ]]; }
+has() { jq -e --arg control "$1" '.controls | index($control)' <<< "$entry" > /dev/null; }
 
 actions=()
 sublabels=()
@@ -215,7 +200,7 @@ elif has wake; then
     sublabels+=("󰐥  Wake")
     actions+=("wake")
 fi
-if [ "$has_page" = "1" ]; then
+if [ -n "$page" ]; then
     sublabels+=("󰖟  Host page")
     actions+=("page")
 fi
@@ -229,10 +214,10 @@ sub=$(printf '%s\n' "${sublabels[@]}" | menu "$tile")
 
 # Confirmations as the dashboard's.
 case "${actions[$sub]}" in
-ssh) "$TERMINAL" -e ssh "${ssh_name,,}.local" & ;;
+ssh) "$TERMINAL" -e ssh "$ssh_host" & ;;
 wake) post wake "$tile" "Wake sent" ;;
-page) chromium "$base/hosts/?host=$host" & ;;
-ports) ports_menu "$tile" "$ssh_name" ;;
+page) chromium "$base/hosts/?host=$page" & ;;
+ports) ports_menu "$tile" "$ports_host" ;;
 switch) confirm "Pull origin/master on $tile and switch to it?" && post switch "$tile" "Switch started" ;;
 tailscale-on) post tailscale-on "$tile" "Tailscale on" ;;
 tailscale-off)
