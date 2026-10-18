@@ -33,6 +33,7 @@ let
       "hyprland/language"
       "network"
       "custom/tailscale"
+      "custom/wheatley"
       "custom/bitwarden"
     ]
     ++ lib.optional hasBluetooth "bluetooth"
@@ -130,6 +131,7 @@ in
     home.file.".config/waybar/scripts/check_flake_updates.sh".source = ./check_flake_updates.sh;
     home.file.".config/waybar/scripts/claude_usage.sh".source = ./claude_usage.sh;
     home.file.".config/waybar/scripts/tailscale.sh".source = ./tailscale.sh;
+    home.file.".config/waybar/scripts/wheatley.sh".source = ./wheatley.sh;
     home.file.".config/waybar/scripts/bitwarden.sh".source = ./bitwarden.sh;
 
   };

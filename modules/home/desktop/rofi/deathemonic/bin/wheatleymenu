@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Homelab hosts from Wheatley's dashboard API. Read-only plus wake; poweroff,
+# reboot and switch need the dashboard's login, so they stay on the dashboard.
+ddir="$HOME/.config/rofi/config"
+
+# Tile name | hostctl name | `wake` name | has a host page
+HOSTS=("Wheatley|wheatley|wheatley|1" "Chell|chell|chell|1" "GLaDOS|GLaDOS|GLaDOS|1" "Companion Cube|CompanionCube|CompanionCube|0")
+
+show_msg() {
+    rofi -theme "$ddir/askpass.rasi" -e "$1"
+}
+
+menu() {
+    rofi -dmenu -i -format i -p "$1" -theme "$ddir/networkmenu.rasi" \
+        -theme-str 'textbox-prompt-colon { str: "󰒋"; }'
+}
+
+# The short MagicDNS name only resolves on the tailnet; otherwise mDNS.
+if [ "$(tailscale status --peers=false --json 2> /dev/null | jq -r '.BackendState' 2> /dev/null)" = "Running" ]; then
+    base="http://wheatley"
+else
+    base="http://wheatley.local"
+fi
+
+if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status"); then
+    show_msg "Wheatley unreachable"
+    exit 1
+fi
+
+labels=()
+for entry in "${HOSTS[@]}"; do
+    IFS='|' read -r tile _ _ _ <<< "$entry"
+    state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
+    ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
+    if [ "$state" = "up" ]; then
+        labels+=("●  $tile    ${ping:+$ping ms}")
+    else
+        labels+=("○  $tile    down")
+    fi
+done
+
+row=$(printf '%s\n' "${labels[@]}" | menu "Homelab")
+[[ -z "$row" || "$row" -lt 0 ]] && exit 0
+
+IFS='|' read -r tile host wake_name has_page <<< "${HOSTS[$row]}"
+up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
+
+actions=()
+sublabels=()
+if [ "$up" = "true" ]; then
+    sublabels+=("  SSH")
+    actions+=("ssh")
+else
+    sublabels+=("󰐥  Wake")
+    actions+=("wake")
+fi
+if [ "$has_page" = "1" ]; then
+    sublabels+=("󰖟  Host page")
+    actions+=("page")
+fi
+sublabels+=("󰖟  Dashboard")
+actions+=("dashboard")
+
+sub=$(printf '%s\n' "${sublabels[@]}" | menu "$tile")
+[[ -z "$sub" || "$sub" -lt 0 ]] && exit 0
+
+case "${actions[$sub]}" in
+ssh) "$TERMINAL" -e ssh "${wake_name,,}.local" & ;;
+wake)
+    if out=$(wake "$wake_name" 2>&1); then
+        notify-send -a Homelab "Wake sent" "$tile"
+    else
+        show_msg "Failed: $out"
+    fi
+    ;;
+page) xdg-open "$base/hosts/?host=$host" & ;;
+dashboard) wheatley-dashboard & ;;
+esac

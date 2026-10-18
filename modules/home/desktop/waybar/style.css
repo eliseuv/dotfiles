@@ -21,6 +21,7 @@ window#waybar {
 #custom-weather,
 #custom-claude-usage,
 #custom-tailscale,
+#custom-wheatley,
 #custom-bitwarden,
 #language,
 #network,
@@ -213,6 +214,38 @@ window#waybar {
 }
 
 #custom-tailscale.needs-login:hover {
+    background: @critical;
+    color: @bg;
+}
+
+#custom-wheatley.ok {
+    color: @active;
+    border-color: @active;
+}
+
+#custom-wheatley.ok:hover {
+    background: @active;
+    color: @bg;
+}
+
+#custom-wheatley.partial {
+    color: @main_dim;
+    border-color: @main_dim;
+}
+
+#custom-wheatley.partial:hover {
+    background: @main_dim;
+    color: @bg;
+}
+
+#custom-wheatley.down,
+#custom-wheatley.failed {
+    color: @critical;
+    border-color: @critical;
+}
+
+#custom-wheatley.down:hover,
+#custom-wheatley.failed:hover {
     background: @critical;
     color: @bg;
 }

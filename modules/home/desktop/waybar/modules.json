@@ -123,6 +123,13 @@
         "on-click": "~/.config/rofi/bin/tailscalemenu",
         "on-click-right": "~/.config/waybar/scripts/tailscale.sh toggle",
     },
+    "custom/wheatley": {
+        "exec": "~/.config/waybar/scripts/wheatley.sh",
+        "interval": 10,
+        "return-type": "json",
+        "on-click": "~/.config/rofi/bin/wheatleymenu",
+        "on-click-right": "wheatley-dashboard",
+    },
     "custom/bitwarden": {
         "exec": "~/.config/waybar/scripts/bitwarden.sh",
         "interval": 30,
