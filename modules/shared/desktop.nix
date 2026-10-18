@@ -93,7 +93,29 @@ in
       );
     };
 
-    waybar.homeDisk = lib.mkEnableOption "a Waybar disk readout for a separate /home partition";
+    waybar.disks = lib.mkOption {
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            path = lib.mkOption {
+              type = lib.types.str;
+              description = "Mount point to report on.";
+            };
+            icon = lib.mkOption {
+              type = lib.types.str;
+              description = "Nerd Font glyph shown before the usage.";
+            };
+          };
+        }
+      );
+      default = [
+        {
+          path = "/";
+          icon = "󰆼";
+        }
+      ];
+      description = "Disks the Waybar bars read out, one module each, in order; /boot and the like are left out.";
+    };
 
     bootSplash.enable = lib.mkOption {
       type = lib.types.bool;

@@ -54,14 +54,6 @@
         ],
         "max-length": 25
     },
-    "disk": {
-        "format": "󰆼  {percentage_used}%",
-        "path": "/"
-    },
-    "disk#home": {
-        "format": "󰋜  {percentage_used}%",
-        "path": "/home/"
-    },
     "privacy": {
         "icon-spacing": 10,
         "icon-size": 18,

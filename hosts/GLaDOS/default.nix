@@ -6,7 +6,24 @@
     hyprland.enable = true;
     gnome.enable = true;
     gdmMonitors = ./monitors.xml;
-    waybar.homeDisk = true;
+    waybar.disks = [
+      {
+        path = "/";
+        icon = "󰆼";
+      }
+      {
+        path = "/home";
+        icon = "󰋜";
+      }
+      {
+        path = "/run/media/evf/Storage";
+        icon = "󰋊";
+      }
+      {
+        path = "/run/media/evf/Research";
+        icon = "󰉋";
+      }
+    ];
     monitors = [
       {
         output = "DP-1";

@@ -8,19 +8,28 @@ let
 
   # One layout shared by every host so bars can't drift apart; hosts only
   # differ in hardware-specific modules and in their outputs.
-  hasHomePartition = config.my.desktop.waybar.homeDisk;
+  # One native disk module per configured mount: "disk#0", "disk#1", ...
+  diskModules = lib.listToAttrs (
+    lib.imap0 (index: disk: {
+      name = "disk#${toString index}";
+      value = {
+        inherit (disk) path;
+        format = "${disk.icon}  {percentage_used}%";
+      };
+    }) config.my.desktop.waybar.disks
+  );
+  diskNames = lib.attrNames diskModules;
   hasBluetooth = config.my.hardware.bluetooth.enable;
 
-  mainBar = {
+  mainBar = diskModules // {
     layer = "top";
     include = [ "~/.config/waybar/modules.json" ];
     modules-left = [
       "custom/launcher"
       "cpu"
       "memory"
-      "disk"
     ]
-    ++ lib.optional hasHomePartition "disk#home"
+    ++ diskNames
     ++ [ "temperature" ];
     modules-center = [
       "hyprland/workspaces"
@@ -54,15 +63,14 @@ let
   };
 
   # Deliberately minimal
-  minimalBar = {
+  minimalBar = diskModules // {
     layer = "top";
     include = [ "~/.config/waybar/modules.json" ];
     modules-left = [
       "cpu"
       "memory"
-      "disk"
     ]
-    ++ lib.optional hasHomePartition "disk#home";
+    ++ diskNames;
     modules-center = [ "hyprland/workspaces" ];
     modules-right = [
       "network"
