@@ -13,6 +13,9 @@ in
       Downloads.SavePath = "${mediaRoot}/downloads";
       # Substituted from sops below, keeping the key out of the Nix store.
       WebUI.APIKey = "@QBT_API_KEY@";
+      WebUI.Username = "evf";
+      # Without this, a password set in the WebUI is lost on the next start.
+      WebUI.Password_PBKDF2 = "@QBT_PASSWORD_PBKDF2@";
       # Lidarr's qBittorrent client has no API key field (Sonarr's and
       # Radarr's do), so it connects unauthenticated over localhost. This
       # opens the WebUI to every local process; the LAN and tailnet still need
@@ -23,14 +26,17 @@ in
   users.users.qbittorrent.extraGroups = [ "media" ];
 
   # The qBittorrent module reinstalls qBittorrent.conf from the store on every
-  # start, so the API key is spliced in afterwards - same user, so the file
+  # start, so the secrets are spliced in afterwards - same user, so the file
   # stays writable.
   systemd.services.qbittorrent.serviceConfig.ExecStartPre = lib.mkAfter [
-    (pkgs.writeShellScript "qbittorrent-inject-api-key" ''
+    (pkgs.writeShellScript "qbittorrent-inject-secrets" ''
       conf="${config.services.qbittorrent.profileDir}/qBittorrent/config/qBittorrent.conf"
       key=$(<${config.sops.secrets."qbittorrent/api-key".path})
+      password=$(<${config.sops.secrets."qbittorrent/password-pbkdf2".path})
       contents=$(<"$conf")
-      printf '%s\n' "''${contents//@QBT_API_KEY@/$key}" > "$conf"
+      contents=''${contents//@QBT_API_KEY@/$key}
+      contents=''${contents//@QBT_PASSWORD_PBKDF2@/$password}
+      printf '%s\n' "$contents" > "$conf"
     '')
   ];
 
@@ -40,6 +46,13 @@ in
   sops.secrets."qbittorrent/api-key" = {
     owner = config.services.qbittorrent.user;
     restartUnits = [ "qbittorrent.service" "arr-sync.service" ];
+  };
+
+  # PBKDF2 hash of the WebUI password, in qBittorrent's @ByteArray(salt:hash)
+  # form.
+  sops.secrets."qbittorrent/password-pbkdf2" = {
+    owner = config.services.qbittorrent.user;
+    restartUnits = [ "qbittorrent.service" ];
   };
 
   homelab.services.qbittorrent = {
