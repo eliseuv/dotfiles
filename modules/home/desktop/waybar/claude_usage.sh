@@ -10,6 +10,8 @@ REFRESH_BUFFER=300 # refresh token if it expires within this many seconds
 CLIENT_ID="9d1c250a-e61b-44d9-88ed-5944d1962f5e" # Claude CLI OAuth client ID
 TOKEN_URL="https://platform.claude.com/v1/oauth/token"
 USAGE_URL="https://api.anthropic.com/api/oauth/usage"
+CODEX_AUTH_FILE="$HOME/.codex/auth.json"
+CODEX_USAGE_URL="https://chatgpt.com/backend-api/wham/usage"
 
 die() {
     jq -nc --arg t "$1" --arg tip "$2" '{text: $t, tooltip: $tip, class: "critical"}'
@@ -136,12 +138,33 @@ span_section() {
     fi
 }
 
+# 4b. Codex usage is best-effort: Codex CLI owns the token refresh, so an
+# expired token just drops the Codex section until `codex` is run again.
+codex_session_pct=""
+codex_weekly_pct=""
+if [ -f "$CODEX_AUTH_FILE" ]; then
+    codex_body=$(curl -s --max-time 10 --fail "$CODEX_USAGE_URL" \
+        -H "Authorization: Bearer $(jq -r '.tokens.access_token // empty' "$CODEX_AUTH_FILE")" \
+        -H "chatgpt-account-id: $(jq -r '.tokens.account_id // empty' "$CODEX_AUTH_FILE")") || codex_body=""
+    if jq -e '.rate_limit.primary_window' <<< "$codex_body" &> /dev/null; then
+        codex_session_pct=$(jq -r '.rate_limit.primary_window.used_percent | round' <<< "$codex_body")
+        codex_session_reset=$(jq -r '.rate_limit.primary_window.reset_at // empty' <<< "$codex_body")
+        codex_weekly_pct=$(jq -r '(.rate_limit.secondary_window.used_percent // 0) | round' <<< "$codex_body")
+        codex_weekly_reset=$(jq -r '.rate_limit.secondary_window.reset_at // empty' <<< "$codex_body")
+    fi
+fi
+
 session_reset_fmt=$(fmt_reset "$session_reset")
 weekly_reset_fmt=$(fmt_reset "$weekly_reset")
 session_reset_short=$(fmt_reset_short "$session_reset")
 
 max_pct=$session_pct
 [ "$weekly_pct" -gt "$max_pct" ] && max_pct=$weekly_pct
+
+if [ -n "$codex_session_pct" ]; then
+    [ "$codex_session_pct" -gt "$max_pct" ] && max_pct=$codex_session_pct
+    [ "$codex_weekly_pct" -gt "$max_pct" ] && max_pct=$codex_weekly_pct
+fi
 
 class="normal"
 [ "$max_pct" -ge 70 ] && class="warning"
@@ -156,8 +179,26 @@ updated_at=$(date "+%a %H:%M")
 # Weekly usage only lives in the tooltip; the class (border colour) still
 # follows max_pct so a weekly limit nearing its cap is visible on the bar
 text="${session_span}"
-tooltip="$(span_section "$session_pct" "$session_line")
-$(span_section "$weekly_pct" "$weekly_line")
+tooltip="Claude
+$(span_section "$session_pct" "$session_line")
+$(span_section "$weekly_pct" "$weekly_line")"
+
+if [ -n "$codex_session_pct" ]; then
+    codex_session_fmt=$(fmt_reset "@$codex_session_reset")
+    codex_weekly_fmt=$(fmt_reset "@$codex_weekly_reset")
+    codex_session_short=$(fmt_reset_short "@$codex_session_reset")
+    codex_section="${codex_session_pct}%$( [ -n "$codex_session_short" ] && echo " · ${codex_session_short}")"
+    text="${session_span} │ $(span_section "$codex_session_pct" "$codex_section")"
+    codex_session_line="Session: ${codex_session_pct}%$( [ -n "$codex_session_fmt" ] && echo " (resets ${codex_session_fmt})")"
+    codex_weekly_line="Weekly:  ${codex_weekly_pct}%$( [ -n "$codex_weekly_fmt" ] && echo " (resets ${codex_weekly_fmt})")"
+    tooltip="${tooltip}
+
+Codex
+$(span_section "$codex_session_pct" "$codex_session_line")
+$(span_section "$codex_weekly_pct" "$codex_weekly_line")"
+fi
+
+tooltip="${tooltip}
 
 Last updated: ${updated_at}"
 
