@@ -94,9 +94,6 @@ in
         emacs = {
           _var = "emacsclient -nc -a 'emacs'";
         };
-        vim = {
-          _var = "neovide";
-        };
         fileManager = {
           _var = "nautilus";
         };
@@ -434,13 +431,7 @@ in
         ###################
 
         bind = [
-          # Exit
-          {
-            _args = [
-              (inline ''mainMod .. " + SHIFT + backspace"'')
-              (inline "hl.dsp.exec_cmd(powermenu)")
-            ];
-          }
+          # Reload
           {
             _args = [
               (inline ''mainMod .. " + SHIFT + R"'')
@@ -448,29 +439,7 @@ in
             ];
           }
 
-          # Menu
-          {
-            _args = [
-              (inline ''mainMod .. " + SHIFT + return"'')
-              (inline "hl.dsp.exec_cmd(menu)")
-            ];
-          }
-
-          # Terminal
-          {
-            _args = [
-              (inline ''mainMod .. " + return"'')
-              (inline "hl.dsp.exec_cmd(terminal)")
-            ];
-          }
-
-          # Programs
-          {
-            _args = [
-              (inline ''mainMod .. " + SHIFT + B"'')
-              (inline "hl.dsp.exec_cmd(browser)")
-            ];
-          }
+          # Menus: Super + letter
           {
             _args = [
               (inline ''mainMod .. " + B"'')
@@ -479,14 +448,36 @@ in
           }
           {
             _args = [
-              (inline ''mainMod .. " + SHIFT + D"'')
+              (inline ''mainMod .. " + D"'')
               (inline ''hl.dsp.exec_cmd("~/.config/rofi/bin/wheatleymenu")'')
+            ];
+          }
+
+          # Exceptions to the Super (menus) / Super + Shift (programs) scheme
+          {
+            _args = [
+              (inline ''mainMod .. " + SHIFT + return"'')
+              (inline "hl.dsp.exec_cmd(menu)")
             ];
           }
           {
             _args = [
-              (inline ''mainMod .. " + SHIFT + V"'')
-              (inline "hl.dsp.exec_cmd(vim)")
+              (inline ''mainMod .. " + SHIFT + backspace"'')
+              (inline "hl.dsp.exec_cmd(powermenu)")
+            ];
+          }
+          {
+            _args = [
+              (inline ''mainMod .. " + return"'')
+              (inline "hl.dsp.exec_cmd(terminal)")
+            ];
+          }
+
+          # Programs: Super + Shift + letter
+          {
+            _args = [
+              (inline ''mainMod .. " + SHIFT + B"'')
+              (inline "hl.dsp.exec_cmd(browser)")
             ];
           }
           {
@@ -595,19 +586,19 @@ in
           }
           {
             _args = [
-              (inline ''mainMod .. " + T"'') # dwindle
+              (inline ''mainMod .. " + ALT + T"'') # dwindle
               (inline ''hl.dsp.layout("togglesplit")'')
             ];
           }
           {
             _args = [
-              (inline ''mainMod .. " + S"'') # dwindle
+              (inline ''mainMod .. " + ALT + Y"'') # dwindle
               (inline ''hl.dsp.window.pseudo({ action = "toggle" })'')
             ];
           }
           {
             _args = [
-              (inline ''mainMod .. " + V"'')
+              (inline ''mainMod .. " + ALT + V"'')
               (inline ''hl.dsp.window.float({ action = "toggle" })'')
             ];
           }
@@ -753,13 +744,13 @@ in
           # Special workspaces
           {
             _args = [
-              (inline ''mainMod .. " + P"'')
+              (inline ''mainMod .. " + ALT + P"'')
               (inline ''hl.dsp.workspace.toggle_special("magic")'')
             ];
           }
           {
             _args = [
-              (inline ''mainMod .. " + SHIFT + P"'')
+              (inline ''mainMod .. " + ALT + SHIFT + P"'')
               (inline ''hl.dsp.window.move({ workspace = "special:magic" })'')
             ];
           }
