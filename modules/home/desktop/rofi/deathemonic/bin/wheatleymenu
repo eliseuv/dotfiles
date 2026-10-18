@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Homelab hosts from Wheatley's dashboard API, with the dashboard tiles'
 # controls. Reads need no login; actions are behind the dashboard's basic
-# auth, whose login is read from Bitwarden (rbw) when one is used. Wake is sent
-# from here rather than through Wheatley, so it needs no login either.
+# auth, whose login is read from Bitwarden (rbw) when one is used. Wake goes
+# through Wheatley too, so it reaches the LAN from anywhere on the tailnet.
 ddir="$HOME/.config/rofi/config"
 
 # Bitwarden login entry holding the dashboard's basic-auth username and
 # password (svcctl/htpasswd on wheatley).
 RBW_ENTRY="Wheatley dashboard"
 
-# Tile name | hostctl name | `wake` name | has a host page | icon | controls
+# Tile name | hostctl name | SSH name | has a host page | icon | controls
 # Controls mirror the tiles' dashboard options in hosts/wheatley/system.nix
 # and nas.nix; svcctl's status doesn't say which a tile has.
 ALL_HOSTS=(
@@ -172,7 +172,7 @@ if [[ "$row" -eq 0 ]]; then
     exit 0
 fi
 
-IFS='|' read -r tile host wake_name has_page _ controls <<< "${HOSTS[$((row - 1))]}"
+IFS='|' read -r tile host ssh_name has_page _ controls <<< "${HOSTS[$((row - 1))]}"
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
 has() { [[ ",$controls," == *",$1,"* ]]; }
 
@@ -229,16 +229,10 @@ sub=$(printf '%s\n' "${sublabels[@]}" | menu "$tile")
 
 # Confirmations as the dashboard's.
 case "${actions[$sub]}" in
-ssh) "$TERMINAL" -e ssh "${wake_name,,}.local" & ;;
-wake)
-    if out=$(wake "$wake_name" 2>&1); then
-        notify-send -a Homelab "Wake sent" "$tile"
-    else
-        show_msg "Failed: $out"
-    fi
-    ;;
+ssh) "$TERMINAL" -e ssh "${ssh_name,,}.local" & ;;
+wake) post wake "$tile" "Wake sent" ;;
 page) chromium "$base/hosts/?host=$host" & ;;
-ports) ports_menu "$tile" "$wake_name" ;;
+ports) ports_menu "$tile" "$ssh_name" ;;
 switch) confirm "Pull origin/master on $tile and switch to it?" && post switch "$tile" "Switch started" ;;
 tailscale-on) post tailscale-on "$tile" "Tailscale on" ;;
 tailscale-off)
