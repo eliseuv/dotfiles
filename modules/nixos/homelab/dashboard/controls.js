@@ -410,7 +410,7 @@
     // theme.css prints: the text is React's, and an attribute it never set
     // survives its re-renders. The label is the deepest last element of the
     // widget, Homepage giving it no class.
-    let label = document.querySelector("#widgets-wrap > .widget-container:nth-child(2)");
+    let label = document.querySelector("#widgets-wrap > :nth-child(3 of .widget-container)");
     while (label?.lastElementChild) label = label.lastElementChild;
     if (label) {
       const text = latency != null ? `${Math.round(latency)} ms` : "";

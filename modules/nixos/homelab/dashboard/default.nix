@@ -312,7 +312,7 @@ let
     };
   };
 
-  inherit (import ./_svg.nix) svgUri iris;
+  inherit (import ./_svg.nix) svgUri iris companionCube;
 
   hostIcons = import ./_host-icons.nix;
 
@@ -405,6 +405,14 @@ in
           };
         }
         {
+          greeting = {
+            text = "Tailscale";
+            text_size = "sm";
+            href = "https://login.tailscale.com/admin/machines";
+            target = "_blank";
+          };
+        }
+        {
           resources = {
             label = "Wheatley";
             cpu = true;
@@ -413,7 +421,7 @@ in
             expanded = true;
           };
         }
-        # Must stay second to last, before the Tailscale link: theme.css
+        # Must stay last: theme.css
         # themes it by position, since Homepage gives info widgets no id or
         # class hook.
         {
@@ -421,14 +429,6 @@ in
             label = "Companion Cube";
             disk = "/mnt/media";
             expanded = true;
-          };
-        }
-        {
-          greeting = {
-            text = "Tailscale";
-            text_size = "sm";
-            href = "https://login.tailscale.com/admin/machines";
-            target = "_blank";
           };
         }
       ];
@@ -480,7 +480,7 @@ in
         + ''
           :root {
             --aperture-iris: url("${iris "black"}");
-            --companion-cube: url("${hostIcons.cube.on}");
+            --companion-cube: url("${companionCube}");
             ${lib.concatStringsSep "\n" (
               lib.mapAttrsToList (
                 name: states:

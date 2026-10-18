@@ -7,6 +7,9 @@ rec {
     svg:
     "data:image/svg+xml," + builtins.replaceStrings [ "<" ">" "#" " " ] [ "%3C" "%3E" "%23" "%20" ] svg;
 
+  # Simple Companion Cube face for the header's monochrome storage icon.
+  companionCube = svgUri "<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 2 20 20'><g fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2'/><path d='M3 8h5V3m8 0v5h5M3 16h5v5m8 0v-5h5'/></g><path d='M12 16l-3.5-3.5a2.5 2.5 0 0 1 3.5-3.6 2.5 2.5 0 0 1 3.5 3.6z'/></svg>";
+
   # Generic 8-blade camera iris, used as the favicon and (as a CSS mask) the
   # header mark.
   iris =
