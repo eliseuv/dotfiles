@@ -87,5 +87,5 @@ wake)
         show_msg "Failed: $out"
     fi
     ;;
-page) xdg-open "$base/hosts/?host=$host" & ;;
+page) chromium "$base/hosts/?host=$host" & ;;
 esac
