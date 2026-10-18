@@ -65,6 +65,22 @@ html.dark { background: #101416; }
 
 /* --------------------------------------------------------------- header */
 
+/* The title stays at the start; every other widget packs against the end. */
+#widgets-wrap {
+  justify-content: flex-end;
+}
+
+#widgets-wrap > .widget-container:first-child {
+  margin-right: auto;
+}
+
+/* The empty trailing element Homepage grows and auto-margins to fill the row
+   would otherwise keep the free space the widgets are to be pushed across. */
+#widgets-wrap > .grow {
+  flex-grow: 0;
+  margin: 0;
+}
+
 .information-widget-greeting span {
   display: inline-flex;
   align-items: center;
