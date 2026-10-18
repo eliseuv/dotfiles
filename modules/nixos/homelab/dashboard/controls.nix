@@ -33,6 +33,8 @@
 # "<label> · <tile>".
 # Buttons combine: one tile can wake, power off, reboot, switch and toggle
 # Tailscale.
+# svcctl also serves the host tiles' buttons, pages and ports as one list,
+# for the Homelab rofi menu (wheatleymenu), which offers the same controls.
 {
   config,
   lib,
@@ -148,6 +150,63 @@ let
           ports = map (entry: entry.port) (lib.attrValues service.dashboard.ports);
         }
       ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles)
+    )
+  );
+
+  # Tiles with a host button or page, in dashboard order. Those options all
+  # name the tile's one host, which the menu leaves out when it's the machine
+  # it runs on, and SSHes to (at `address` when set). `portsHost` null is
+  # this host, linked by whatever name the menu reached it with.
+  hostOptions = [
+    "page"
+    "reboot"
+    "switch"
+    "tailscale"
+    "wake"
+  ];
+  hostOf =
+    service:
+    lib.findFirst (host: host != null) null (map (option: service.dashboard.${option}) hostOptions);
+  groupIndex =
+    group: lib.lists.findFirstIndex (entry: entry.name == group) null (import ./_groups.nix);
+  hostTiles = lib.sort (
+    a: b:
+    let
+      keyA = tiles.${a}.dashboard;
+      keyB = tiles.${b}.dashboard;
+    in
+    if keyA.group != keyB.group then
+      groupIndex keyA.group < groupIndex keyB.group
+    else if keyA.order != keyB.order then
+      keyA.order < keyB.order
+    else
+      a < b
+  ) (lib.attrNames (lib.filterAttrs (_: service: hostOf service != null) tiles));
+  menuFile = pkgs.writeText "svcctl-menu.json" (
+    builtins.toJSON (
+      map (
+        name:
+        let
+          tile = tiles.${name}.dashboard;
+        in
+        {
+          tile = tile.name;
+          host = hostOf tiles.${name};
+          inherit (tile) address page portsHost;
+          controls =
+            lib.optional (tile.wake != null) "wake"
+            ++ lib.optional tile.poweroff "poweroff"
+            ++ lib.optional (tile.reboot != null) "reboot"
+            ++ lib.optional (tile.switch != null) "switch"
+            ++ lib.optional (tile.tailscale != null) "tailscale"
+            ++ lib.optional (tile.ports != { }) "ports";
+          ports = lib.mapAttrsToList (label: entry: {
+            inherit label;
+            inherit (entry) port href;
+            unit = entry.unit != null;
+          }) tile.ports;
+        }
+      ) hostTiles
     )
   );
 
@@ -284,6 +343,7 @@ in
             "${switchFile}"
             "${tailscaleFile}"
             "${portsFile}"
+            "${menuFile}"
           ]
           ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
         );
