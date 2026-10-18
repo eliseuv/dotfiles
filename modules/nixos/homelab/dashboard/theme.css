@@ -370,12 +370,23 @@ html.dark .service-card {
     0 6px 16px -8px rgb(0 0 0 / 0.8);
 }
 
-/* Portal rings on hover, alternating orange and blue. */
-.service:nth-child(odd) .service-card {
-  --ring: var(--portal-orange);
-}
-.service:nth-child(even) .service-card {
-  --ring: var(--portal-blue);
+/* Match the service icons' main colors rather than their grid positions.
+   Monochrome icons (Bazarr, Ledger) and new tiles use a theme-aware gray;
+   the custom host portraits keep their own --host-accent above. */
+li.service[data-name="Drive"] { --icon-accent: 0 100 152; }
+li.service[data-name="Netdata"] { --icon-accent: 0 171 68; }
+li.service[data-name="Jellyfin"] { --icon-accent: 170 92 195; }
+li.service[data-name="Seerr"] { --icon-accent: 141 97 235; }
+li.service[data-name="Navidrome"] { --icon-accent: 0 132 255; }
+li.service[data-name="Sonarr"] { --icon-accent: 0 204 255; }
+li.service[data-name="Radarr"] { --icon-accent: 255 194 48; }
+li.service[data-name="Lidarr"] { --icon-accent: 0 146 82; }
+li.service[data-name="Prowlarr"] { --icon-accent: 212 84 30; }
+li.service[data-name="qBittorrent"] { --icon-accent: 53 110 191; }
+li.service[data-name="Minecraft"] { --icon-accent: 114 177 71; }
+
+.service-card {
+  --ring: var(--icon-accent, var(--color-500));
 }
 
 .service-card:hover,
