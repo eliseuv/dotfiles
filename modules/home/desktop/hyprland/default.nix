@@ -480,6 +480,12 @@ in
           }
           {
             _args = [
+              (inline ''mainMod .. " + SHIFT + D"'')
+              (inline ''hl.dsp.exec_cmd("wheatley-dashboard")'')
+            ];
+          }
+          {
+            _args = [
               (inline ''mainMod .. " + SHIFT + V"'')
               (inline "hl.dsp.exec_cmd(vim)")
             ];
@@ -1021,6 +1027,16 @@ in
             match = {
               # Forced onto XWayland (see browser/default.nix), where WM_CLASS is capitalised
               class = "^[Cc]hromium-browser$";
+            };
+            tag = "+browser";
+            workspace = 5;
+          }
+          {
+            name = "wheatley-dashboard";
+            match = {
+              # Brave's --app class embeds the URL host, so it differs between
+              # the tailnet and .local forms (see wheatley-dashboard)
+              class = "^brave-wheatley.*-Default$";
             };
             tag = "+browser";
             workspace = 5;

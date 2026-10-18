@@ -9,7 +9,10 @@
 
   config = lib.mkIf config.my.desktop.enable {
 
-    home.packages = with pkgs; [ brave ];
+    home.packages = with pkgs; [
+      brave
+      (import ./_wheatley-dashboard.nix { inherit pkgs; })
+    ];
 
     programs.chromium = {
       enable = true;
