@@ -4,7 +4,17 @@
 ddir="$HOME/.config/rofi/config"
 
 # Tile name | hostctl name | `wake` name | has a host page
-HOSTS=("Wheatley|wheatley|wheatley|1" "Chell|chell|chell|1" "GLaDOS|GLaDOS|GLaDOS|1" "Companion Cube|CompanionCube|CompanionCube|0")
+ALL_HOSTS=("Wheatley|wheatley|wheatley|1" "Chell|chell|chell|1" "GLaDOS|GLaDOS|GLaDOS|1" "Companion Cube|CompanionCube|CompanionCube|0")
+self=$(hostname)
+self=${self,,}
+
+# This machine is not part of what the menu lists. Filtered up front so row
+# indices still map straight onto HOSTS.
+HOSTS=()
+for entry in "${ALL_HOSTS[@]}"; do
+    IFS='|' read -r _ host _ _ <<< "$entry"
+    [ "${host,,}" = "$self" ] || HOSTS+=("$entry")
+done
 
 show_msg() {
     rofi -theme "$ddir/askpass.rasi" -e "$1"
