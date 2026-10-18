@@ -4,8 +4,8 @@
 # Toggling without root requires this user to be the tailscale operator
 # (see modules/nixos/services/tailscale.nix).
 
-ICON="󰖂"
-ICON_WARN="󰖂 "
+ICON="󰌨"
+ICON_WARN="󰌨 "
 SIGNAL=10 # must match "signal" of custom/tailscale in modules.json
 
 status_json() {
