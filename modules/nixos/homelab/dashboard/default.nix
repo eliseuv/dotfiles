@@ -298,7 +298,7 @@ let
     ports = lib.mkOption {
       type = lib.types.attrsOf (lib.types.coercedTo lib.types.port (port: { inherit port; }) portEntry);
       default = { };
-      description = "Label -> TCP port (or entry) the tile's ports menu links to, each shown open or closed (controls.nix); for servers with no tile of their own.";
+      description = "Label -> TCP port (or entry) the tile's ports menu links to while open (controls.nix); for servers with no tile of their own.";
     };
     portsHost = lib.mkOption {
       type = lib.types.nullOr lib.types.str;

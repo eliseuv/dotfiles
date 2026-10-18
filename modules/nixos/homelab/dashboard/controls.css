@@ -139,9 +139,9 @@ li.service:has(.svcctl[data-switch="switching"]) .service-icon::after {
   color: rgb(16 185 129);
 }
 
-/* The ports menu, in flow below the bar: one row per port, its dot lit while
-   something listens there, with a start-or-stop button for entries with a
-   unit. */
+/* The ports menu, in flow below the bar: one row per open port, with a stop
+   button for entries with a unit, and below them start buttons for those
+   entries while their port is closed. */
 .svcctl-ports-menu {
   display: flex;
   flex-direction: column;
@@ -153,7 +153,8 @@ li.service:has(.svcctl[data-switch="switching"]) .service-icon::after {
   font-size: 0.7rem;
 }
 
-.svcctl-ports-menu[hidden] {
+.svcctl-ports-menu[hidden],
+.svcctl-ports-menu [hidden] {
   display: none;
 }
 
@@ -162,8 +163,53 @@ li.service:has(.svcctl[data-switch="switching"]) .service-icon::after {
   align-items: center;
 }
 
-.svcctl-ports-row + .svcctl-ports-row {
+/* Hidden rows are still siblings, so `+` would border the first shown one. */
+.svcctl-ports-list > :not([hidden]) ~ :not([hidden]) {
   border-top: 1px solid var(--card-border);
+}
+
+.svcctl-ports-empty {
+  padding: 0.25rem 0.5rem;
+  color: rgb(var(--color-500));
+}
+
+.svcctl-ports-starts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.svcctl-ports-starts:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+.svcctl-ports-menu button.svcctl-ports-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  background: var(--block-bg);
+  color: rgb(var(--color-700));
+  font: inherit;
+  cursor: pointer;
+}
+
+.svcctl-ports-menu button.svcctl-ports-start svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+html.dark .svcctl-ports-menu button.svcctl-ports-start {
+  color: rgb(var(--color-200));
+}
+
+.svcctl-ports-menu button.svcctl-ports-start:hover {
+  box-shadow: 0 0 0 1px rgb(var(--portal-orange));
 }
 
 .svcctl-ports-row a {
@@ -217,13 +263,7 @@ html.dark .svcctl-ports-row button {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: rgb(var(--color-500));
-  opacity: 0.4;
-}
-
-.svcctl-ports-row[data-open="true"] .svcctl-ports-dot {
   background: rgb(16 185 129);
-  opacity: 1;
 }
 
 .svcctl button.svcctl-ports[aria-expanded="true"] {

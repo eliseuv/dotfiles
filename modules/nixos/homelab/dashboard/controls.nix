@@ -25,11 +25,12 @@
 # Tailscale on or off, over the same SSH login (the other host must be on the
 # LAN to be reached again once it's off). It shows on/off, read over SSH.
 # Tiles with `dashboard.ports` get a menu linking to those ports on
-# `portsHost` (this host when null), each marked open or closed by a TCP
-# connect from here; for ad-hoc dev servers, which are rarely all running.
+# `portsHost` (this host when null) that a TCP connect from here finds open;
+# for ad-hoc dev servers, which are rarely all running.
 # An entry with an `href` links to that dashboard path instead, behind the
-# login; one with a `unit` gets a start/stop button, the unit registered like
-# a tile's under "<label> · <tile>".
+# login; one with a `unit` gets a stop button, and a start button below the
+# list while its port is closed, the unit registered like a tile's under
+# "<label> · <tile>".
 # Buttons combine: one tile can wake, power off, reboot, switch and toggle
 # Tailscale.
 {

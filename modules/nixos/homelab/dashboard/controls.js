@@ -1,7 +1,7 @@
 // Restart and start-or-stop (one button, last, like on/off below) buttons on
 // tiles backed by a systemd unit; host tiles get, in this order and as
-// configured: ports (a menu of its dev servers, each open or closed, some
-// with their own start-or-stop),
+// configured: ports (a menu of its open dev servers, and start buttons for
+// those with a unit),
 // switch (pull the dotfiles and switch to them; a config page button instead
 // where the host has a page, which switches from there), tailscale
 // (on/off), restart, and on/off, one button that wakes the host while it's
@@ -271,18 +271,29 @@
   };
 
   // Below the bar rather than over the tiles next to it, and outside it so
-  // its links don't take the bar's button styles. A row is its link, plus a
-  // start-or-stop button for entries with a unit, which svcctl knows by the
-  // entry's `unit` name.
+  // its links don't take the bar's button styles. Only open ports are listed
+  // (render() hides the rest): a row is its link, plus a stop button for
+  // entries with a unit, which svcctl knows by the entry's `unit` name. While
+  // such an entry's port is closed, a start button below the list stands in
+  // for its row.
   const portsMenu = (name) => {
     const { host, ports } = svcctlPorts[name];
     const menu = document.createElement("div");
     menu.className = "svcctl-ports-menu";
     menu.hidden = true;
+    const list = document.createElement("div");
+    list.className = "svcctl-ports-list";
+    const empty = document.createElement("div");
+    empty.className = "svcctl-ports-empty";
+    empty.textContent = "No open ports";
+    list.append(empty);
+    const starts = document.createElement("div");
+    starts.className = "svcctl-ports-starts";
     for (const { name: label, port, href, unit } of ports) {
       const row = document.createElement("div");
       row.className = "svcctl-ports-row";
       row.dataset.port = port;
+      row.hidden = true;
       const link = document.createElement("a");
       link.href = href || `http://${portsHost(host)}:${port}`;
       link.target = "_blank";
@@ -295,9 +306,18 @@
         const run = button(unit, "run", "play");
         run.dataset.unit = unit;
         row.append(run);
+        const start = button(unit, "run", "play");
+        start.classList.add("svcctl-ports-start");
+        start.dataset.unit = unit;
+        start.dataset.port = port;
+        start.dataset.name = label;
+        start.innerHTML += "<span></span>";
+        starts.append(start);
       }
-      menu.append(row);
+      list.append(row);
     }
+    menu.append(list);
+    if (starts.children.length) menu.append(starts);
     menu.addEventListener("click", (event) => event.stopPropagation());
     return menu;
   };
@@ -474,15 +494,26 @@
         bar.dataset.ports = portState;
         const open = portStates[name] || {};
         const menu = card.querySelector(":scope > .svcctl-ports-menu");
-        for (const row of menu.children) {
-          row.dataset.open = String(!!open[row.dataset.port]);
-          const run = row.querySelector("button");
-          if (!run) continue;
+        for (const row of menu.querySelectorAll(".svcctl-ports-row")) {
+          row.hidden = !open[row.dataset.port];
+        }
+        menu.querySelector(".svcctl-ports-empty").hidden = !!menu.querySelector(
+          ".svcctl-ports-row:not([hidden])",
+        );
+        // A unit that is starting has no open port yet, so its start button
+        // stays, as a stop button until the port opens.
+        for (const run of menu.querySelectorAll("button[data-unit]")) {
           const unit = run.dataset.unit;
           const active = unitActive(displayState(unit));
-          run.innerHTML = iconSvg(active ? "stop" : "play");
           run.title = active ? `Stop ${unit}` : `Start ${unit}`;
           run.dataset.label = active ? "Stop" : "Start";
+          if (!run.classList.contains("svcctl-ports-start")) {
+            run.innerHTML = iconSvg(active ? "stop" : "play");
+            continue;
+          }
+          run.hidden = !!open[run.dataset.port];
+          run.innerHTML = iconSvg(active ? "stop" : "play") + "<span></span>";
+          run.lastChild.textContent = `${active ? "Stop" : "Start"} ${run.dataset.name}`;
         }
         const element = bar.querySelector(".svcctl-ports");
         element.disabled = state !== "up";
