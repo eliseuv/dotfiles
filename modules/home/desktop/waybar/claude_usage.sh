@@ -147,7 +147,7 @@ class="normal"
 [ "$max_pct" -ge 70 ] && class="warning"
 [ "$max_pct" -ge 90 ] && class="critical"
 
-session_section="󰚩 ${session_pct}%$( [ -n "$session_reset_short" ] && echo "   ${session_reset_short}")"
+session_section="${session_pct}%$( [ -n "$session_reset_short" ] && echo " · ${session_reset_short}")"
 session_span=$(span_section "$session_pct" "$session_section")
 session_line="Session: ${session_pct}%$( [ -n "$session_reset_fmt" ] && echo " (resets ${session_reset_fmt})")"
 weekly_line="Weekly:  ${weekly_pct}%$( [ -n "$weekly_reset_fmt" ] && echo " (resets ${weekly_reset_fmt})")"
