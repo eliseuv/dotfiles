@@ -1,10 +1,42 @@
 #!/usr/bin/env bash
-# Homelab hosts from Wheatley's dashboard API. Read-only plus wake; poweroff,
-# reboot and switch need the dashboard's login, so they stay on the dashboard.
+# Homelab hosts from Wheatley's dashboard API, with the dashboard tiles'
+# controls. Reads need no login; actions are behind the dashboard's basic
+# auth, whose login is read from Bitwarden (rbw) when one is used. Wake is sent
+# from here rather than through Wheatley, so it needs no login either.
 ddir="$HOME/.config/rofi/config"
 
-# Tile name | hostctl name | `wake` name | has a host page | icon
-ALL_HOSTS=("Wheatley|wheatley|wheatley|1|󰈈" "Chell|chell|chell|1|󰀄" "GLaDOS|GLaDOS|GLaDOS|1|󰚩" "Companion Cube|CompanionCube|CompanionCube|0|󰆧")
+# Bitwarden login entry holding the dashboard's basic-auth username and
+# password (svcctl/htpasswd on wheatley).
+RBW_ENTRY="Wheatley dashboard"
+
+# Tile name | hostctl name | `wake` name | has a host page | icon | controls
+# Controls mirror the tiles' dashboard options in hosts/wheatley/system.nix
+# and nas.nix; svcctl's status doesn't say which a tile has.
+ALL_HOSTS=(
+    "Wheatley|wheatley|wheatley|1|󰈈|reboot,switch,ports"
+    "Chell|chell|chell|1|󰀄|wake,poweroff,reboot,switch,tailscale,ports"
+    "GLaDOS|GLaDOS|GLaDOS|1|󰚩|wake,poweroff,reboot,switch,tailscale,ports"
+    "Companion Cube|CompanionCube|CompanionCube|0|󰆧|wake,poweroff,reboot,tailscale"
+)
+
+# Tile | label | port | dashboard path, linked instead of host:port | has a unit
+# From homelab.network.ports' dev ports and the Pluto entries in
+# hosts/wheatley/services/pluto.nix. svcctl knows a unit as "<label> · <tile>".
+PORTS=(
+    "Wheatley|Vite|5173||0"
+    "Wheatley|Vite (fallback)|5174||0"
+    "Wheatley|Zola|1111||0"
+    "Wheatley|Pluto|1234|/wheatley/pluto/|1"
+    "GLaDOS|HTTP|8080||0"
+    "GLaDOS|Zola|1111||0"
+    "GLaDOS|Vite|5173||0"
+    "GLaDOS|Pluto|1234|/glados/pluto/|1"
+    "Chell|HTTP|8080||0"
+    "Chell|Zola|1111||0"
+    "Chell|Vite|5173||0"
+    "Chell|Pluto|1234|/chell/pluto/|1"
+)
+
 self=$(hostname)
 self=${self,,}
 
@@ -12,7 +44,7 @@ self=${self,,}
 # indices still map straight onto HOSTS.
 HOSTS=()
 for entry in "${ALL_HOSTS[@]}"; do
-    IFS='|' read -r _ host _ _ <<< "$entry"
+    IFS='|' read -r _ host _ _ _ _ <<< "$entry"
     [ "${host,,}" = "$self" ] || HOSTS+=("$entry")
 done
 
@@ -25,22 +57,104 @@ menu() {
         -theme-str 'textbox-prompt-colon { str: "󰒋"; }'
 }
 
+# No first, so a stray Enter doesn't power anything off.
+confirm() {
+    [ "$(printf '%s\n' "󰅖  No" "󰄬  Yes" | menu "$1")" = 1 ]
+}
+
 # The short MagicDNS name only resolves on the tailnet; otherwise mDNS.
 if [ "$(tailscale status --peers=false --json 2> /dev/null | jq -r '.BackendState' 2> /dev/null)" = "Running" ]; then
-    base="http://wheatley"
+    domain=""
 else
-    base="http://wheatley.local"
+    domain=".local"
 fi
+base="http://wheatley$domain"
 
 if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status"); then
     show_msg "Wheatley unreachable"
     exit 1
 fi
 
+# POSTs an svcctl action on a tile (or a ports entry's unit) with the login
+# from Bitwarden, then notifies `$3` or shows why it failed.
+post() {
+    local action=$1 name=$2 done_msg=$3 creds user pass login code body
+    if ! creds=$(rbw get --raw "$RBW_ENTRY" 2>&1); then
+        [[ "$creds" != *"pinentry cancelled"* ]] && show_msg "Bitwarden: $creds"
+        return 1
+    fi
+    user=$(jq -r '.data.username // empty' <<< "$creds")
+    pass=$(jq -r '.data.password // empty' <<< "$creds")
+    if [ -z "$user" ] || [ -z "$pass" ]; then
+        show_msg "Bitwarden entry \"$RBW_ENTRY\" needs a username and password"
+        return 1
+    fi
+    body=$(mktemp)
+    # The login goes in on stdin as curl config, not in argv, where any
+    # process could read it; quoted there, so \ and " are escaped.
+    login="$user:$pass"
+    login=${login//\\/\\\\}
+    login=${login//\"/\\\"}
+    code=$(printf 'user = "%s"\n' "$login" |
+        curl -s -m 30 -K - -o "$body" -w '%{http_code}' -X POST -H 'X-Svcctl: 1' \
+            "$base/api/svc/$action/$(jq -rn --arg name "$name" '$name | @uri')")
+    case "$code" in
+    2??) notify-send -a Homelab "$done_msg" "$name" ;;
+    401) show_msg "Dashboard rejected the login in \"$RBW_ENTRY\"" ;;
+    000) show_msg "Wheatley unreachable" ;;
+    *) show_msg "Failed ($code): $(jq -r '.error // empty' "$body" 2> /dev/null)" ;;
+    esac
+    rm -f "$body"
+}
+
+# Open dev servers to open, and start/stop for entries with a unit, as in the
+# tile's ports menu: a starting unit has no open port yet, so it offers stop.
+ports_menu() {
+    local tile=$1 host=$2 ptile label port path unit open state labels=() kinds=() targets=()
+    for entry in "${PORTS[@]}"; do
+        IFS='|' read -r ptile label port path unit <<< "$entry"
+        [ "$ptile" = "$tile" ] || continue
+        open=$(jq -r --arg tile "$tile" --arg port "$port" '.ports[$tile][$port] // false' <<< "$status")
+        if [ "$open" = "true" ]; then
+            labels+=("󰏌  $label    ${path:-:$port}")
+            kinds+=("open")
+            if [ -n "$path" ]; then
+                targets+=("$base$path")
+            else
+                targets+=("http://${host,,}$domain:$port")
+            fi
+        fi
+        if [ "$unit" = "1" ]; then
+            state=$(jq -r --arg name "$label · $tile" '.tiles[$name] // "unknown"' <<< "$status")
+            if [ "$open" = "true" ] || [[ "$state" =~ ^(active|activating|reloading)$ ]]; then
+                labels+=("󰓛  Stop $label")
+                kinds+=("stop")
+            else
+                labels+=("󰐊  Start $label")
+                kinds+=("start")
+            fi
+            targets+=("$label · $tile")
+        fi
+    done
+    if [ ${#labels[@]} -eq 0 ]; then
+        show_msg "No open ports on $tile"
+        return
+    fi
+
+    local pick
+    pick=$(printf '%s\n' "${labels[@]}" | menu "$tile ports")
+    [[ -z "$pick" || "$pick" -lt 0 ]] && return
+    case "${kinds[$pick]}" in
+    open) chromium "${targets[$pick]}" & ;;
+    start) post start "${targets[$pick]}" "Starting" ;;
+    stop) confirm "Stop ${targets[$pick]}?" && post stop "${targets[$pick]}" "Stopping" ;;
+    esac
+}
+
 # First, so Enter alone opens it
 labels=("󰕮  Dashboard")
 for entry in "${HOSTS[@]}"; do
-    IFS='|' read -r tile _ _ _ icon <<< "$entry"
+    IFS='|' read -r tile _ _ _ icon _ <<< "$entry"
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
     ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
     if [ "$state" = "up" ]; then
@@ -58,15 +172,46 @@ if [[ "$row" -eq 0 ]]; then
     exit 0
 fi
 
-IFS='|' read -r tile host wake_name has_page _ <<< "${HOSTS[$((row - 1))]}"
+IFS='|' read -r tile host wake_name has_page _ controls <<< "${HOSTS[$((row - 1))]}"
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
+has() { [[ ",$controls," == *",$1,"* ]]; }
 
 actions=()
 sublabels=()
 if [ "$up" = "true" ]; then
     sublabels+=("󰆍  SSH")
     actions+=("ssh")
-else
+    if has ports; then
+        sublabels+=("󰌘  Ports")
+        actions+=("ports")
+    fi
+    if has switch; then
+        case $(jq -r --arg tile "$tile" '.switch[$tile] // "unknown"' <<< "$status") in
+        switching) note="    switching" ;;
+        failed) note="    last switch failed" ;;
+        *) note="" ;;
+        esac
+        sublabels+=("󰇚  Switch$note")
+        actions+=("switch")
+    fi
+    if has tailscale; then
+        if [ "$(jq -r --arg tile "$tile" '.tailscale[$tile] // "unknown"' <<< "$status")" = "on" ]; then
+            sublabels+=("󰌸  Tailscale off")
+            actions+=("tailscale-off")
+        else
+            sublabels+=("󰌷  Tailscale on")
+            actions+=("tailscale-on")
+        fi
+    fi
+    if has reboot; then
+        sublabels+=("󰜉  Restart")
+        actions+=("reboot")
+    fi
+    if has poweroff; then
+        sublabels+=("󰐥  Power off")
+        actions+=("poweroff")
+    fi
+elif has wake; then
     sublabels+=("󰐥  Wake")
     actions+=("wake")
 fi
@@ -74,10 +219,15 @@ if [ "$has_page" = "1" ]; then
     sublabels+=("󰖟  Host page")
     actions+=("page")
 fi
+if [ ${#actions[@]} -eq 0 ]; then
+    show_msg "$tile is down"
+    exit 0
+fi
 
 sub=$(printf '%s\n' "${sublabels[@]}" | menu "$tile")
 [[ -z "$sub" || "$sub" -lt 0 ]] && exit 0
 
+# Confirmations as the dashboard's.
 case "${actions[$sub]}" in
 ssh) "$TERMINAL" -e ssh "${wake_name,,}.local" & ;;
 wake)
@@ -88,4 +238,13 @@ wake)
     fi
     ;;
 page) chromium "$base/hosts/?host=$host" & ;;
+ports) ports_menu "$tile" "$wake_name" ;;
+switch) confirm "Pull origin/master on $tile and switch to it?" && post switch "$tile" "Switch started" ;;
+tailscale-on) post tailscale-on "$tile" "Tailscale on" ;;
+tailscale-off)
+    confirm "Turn Tailscale off on $tile? Only the LAN can turn it back on." &&
+        post tailscale-off "$tile" "Tailscale off"
+    ;;
+reboot) confirm "Restart $tile now?" && post reboot "$tile" "Restarting" ;;
+poweroff) confirm "Power off $tile now?" && post poweroff "$tile" "Power off sent" ;;
 esac
