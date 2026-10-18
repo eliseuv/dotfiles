@@ -171,7 +171,9 @@ class="normal"
 [ "$max_pct" -ge 90 ] && class="critical"
 
 session_section="${session_pct}%$( [ -n "$session_reset_short" ] && echo " · ${session_reset_short}")"
-session_span=$(span_section "$session_pct" "$session_section")
+claude_max=$session_pct
+[ "$weekly_pct" -gt "$claude_max" ] && claude_max=$weekly_pct
+session_span=$(span_section "$claude_max" "$session_section")
 session_line="Session: ${session_pct}%$( [ -n "$session_reset_fmt" ] && echo " (resets ${session_reset_fmt})")"
 weekly_line="Weekly:  ${weekly_pct}%$( [ -n "$weekly_reset_fmt" ] && echo " (resets ${weekly_reset_fmt})")"
 updated_at=$(date "+%a %H:%M")
@@ -188,7 +190,9 @@ if [ -n "$codex_session_pct" ]; then
     codex_weekly_fmt=$(fmt_reset "@$codex_weekly_reset")
     codex_session_short=$(fmt_reset_short "@$codex_session_reset")
     codex_section="${codex_session_pct}%$( [ -n "$codex_session_short" ] && echo " · ${codex_session_short}")"
-    text="${session_span} │ $(span_section "$codex_session_pct" "$codex_section")"
+    codex_max=$codex_session_pct
+    [ "$codex_weekly_pct" -gt "$codex_max" ] && codex_max=$codex_weekly_pct
+    text="${session_span} │ $(span_section "$codex_max" "$codex_section")"
     codex_session_line="Session: ${codex_session_pct}%$( [ -n "$codex_session_fmt" ] && echo " (resets ${codex_session_fmt})")"
     codex_weekly_line="Weekly:  ${codex_weekly_pct}%$( [ -n "$codex_weekly_fmt" ] && echo " (resets ${codex_weekly_fmt})")"
     tooltip="${tooltip}
