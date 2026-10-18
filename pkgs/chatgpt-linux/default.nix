@@ -14,6 +14,12 @@ let
       sha256 = "276b5341c3d74b261d3ad52106f7fa7edde06841e4767fe2a40cb54099b1f3ed";
     };
     nativeBuildInputs = [ pkgs.dpkg ];
+    # Just an unpack of an unfree .deb, which no binary cache has. Also
+    # changes the output path, retiring one whose bundled node was corrupted
+    # by a defective DIMM: reverting this while that path is still in the
+    # store would bring it back.
+    preferLocalBuild = true;
+    allowSubstitutes = false;
     unpackPhase = ''
       dpkg --fsys-tarfile "$src" | tar -x
     '';
