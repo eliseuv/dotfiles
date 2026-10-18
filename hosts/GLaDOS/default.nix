@@ -77,6 +77,9 @@
     remoteUnits = [ "pluto.service" ];
   };
 
+  # Its firewall for the above and its dev servers (homelab/workstation.nix).
+  my.homelab.workstation.enable = true;
+
   my.gaming.enable = true;
 
   my.secrets = {

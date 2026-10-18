@@ -1,29 +1,9 @@
-{ config, lib, ... }:
-let
-  # Dev servers: 8080, zola serve (1111) and vite (5173).
-  devPorts = [ 8080 1111 5173 ];
-  network = config.homelab.network;
-in
+{ ... }:
 {
 
   imports = [ ./netdata.nix ];
 
   boot.loader.timeout = 2;
-
-  # ttyd and Pluto run code as evf, so only wheatley (their reverse proxy) may
-  # reach them, over the tailnet rather than the LAN: the router hands out no
-  # fixed addresses, tailnet ones don't move.
-  #
-  # The dev ports are open to the whole LAN and tailnet. As on wheatley, the LAN is
-  # matched on source address rather than interface, so inbound IPv6 on the
-  # LAN NIC isn't admitted.
-  networking.firewall.extraCommands = ''
-    iptables -A nixos-fw -i tailscale0 -s ${network.tailnet.wheatley} -p tcp --dport ${toString config.my.services.ttyd.port} -j nixos-fw-accept
-    iptables -A nixos-fw -i tailscale0 -s ${network.tailnet.wheatley} -p tcp --dport ${toString config.my.services.pluto.port} -j nixos-fw-accept
-  '' + lib.concatMapStrings (port: ''
-    iptables -A nixos-fw -s ${network.lanSubnet} -p tcp --dport ${toString port} -j nixos-fw-accept
-    iptables -A nixos-fw -i tailscale0 -p tcp --dport ${toString port} -j nixos-fw-accept
-  '') devPorts;
 
   # Shared with wheatley, whose nginx hands it to her Pluto as a cookie.
   sops.secrets."pluto/secret".sopsFile = ../../secrets/shared/pluto-GLaDOS.yaml;

@@ -8,18 +8,17 @@
 { config, ... }:
 let
   cfg = config.my.services.pluto;
-  inherit (config.homelab.network) tailnet;
+  inherit (config.homelab.network) tailnet ports;
   glados = rec {
     basePath = "/glados/pluto/";
-    # Her my.services.pluto.port.
-    port = 1234;
+    port = ports.GLaDOS.pluto;
     # By tailnet address, as for her terminal (system.nix): nginx resolves
     # upstream names once at startup.
     upstream = "http://${tailnet.GLaDOS}:${toString port}";
   };
   chell = rec {
     basePath = "/chell/pluto/";
-    port = 1234;
+    port = ports.chell.pluto;
     upstream = "http://${tailnet.chell}:${toString port}";
   };
 

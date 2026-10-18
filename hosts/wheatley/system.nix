@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  inherit (config.homelab.network) tailnet;
+  inherit (config.homelab.network) tailnet ports;
 in
 {
 
@@ -44,13 +44,8 @@ in
     reboot = "GLaDOS";
     tailscale = "GLaDOS";
     page = "GLaDOS";
-    # Mirrors her devPorts (hosts/GLaDOS/system.nix), which open them.
     portsHost = "GLaDOS";
-    ports = {
-      HTTP = 8080;
-      Zola = 1111;
-      Vite = 5173;
-    };
+    ports = ports.GLaDOS.dev;
   };
   # For the dashboard's power-off (over mDNS) and switch (over the tailnet),
   # which SSH to her with strict host key checking.
@@ -66,7 +61,7 @@ in
   # asleep (.local) or tailscaled isn't up yet (MagicDNS). Long read
   # timeout so an idle terminal's websocket isn't cut after nginx's default 60s.
   services.nginx.virtualHosts.dashboard.locations."/glados/terminal/" = {
-    proxyPass = "http://${tailnet.GLaDOS}:3000";
+    proxyPass = "http://${tailnet.GLaDOS}:${toString ports.GLaDOS.ttyd}";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_read_timeout 1d;
@@ -87,11 +82,7 @@ in
     switch = "wheatley";
     terminal = "/wheatley/terminal/";
     page = "wheatley";
-    ports = with config.homelab.services; {
-      Vite = vite.port;
-      "Vite (fallback)" = vite-fallback.port;
-      Zola = zola.port;
-    };
+    ports = ports.wheatley.dev;
   };
 
   # The same buttons as GLaDOS's for chell, the shared family workstation
@@ -109,17 +100,12 @@ in
     reboot = "chell";
     tailscale = "chell";
     page = "chell";
-    # Mirrors her devPorts (hosts/chell/system.nix), which open them.
     portsHost = "chell";
-    ports = {
-      HTTP = 8080;
-      Zola = 1111;
-      Vite = 5173;
-    };
+    ports = ports.chell.dev;
   };
   # Her ttyd, proxied by tailnet address and firewalled as GLaDOS's
   services.nginx.virtualHosts.dashboard.locations."/chell/terminal/" = {
-    proxyPass = "http://${tailnet.chell}:3000";
+    proxyPass = "http://${tailnet.chell}:${toString ports.chell.ttyd}";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_read_timeout 1d;

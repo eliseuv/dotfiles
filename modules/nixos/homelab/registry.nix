@@ -18,6 +18,21 @@ in
       type = lib.types.attrsOf (lib.types.nullOr lib.types.str);
       description = "Tailscale IPv4 addresses by machine (hosts/ names, and others'); null for one not yet joined. The router hands out no fixed LAN addresses, so hosts reach each other by these.";
     };
+    ports = lib.mkOption {
+      description = "Ports of the servers on each host (hosts/ names) that others reach, set once so its firewall and wheatley's dashboard and proxies agree: `dev`, label -> port of its ad-hoc dev servers, opened to the LAN and tailnet and listed in its tile's ports menu; `ttyd` and `pluto`, its my.services ones, proxied by the dashboard.";
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            dev = lib.mkOption {
+              type = lib.types.attrsOf lib.types.port;
+              default = { };
+            };
+            ttyd = lib.mkOption { type = lib.types.port; };
+            pluto = lib.mkOption { type = lib.types.port; };
+          };
+        }
+      );
+    };
     tailnetAddress = str "This host's Tailscale IPv4 address." // {
       default = config.homelab.network.tailnet.${config.my.host.name};
     };

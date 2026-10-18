@@ -88,7 +88,10 @@
 
     gaming.enable = lib.mkEnableOption "games (Steam on NixOS)";
 
-    homelab.enable = lib.mkEnableOption "the homelab service registry, its firewall policy and dashboard";
+    homelab = {
+      enable = lib.mkEnableOption "the homelab service registry, its firewall policy and dashboard";
+      workstation.enable = lib.mkEnableOption "the firewall of a desktop whose servers the homelab dashboard fronts: its dev ports open to the LAN and tailnet, its ttyd and Pluto to the dashboard host only, all from homelab.network.ports (homelab/workstation.nix)";
+    };
 
     secrets = {
       system.enable = lib.mkEnableOption "sops-nix host secrets, from secrets/hosts/<host>.yaml";

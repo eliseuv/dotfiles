@@ -1,17 +1,16 @@
 # Ad-hoc dev servers run by evf rather than as system services, so only their
-# ports are declared here; the Wheatley tile's ports menu links to them
-# (system.nix).
-{ ... }:
+# ports are registered here, from homelab.network.ports; the Wheatley tile's
+# ports menu links to them (system.nix). Remote use included, as on the
+# desktops (homelab/workstation.nix).
+{ config, lib, ... }:
 {
 
-  homelab.services = {
-    vite = {
-      port = 5173;
+  homelab.services = lib.mapAttrs' (
+    label: port:
+    lib.nameValuePair "dev ${label}" {
+      inherit port;
       expose = "tailnet";
-    };
-    # Vite's next choice when 5173 is taken.
-    vite-fallback.port = 5174;
-    zola.port = 1111;
-  };
+    }
+  ) config.homelab.network.ports.wheatley.dev;
 
 }

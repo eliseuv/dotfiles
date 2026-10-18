@@ -16,6 +16,37 @@
       # Not hosts here
       CompanionCube = "100.109.162.27";
     };
+    ports =
+      let
+        # 8080, zola serve and vite.
+        desktopDev = {
+          HTTP = 8080;
+          Zola = 1111;
+          Vite = 5173;
+        };
+      in
+      {
+        wheatley = {
+          dev = {
+            Vite = 5173;
+            # Vite's next choice when 5173 is taken.
+            "Vite (fallback)" = 5174;
+            Zola = 1111;
+          };
+          ttyd = 3000;
+          pluto = 1234;
+        };
+        GLaDOS = {
+          dev = desktopDev;
+          ttyd = 3000;
+          pluto = 1234;
+        };
+        chell = {
+          dev = desktopDev;
+          ttyd = 3000;
+          pluto = 1234;
+        };
+      };
   };
 
 }
