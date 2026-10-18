@@ -303,9 +303,10 @@ li.service:is([data-name="Wheatley"], [data-name="Companion Cube"], [data-name="
   margin-bottom: 0;
 }
 
-/* Except host tiles, which grow when their ports menu opens: stretched, the
-   host beside them would grow with them. */
-#layout-groups > .services-group:nth-child(-n + 2) .services-list > li.service {
+/* Except that a tile can grow on its own (a ports menu, a widget row opening):
+   stretched, every tile beside it would grow with it. Short tiles beside a
+   tall one are left ragged instead. */
+.services-list > li.service {
   align-self: start;
 }
 
