@@ -101,6 +101,11 @@ html.dark { background: #101416; }
   mask: var(--aperture-iris) center / contain no-repeat;
 }
 
+/* The viewer's round trip to this host (controls.js), after the label. */
+#widgets-wrap [data-latency]:not([data-latency=""])::after {
+  content: " \00b7  " attr(data-latency);
+}
+
 html.dark .information-widget-greeting span {
   text-shadow: 0 0 12px rgb(255 199 118 / 0.35);
 }

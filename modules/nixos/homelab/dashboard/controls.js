@@ -21,8 +21,10 @@
   let switchStates = {};
   // Tile name -> "on"/"off"/"unknown" for tailscale tiles.
   let tailscaleStates = {};
-  // Tile name -> round-trip ms of the host's last answered ping, or null.
-  let pings = {};
+  // Round-trip ms of the last /status request from this browser to the host
+  // serving the page, or null. Other hosts' own pings from here aren't shown:
+  // they all share the LAN, so only the viewer's distance to this one varies.
+  let latency = null;
   // Tile name -> {seconds, at}: uptime of a page host as of performance.now()
   // `at`, counted on from there. hostctl fetches it over SSH only every
   // few minutes; pings say when it has gone stale.
@@ -56,13 +58,14 @@
       response.ok ? response.json() : Promise.reject(response.status),
     );
 
-  const refresh = () =>
-    call("GET", "/status")
+  const refresh = () => {
+    const started = performance.now();
+    return call("GET", "/status")
       .then((next) => {
+        latency = performance.now() - started;
         states = next.tiles;
         switchStates = next.switch;
         tailscaleStates = next.tailscale;
-        pings = next.ping;
         portStates = next.ports;
         syncUptimes();
         if (apiWentDown) {
@@ -73,7 +76,9 @@
       })
       .catch(() => {
         apiWentDown = true;
+        latency = null;
       });
+  };
 
   const fetchUptime = (name, poke) => {
     lastUptimeFetch[name] = performance.now();
@@ -401,6 +406,16 @@
   // Only touches the DOM when something changed: the page's MutationObserver
   // calls this again on every mutation.
   const render = () => {
+    // On the label under the header's Wheatley readings, as an attribute
+    // theme.css prints: the text is React's, and an attribute it never set
+    // survives its re-renders. The label is the deepest last element of the
+    // widget, Homepage giving it no class.
+    let label = document.querySelector("#widgets-wrap > .widget-container:nth-child(2)");
+    while (label?.lastElementChild) label = label.lastElementChild;
+    if (label) {
+      const text = latency != null ? `${Math.round(latency)} ms` : "";
+      if ((label.dataset.latency || "") !== text) label.dataset.latency = text;
+    }
     for (const tile of document.querySelectorAll("li.service[data-name]")) {
       const name = tile.dataset.name;
       const kinds = {
@@ -429,7 +444,7 @@
       const state = displayState(name);
       const switchState = kinds.switch || kinds.config ? switchStates[name] || "unknown" : "";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
-      let ping = state === "up" && pings[name] != null ? ` · ${Math.round(pings[name])} ms` : "";
+      let ping = "";
       if (state === "up" && uptimes[name]) {
         const { seconds, at } = uptimes[name];
         ping += ` · ${formatUptime(seconds + (performance.now() - at) / 1000)}`;
