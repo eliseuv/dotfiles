@@ -3,8 +3,8 @@
 # reboot and switch need the dashboard's login, so they stay on the dashboard.
 ddir="$HOME/.config/rofi/config"
 
-# Tile name | hostctl name | `wake` name | has a host page
-ALL_HOSTS=("Wheatley|wheatley|wheatley|1" "Chell|chell|chell|1" "GLaDOS|GLaDOS|GLaDOS|1" "Companion Cube|CompanionCube|CompanionCube|0")
+# Tile name | hostctl name | `wake` name | has a host page | icon
+ALL_HOSTS=("Wheatley|wheatley|wheatley|1|󰈈" "Chell|chell|chell|1|󰀄" "GLaDOS|GLaDOS|GLaDOS|1|󰚩" "Companion Cube|CompanionCube|CompanionCube|0|󰆧")
 self=$(hostname)
 self=${self,,}
 
@@ -38,15 +38,15 @@ if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status"); then
 fi
 
 # First, so Enter alone opens it
-labels=("󰖟  Dashboard")
+labels=("󰕮  Dashboard")
 for entry in "${HOSTS[@]}"; do
-    IFS='|' read -r tile _ _ _ <<< "$entry"
+    IFS='|' read -r tile _ _ _ icon <<< "$entry"
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
     ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
     if [ "$state" = "up" ]; then
-        labels+=("●  $tile    ${ping:+$ping ms}")
+        labels+=("●  $icon  $tile    ${ping:+$ping ms}")
     else
-        labels+=("○  $tile    down")
+        labels+=("○  $icon  $tile    down")
     fi
 done
 
@@ -58,13 +58,13 @@ if [[ "$row" -eq 0 ]]; then
     exit 0
 fi
 
-IFS='|' read -r tile host wake_name has_page <<< "${HOSTS[$((row - 1))]}"
+IFS='|' read -r tile host wake_name has_page _ <<< "${HOSTS[$((row - 1))]}"
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
 
 actions=()
 sublabels=()
 if [ "$up" = "true" ]; then
-    sublabels+=("  SSH")
+    sublabels+=("󰆍  SSH")
     actions+=("ssh")
 else
     sublabels+=("󰐥  Wake")
