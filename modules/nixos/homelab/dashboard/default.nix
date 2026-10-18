@@ -22,31 +22,7 @@ let
   network = config.homelab.network;
   homepagePort = config.services.homepage-dashboard.listenPort;
 
-  # Tile groups, in display order, on one four-column grid: theme.css evens
-  # out the rows and sets the first two side by side, as halves whose two
-  # columns land on the four below.
-  groups = [
-    {
-      name = "Servers";
-      columns = 2;
-    }
-    {
-      name = "Desktops";
-      columns = 2;
-    }
-    {
-      name = "Tools";
-      columns = 4;
-    }
-    {
-      name = "Media";
-      columns = 4;
-    }
-    {
-      name = "Games";
-      columns = 4;
-    }
-  ];
+  groups = import ./_groups.nix;
 
   tiled = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
   withKey = lib.filterAttrs (_: service: service.dashboard.widgetKey != null) tiled;
