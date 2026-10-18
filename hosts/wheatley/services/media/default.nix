@@ -61,10 +61,18 @@ in
       }
       # Hard dependency: if the NAS is down these must not start and write into
       # the bare mountpoint on the root filesystem.
+      # UMask: with the upstream modules' masks (0022 for the *arrs), a folder
+      # one service creates (e.g. Radarr's per-movie folder) is closed to the
+      # rest of the media group, so Jellyfin and Bazarr can't save subtitles
+      # into it; mkForce overrides those masks. Under /var/lib the extra group
+      # bit lands on each service's own memberless group, so it exposes
+      # nothing; world bits are unchanged (Jellyfin and Navidrome lose their
+      # hardened masks, but their state dirs are 0700).
       (lib.genAttrs mediaServices (_: {
         requires = [ "media-dirs.service" ];
         after = [ "media-dirs.service" ];
         unitConfig.RequiresMountsFor = mediaRoot;
+        serviceConfig.UMask = lib.mkForce "0002";
       }))
     ];
 
