@@ -16,8 +16,9 @@ pkgs.writeShellApplication {
       url="http://wheatley.local"
     fi
 
-    # Own profile so --app opens a new window instead of attaching to the
-    # running browser session.
-    exec brave --app="$url" --user-data-dir="''${XDG_DATA_HOME:-$HOME/.local/share}/wheatley-dashboard"
+    # Chromium rather than Brave so links out of the app window (service ports)
+    # open in Chromium's own browser window. Own profile so --app opens a new
+    # window instead of attaching to the running browser session.
+    exec chromium --app="$url" --user-data-dir="''${XDG_DATA_HOME:-$HOME/.local/share}/wheatley-dashboard"
   '';
 }

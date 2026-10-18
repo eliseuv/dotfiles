@@ -1022,16 +1022,6 @@ in
             workspace = 5;
           }
           {
-            name = "wheatley-dashboard";
-            match = {
-              # Brave's --app class embeds the URL host, so it differs between
-              # the tailnet and .local forms (see wheatley-dashboard)
-              class = "^brave-wheatley.*-Default$";
-            };
-            tag = "+browser";
-            workspace = 5;
-          }
-          {
             name = "browser-opaque";
             match = {
               tag = "browser";
