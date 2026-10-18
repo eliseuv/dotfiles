@@ -3,9 +3,15 @@
 # Homelab summary from Wheatley's dashboard API (svcctl and hostctl). Reads
 # only: those GETs need no login, just the X-Svcctl header.
 
-ICON="󰒋"
-# Tile name -> hostctl's name for the host
-HOSTS=("Wheatley:wheatley" "Chell:chell" "GLaDOS:GLaDOS" "Companion Cube:CompanionCube")
+# Tile name : hostctl's name for the host : icon
+HOSTS=(
+    "Wheatley:wheatley:󰈈" # eye
+    "Chell:chell:󰀄"
+    "GLaDOS:GLaDOS:󰚩" # robot
+    "Companion Cube:CompanionCube:󰆧" # cube
+)
+self=$(hostname)
+self=${self,,}
 
 # The short MagicDNS name only resolves on the tailnet; otherwise mDNS.
 if [ "$(tailscale status --peers=false --json 2> /dev/null | jq -r '.BackendState' 2> /dev/null)" = "Running" ]; then
@@ -32,16 +38,22 @@ if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status") || [ -z "$s
 fi
 
 up=0
+total=0
+icons=()
 lines=()
 for entry in "${HOSTS[@]}"; do
-    tile=${entry%%:*}
-    host=${entry##*:}
+    IFS=: read -r tile host icon <<< "$entry"
+    # This machine is not part of what the bar reports on
+    [ "${host,,}" = "$self" ] && continue
+    total=$((total + 1))
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
     if [ "$state" != "up" ]; then
+        icons+=("<span alpha=\"40%\">$icon</span>")
         lines+=("○ $tile")
         continue
     fi
     up=$((up + 1))
+    icons+=("$icon")
     ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
     uptime=$(curl -fs -m 3 "$base/api/hosts/$host" | jq -r '.uptime // empty')
     line="● $tile"
@@ -50,7 +62,6 @@ for entry in "${HOSTS[@]}"; do
     lines+=("$line")
 done
 
-total=${#HOSTS[@]}
 class="ok"
 ((up < total)) && class="partial"
 ((up == 0)) && class="down"
@@ -58,5 +69,5 @@ class="ok"
 jq -e '.switch | to_entries | any(.value == "failed")' <<< "$status" > /dev/null && class="failed"
 
 tooltip=$(printf '%s\n' "${lines[@]}")
-jq -cn --arg text "$ICON $up/$total" --arg class "$class" --arg tooltip "$tooltip" \
+jq -cn --arg text "${icons[*]}" --arg class "$class" --arg tooltip "$tooltip" \
     '{text: $text, class: $class, tooltip: ($tooltip | gsub("&"; "&amp;") | gsub("<"; "&lt;"))}'
