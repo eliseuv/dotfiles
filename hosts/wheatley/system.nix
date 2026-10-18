@@ -69,12 +69,12 @@ in
   };
 
   # Terminal, switch and restart buttons for wheatley himself; no on/off, as
-  # nothing here could turn him back on. First in Headless servers, followed
+  # nothing here could turn him back on. First in Servers, followed
   # by Companion Cube.
   # The icon is a placeholder the dashboard theme draws over with his core.
   homelab.services.wheatley.dashboard = {
     name = "Wheatley";
-    group = "Headless servers";
+    group = "Servers";
     order = 0;
     icon = "mdi-server";
     link = false;

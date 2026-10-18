@@ -27,7 +27,7 @@ let
   # columns land on the four below.
   groups = [
     {
-      name = "Headless servers";
+      name = "Servers";
       columns = 2;
     }
     {

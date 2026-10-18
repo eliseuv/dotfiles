@@ -56,7 +56,7 @@ in
   # here. DSM's cert is self-signed; Homepage's monitor doesn't verify it.
   homelab.services.companion-cube.dashboard = {
     name = "Companion Cube";
-    group = "Headless servers";
+    group = "Servers";
     order = 1;
     # Drawn over with the cube face; the dashboard theme CSS matches this name.
     icon = "synology.svg";
