@@ -18,7 +18,8 @@ pkgs.writeShellApplication {
 
     # Chromium rather than Brave so links out of the app window (service ports)
     # open in Chromium's own browser window. Own profile so --app opens a new
-    # window instead of attaching to the running browser session.
-    exec chromium --app="$url" --user-data-dir="''${XDG_DATA_HOME:-$HOME/.local/share}/wheatley-dashboard"
+    # window instead of attaching to the running browser session. The custom
+    # class lets Hyprland target this window (see its wheatley-dashboard rule).
+    exec chromium --class=wheatley-dashboard --app="$url" --user-data-dir="''${XDG_DATA_HOME:-$HOME/.local/share}/wheatley-dashboard"
   '';
 }

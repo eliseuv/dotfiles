@@ -1022,6 +1022,16 @@ in
             workspace = 5;
           }
           {
+            name = "wheatley-dashboard";
+            match = {
+              class = "^wheatley-dashboard$";
+            };
+            # Chromium --app windows open floating otherwise
+            tile = true;
+            tag = "+browser";
+            workspace = 5;
+          }
+          {
             name = "browser-opaque";
             match = {
               tag = "browser";
