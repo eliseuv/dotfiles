@@ -1,4 +1,4 @@
-{ lib, pkgs-master, ... }:
+{ lib, pkgs, pkgs-master, ... }:
 let
   # Escape hatch for a release newer than nixpkgs-master. Fill in the version
   # with lib.fakeHash for both hashes, build, and copy each "got:" hash from
@@ -14,6 +14,8 @@ let
   # };
 in
 {
+
+  home.packages = [ pkgs.bubblewrap ];
 
   programs.codex = {
     enable = true;
