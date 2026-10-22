@@ -1,99 +1,47 @@
 #!/usr/bin/env bash
-rofi_command="rofi -theme $HOME/.config/rofi/config/powermenu.rasi"
-
+ddir="$HOME/.config/rofi/config"
 uptime=$(uptime | sed -e 's/up //g')
 
-# Options
-if [[ "$DIR" == "powermenus" ]]; then
+# Match the icon-only layout selected in the main menu theme.
+if [[ "${DIR:-}" == "powermenus" ]] || grep -q 'BUTTON = TRUE' "$ddir/powermenu.rasi"; then
     shutdown="󰐥"
     reboot="󰜉"
     lock="󰍁"
     suspend="󰒲"
     logout="󰍃 "
-    ddir="$HOME/.config/rofi/config"
 else
-
-    # Buttons
-    layout=$(grep BUTTON "$HOME/.config/rofi/config/powermenu.rasi" | cut -d'=' -f2 | tr -d '[:blank:],*/')
-    if [[ "$layout" == "TRUE" ]]; then
-        shutdown="󰐥"
-        reboot="󰜉"
-        lock="󰍁"
-        suspend="󰒲"
-        logout="󰍃 "
-    else
-        shutdown="󰐥Shutdown"
-        reboot="󰜉 Restart"
-        lock="󰍁 Lock"
-        suspend="󰒲Sleep"
-        logout="󰍃 Logout"
-    fi
-    ddir="$HOME/.config/rofi/config"
+    shutdown="󰐥Shutdown"
+    reboot="󰜉 Restart"
+    lock="󰍁 Lock"
+    suspend="󰒲Sleep"
+    logout="󰍃 Logout"
 fi
 
-# Ask for confirmation
-rdialog() {
-    rofi -dmenu -i -no-fixed-num-lines -p "Are You Sure? : " \
-        -theme "$ddir/confirm.rasi"
+# Cancel is selected first. Only an explicit selection of the second row
+# authorizes the action; Escape, closing the menu, and stray Enter cancel.
+confirm() {
+    local choice
+    choice=$(printf '%s\n' '󰅖  Cancel' "$2" |
+        rofi -dmenu -no-custom -format i -selected-row 0 -p "$1" \
+            -theme "$ddir/power-confirm.rasi") || return 1
+    [[ "$choice" == 1 ]]
 }
 
-# Display Help
-show_msg() {
-    rofi -theme "$ddir/askpass.rasi" -e "Options : yes / no / y / n"
-}
+choice=$(printf '%s\n' "$lock" "$suspend" "$logout" "$reboot" "$shutdown" |
+    rofi -dmenu -no-custom -format i -selected-row 0 -p "UP - $uptime" \
+        -theme "$ddir/powermenu.rasi") || exit 0
 
-# Variable passed to rofi
-options="$lock\n$suspend\n$logout\n$reboot\n$shutdown"
-
-lock_command="hyprlock"
-exit_command="uwsm stop"
-
-chosen="$(echo -e "$options" | $rofi_command -p "UP - $uptime" -dmenu -selected-row 0)"
-case $chosen in
-"$shutdown")
-    ans=$(rdialog &)
-    if [[ $ans == "yes" ]] || [[ $ans == "YES" ]] || [[ $ans == "y" ]]; then
-        systemctl poweroff
-    elif [[ $ans == "no" ]] || [[ $ans == "NO" ]] || [[ $ans == "n" ]]; then
-        exit
-    else
-        show_msg
-    fi
-    ;;
-"$reboot")
-    ans=$(rdialog &)
-    if [[ $ans == "yes" ]] || [[ $ans == "YES" ]] || [[ $ans == "y" ]]; then
-        systemctl reboot
-    elif [[ $ans == "no" ]] || [[ $ans == "NO" ]] || [[ $ans == "n" ]]; then
-        exit
-    else
-        show_msg
-    fi
-    ;;
-"$lock")
-    $lock_command
-    ;;
-"$suspend")
-    ans=$(rdialog &)
-    if [[ $ans == "yes" ]] || [[ $ans == "YES" ]] || [[ $ans == "y" ]]; then
+case "$choice" in
+0) hyprlock ;;
+1)
+    if confirm 'Put this computer to sleep?' '󰒲  Sleep now'; then
         mpc -q pause
         wpctl set-mute @DEFAULT_SINK@ 1
-        $lock_command
+        hyprlock
         systemctl suspend
-    elif [[ $ans == "no" ]] || [[ $ans == "NO" ]] || [[ $ans == "n" ]]; then
-        exit
-    else
-        show_msg
     fi
     ;;
-"$logout")
-    ans=$(rdialog &)
-    if [[ $ans == "yes" ]] || [[ $ans == "YES" ]] || [[ $ans == "y" ]]; then
-        $exit_command
-    elif [[ $ans == "no" ]] || [[ $ans == "NO" ]] || [[ $ans == "n" ]]; then
-        exit
-    else
-        show_msg
-    fi
-    ;;
+2) confirm 'Log out of this session?' '󰍃  Log out now' && uwsm stop ;;
+3) confirm 'Restart this computer?' '󰜉  Restart now' && systemctl reboot ;;
+4) confirm 'Shut down this computer?' '󰐥  Shut down now' && systemctl poweroff ;;
 esac

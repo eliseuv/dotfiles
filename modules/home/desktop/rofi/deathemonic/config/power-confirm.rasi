@@ -1,0 +1,59 @@
+@import "font.rasi"
+@import "colors.rasi"
+
+configuration {
+    click-to-exit: true;
+    location: 0;
+}
+
+window {
+    background-color: @BG;
+    text-color: @FG;
+    border: 2px;
+    border-color: @BDR;
+    border-radius: 10px;
+    width: 360px;
+    padding: 16px;
+    anchor: center;
+}
+
+mainbox {
+    background-color: @BG;
+    children: [ inputbar, listview ];
+    spacing: 12px;
+}
+
+inputbar {
+    background-color: @BG;
+    children: [ prompt ];
+}
+
+prompt {
+    background-color: @BG;
+    text-color: @FG;
+    padding: 8px;
+}
+
+listview {
+    background-color: @BG;
+    lines: 2;
+    cycle: false;
+    spacing: 6px;
+}
+
+element {
+    background-color: @BG;
+    text-color: @FG;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+element-text {
+    background-color: inherit;
+    text-color: inherit;
+}
+
+element selected {
+    background-color: @BGA;
+    text-color: @SEL;
+}
