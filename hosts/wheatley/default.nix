@@ -13,6 +13,13 @@
     };
     nas.enable = true;
     dotfilesSwitch.enable = true;
+    # Central git hub for every host's projects (modules/nixos/services/git-hub.nix)
+    gitHub = {
+      enable = true;
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAUnmhWDmvCC5BrQtkq84+svdTs/SwYJSQWUntpj6gnf evf@GLaDOS(ssh)"
+      ];
+    };
   };
 
   my.secrets = {
