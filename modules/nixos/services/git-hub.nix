@@ -55,7 +55,12 @@ let
 
   wrapper = pkgs.writeShellScript "git-hub-wrapper" ''
     set -eu
-    export PATH=${lib.makeBinPath [ pkgs.git pkgs.coreutils ]}
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.git
+        pkgs.coreutils
+      ]
+    }
     export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=${hooksDir}
     cd ${cfg.root}
 
@@ -113,8 +118,16 @@ let
 
   forward = pkgs.writeShellScript "git-hub-forward" ''
     set -u
-    export PATH=${lib.makeBinPath [ pkgs.git pkgs.openssh pkgs.coreutils ]}
-    export GIT_SSH_COMMAND="ssh -i ${config.sops.secrets."git-hub/github-key".path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${knownHosts}"
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.git
+        pkgs.openssh
+        pkgs.coreutils
+      ]
+    }
+    export GIT_SSH_COMMAND="ssh -i ${
+      config.sops.secrets."git-hub/github-key".path
+    } -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${knownHosts}"
     failed=0
     for marker in ${queueDir}/*; do
       [ -e "$marker" ] || continue
@@ -142,7 +155,9 @@ in
       group = user;
       home = cfg.root;
       useDefaultShell = true;
-      openssh.authorizedKeys.keys = map (key: ''restrict,command="${wrapper}" ${key}'') cfg.authorizedKeys;
+      openssh.authorizedKeys.keys = map (
+        key: ''restrict,command="${wrapper}" ${key}''
+      ) cfg.authorizedKeys;
     };
     users.groups.${user} = { };
 
