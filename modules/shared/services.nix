@@ -30,6 +30,20 @@
         description = "systemd units the homelab dashboard may start, stop, restart and query over SSH (services/remote-control.nix).";
       };
 
+      gitHub = {
+        enable = lib.mkEnableOption "the central git hub: bare repos under `root`, created on first push over SSH, with an optional per-repo push to GitHub (services/git-hub.nix)";
+        root = lib.mkOption {
+          type = lib.types.str;
+          default = "/srv/git";
+          description = "Directory holding the bare repositories; also the git user's home.";
+        };
+        authorizedKeys = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Public keys of the hosts that push here. Each is pinned to the hub's forced command, so none gets a shell.";
+        };
+      };
+
       ttyd = {
         enable = lib.mkEnableOption "the ttyd web terminal (zellij as the primary user); it has no login of its own, so it belongs behind the homelab dashboard's nginx";
         port = lib.mkOption {
