@@ -18,6 +18,7 @@
       enable = true;
       authorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAUnmhWDmvCC5BrQtkq84+svdTs/SwYJSQWUntpj6gnf evf@GLaDOS(ssh)"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBR/mgTmHW79dRmr0FCuIwE/oPejHJOtXvhWAQLuF//y evf@tardis(ssh)"
       ];
     };
   };
