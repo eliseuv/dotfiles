@@ -7,21 +7,82 @@
   ...
 }:
 let
-  # Generated from the binary so the skill always matches the installed CLI
-  # (its own description says the binary is the authority on syntax).
-  skill = pkgs.runCommand "herdr-skill" { } ''
-    mkdir $out
-    ${lib.getExe pkgs.herdr} --skill > $out/SKILL.md
-  '';
+  # Generated from the binary so the skill and the integration hooks always
+  # match the installed CLI (its own description says the binary is the
+  # authority on syntax). The installer refuses to run without the agent's
+  # config directory, hence the mkdir. The hooks shell out to python3 and
+  # silently no-op without it, so PATH is pinned rather than inherited.
+  generated =
+    pkgs.runCommand "herdr-generated"
+      {
+        nativeBuildInputs = [ pkgs.herdr ];
+      }
+      ''
+        export HOME=$TMPDIR/home
+        mkdir -p $HOME/.claude $HOME/.codex $out/skill
+
+        herdr --skill > $out/skill/SKILL.md
+        herdr integration install claude
+        herdr integration install codex
+
+        for hook in $HOME/.claude/hooks/herdr-agent-state.sh $HOME/.codex/herdr-agent-state.sh; do
+          sed -i '/^set -eu$/a export PATH=${pkgs.python3}/bin:"$PATH"' "$hook"
+        done
+        cp $HOME/.claude/hooks/herdr-agent-state.sh $out/claude.sh
+        cp $HOME/.codex/herdr-agent-state.sh $out/codex.sh
+      '';
+
+  hookCommand = script: "bash '${script}' session";
+  claudeHookScript = "${config.home.homeDirectory}/.claude/hooks/herdr-agent-state.sh";
+  codexHookScript = "${config.home.homeDirectory}/.codex/herdr-agent-state.sh";
 in
 {
 
   config = lib.mkIf (config.home.username == "evf") {
-    home.packages = [ pkgs.herdr ];
+    programs.herdr.enable = true;
     home.shellAliases.h = "herdr";
 
-    programs.claude-code.skills.herdr = skill;
-    programs.codex.skills.herdr = skill;
+    programs.claude-code = {
+      skills.herdr = "${generated}/skill";
+      hooks."herdr-agent-state.sh" = "${generated}/claude.sh";
+      # Claude Code rewrites settings.json itself (/config, theme), so merge
+      # the declared keys into a writable file instead of owning it outright.
+      mutableSettings = true;
+      settings.hooks.SessionStart = [
+        {
+          matcher = "^(startup|resume|clear|compact|fork)$";
+          hooks = [
+            {
+              type = "command";
+              command = hookCommand claudeHookScript;
+              timeout = 10;
+            }
+          ];
+        }
+      ];
+    };
+
+    programs.codex = {
+      skills.herdr = "${generated}/skill";
+      mutableSettings = true;
+      settings.features.hooks = true;
+      hooks.SessionStart = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = hookCommand codexHookScript;
+              timeout = 10;
+            }
+          ];
+        }
+      ];
+    };
+
+    home.file.".codex/herdr-agent-state.sh" = {
+      source = "${generated}/codex.sh";
+      executable = true;
+    };
   };
 
 }
