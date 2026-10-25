@@ -9,9 +9,10 @@
       lib.types.enum [
         "tmux"
         "zellij"
+        "herdr"
       ]
     );
-    default = "tmux";
+    default = "herdr";
     description = "Multiplexer to auto-attach on interactive SSH logins; null for none.";
   };
 

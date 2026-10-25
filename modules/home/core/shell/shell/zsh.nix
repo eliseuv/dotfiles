@@ -9,6 +9,7 @@ let
   attachCommand = {
     tmux = "${lib.getExe pkgs.tmux} new-session -A -s ssh";
     zellij = "${lib.getExe pkgs.zellij} attach --create ssh";
+    herdr = "${lib.getExe pkgs.herdr} --session ssh";
   };
 in
 {
@@ -41,11 +42,11 @@ in
       # which the multiplexer's screen would otherwise cover. $SSH_TTY is
       # unset for tty-less sessions (scp/rsync/ProxyJump -W). Both guards
       # prevent nesting: a tmux server started over SSH hands $SSH_TTY to its
-      # panes, and $ZELLIJ also covers wheatley's ttyd. No exec, so detaching
+      # panes, and $HERDR_PANE_ID also covers wheatley's ttyd. No exec, so detaching
       # drops back to a plain shell instead of disconnecting.
       (lib.mkIf (config.my.home.multiplexer != null) (
         lib.mkOrder 200 ''
-          if [[ -n $SSH_TTY && -z $TMUX && -z $ZELLIJ ]]; then
+          if [[ -n $SSH_TTY && -z $TMUX && -z $ZELLIJ && -z $HERDR_PANE_ID ]]; then
             ${attachCommand.${config.my.home.multiplexer}}
           fi
         ''
