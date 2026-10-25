@@ -32,6 +32,13 @@ let
         cp $HOME/.codex/herdr-agent-state.sh $out/codex.sh
       '';
 
+  mauve = {
+    latte = "#8839ef";
+    frappe = "#ca9ee6";
+    macchiato = "#c6a0f6";
+    mocha = "#cba6f7";
+  };
+
   hookCommand = script: "bash '${script}' session";
   claudeHookScript = "${config.home.homeDirectory}/.claude/hooks/herdr-agent-state.sh";
   codexHookScript = "${config.home.homeDirectory}/.codex/herdr-agent-state.sh";
@@ -45,6 +52,21 @@ in
       mutableSettings = true;
       # Herdr only ships mocha ("catppuccin") and latte; frappe and macchiato
       # fall back to mocha.
+      settings.ui = {
+        # Mirrors the tmux/zellij status bar: on top, hostname and clock at
+        # the right.
+        tab_bar_position = "top";
+        tab_bar_right = [
+          { type = "hostname"; }
+          {
+            type = "datetime";
+            format = "%Y-%m-%d %H:%M";
+          }
+        ];
+        # Herdr takes a hex accent, not a Catppuccin name, so only mauve (the
+        # shared default) is mapped.
+        accent = lib.mkIf (config.my.theme.accent == "mauve") mauve.${config.my.theme.flavor};
+      };
       settings.theme.name = if config.my.theme.flavor == "latte" then "catppuccin-latte" else "catppuccin";
     };
     home.shellAliases.h = "herdr";
