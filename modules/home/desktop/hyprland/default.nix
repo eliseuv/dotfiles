@@ -1212,7 +1212,7 @@ in
     # Screenshot
     programs.hyprshot = {
       enable = true;
-      saveLocation = "$HOME/Storage/Images/screenshots";
+      saveLocation = "$HOME/Pictures/screenshots";
     };
 
   };
