@@ -1,4 +1,4 @@
-# ttyd web terminal running zellij as the primary user. A system unit rather
+# ttyd web terminal running herdr as the primary user. A system unit rather
 # than a home-manager user service so it runs without a login session; the
 # in-terminal tooling (lrzsz, sixel) stays in modules/home/remote/ttyd.nix.
 #
@@ -50,7 +50,7 @@ in
       in
       {
         description = "ttyd web terminal";
-        # The user manager is what creates /run/user/<uid>, which zellij's
+        # The user manager is what creates /run/user/<uid>, which herdr's
         # sockets and the session bus live in.
         requires = [ "user@${uid}.service" ];
         after = [
@@ -79,7 +79,7 @@ in
               -p ${toString cfg.port} -W${
                 lib.optionalString (cfg.basePath != "/") " -b ${lib.escapeShellArg cfg.basePath}"
               }${lib.optionalString (cfg.interface != null) " -i ${lib.escapeShellArg cfg.interface}"} \
-              ${pkgs.zsh}/bin/zsh -lc 'exec ${pkgs.zellij}/bin/zellij attach --create ttyd'
+              ${pkgs.zsh}/bin/zsh -lc 'exec ${lib.getExe pkgs.herdr} --session ttyd'
           '';
         };
       };

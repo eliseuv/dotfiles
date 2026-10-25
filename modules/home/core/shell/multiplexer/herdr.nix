@@ -8,6 +8,9 @@
 }:
 {
 
-  home.packages = lib.mkIf (config.home.username == "evf") [ pkgs.herdr ];
+  config = lib.mkIf (config.home.username == "evf") {
+    home.packages = [ pkgs.herdr ];
+    home.shellAliases.h = "herdr";
+  };
 
 }
