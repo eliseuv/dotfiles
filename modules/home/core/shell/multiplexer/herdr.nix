@@ -39,7 +39,14 @@ in
 {
 
   config = lib.mkIf (config.home.username == "evf") {
-    programs.herdr.enable = true;
+    programs.herdr = {
+      enable = true;
+      # Herdr's settings screen writes config.toml itself.
+      mutableSettings = true;
+      # Herdr only ships mocha ("catppuccin") and latte; frappe and macchiato
+      # fall back to mocha.
+      settings.theme.name = if config.my.theme.flavor == "latte" then "catppuccin-latte" else "catppuccin";
+    };
     home.shellAliases.h = "herdr";
 
     programs.claude-code = {
