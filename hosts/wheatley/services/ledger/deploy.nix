@@ -12,7 +12,7 @@
 # the same three-stage pipeline `just deploy-service` does by hand, split
 # across privilege boundaries so no sudo/password is ever needed:
 #   1. evf: bump the ledger-web pin (`just pin-service ledger-web`)
-#   2. root: build + activate (`nixos-rebuild switch --flake .#wheatley`)
+#   2. evf: build; root: activate the built system
 #   3. evf: tag the generation, push, sync home-manager, gc
 #      (`just after-switch`)
 #
@@ -78,9 +78,19 @@ let
       ${user}
 
     test "$(${pkgs.jq}/bin/jq -r .rev ${dotfilesPath}/pkgs/ledger-web/pin.json)" = "$rev"
+    phase=build
+    write_status running
+    # Build as the repository owner: root's libgit2 rejects this user-owned
+    # checkout. Match dotfiles-switch.nix's build/activation boundary.
+    /run/wrappers/bin/su -s /bin/sh -c \
+      'cd ${dotfilesPath} && ${config.nix.package}/bin/nix build --out-link ${triggerDir}/system .#nixosConfigurations.${config.my.host.name}.config.system.build.toplevel' \
+      ${user}
+
     phase=activate
     write_status running
-    cd ${dotfilesPath} && ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake .#${config.my.host.name}
+    system=$(readlink -f ${triggerDir}/system)
+    ${config.nix.package}/bin/nix-env --profile /nix/var/nix/profiles/system --set "$system"
+    "$system/bin/switch-to-configuration" switch
 
     phase=health
     write_status running
@@ -133,7 +143,7 @@ in
     description = "Deploy ledger-web from the latest push";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
-    # nixos-rebuild needs nix in this unit's otherwise minimal PATH.
+    # Activation needs nix in this unit's otherwise minimal PATH.
     path = [ config.nix.package ];
     # Activation may replace this unit while it is running; let it finish
     # its health check and report the result to the waiting client.

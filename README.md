@@ -198,8 +198,8 @@ a manual `deploy-service` call:
   deletions are rejected by the receiving repository.
 - A `systemd.path` unit watches that file and runs the deploy chain, split
   by privilege so nothing ever needs sudo or a password: `just
-  pin-service ledger-web` as `evf`, then `nixos-rebuild switch --flake
-  .#wheatley` as **root**, then `just
+  pin-service ledger-web` and `nix build` as `evf`, then set the system
+  profile and run `switch-to-configuration switch` as **root**, then `just
   after-switch` as `evf` again. Pinning failures stop deployment; the pinned
   revision must match the request. After activation, the service checks
   `/api/accounts` before reporting success.

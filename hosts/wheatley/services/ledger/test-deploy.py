@@ -34,7 +34,12 @@ else
   [ "${FAIL_BOOKKEEPING:-0}" = 0 ] || exit 13
 fi
 ''')
-    executable('nixos-rebuild', 'echo activated > "$TEST_ROOT/activated"; [ "${FAIL_BUILD:-0}" = 0 ]\n')
+    executable('nix', '[ "${FAIL_BUILD:-0}" = 0 ] || exit 14; ln -sfn "$TEST_ROOT/system" "$TEST_ROOT/state/system"\n')
+    executable('nix-env', 'echo activated > "$TEST_ROOT/activated"; [ "${FAIL_ACTIVATE:-0}" = 0 ]\n')
+    (root/'system/bin').mkdir(parents=True)
+    activate = root/'system/bin/switch-to-configuration'
+    activate.write_text('#!/usr/bin/env bash\nexit 0\n')
+    activate.chmod(0o755)
     executable('curl', '[ "${FAIL_HEALTH:-0}" = 0 ] || exit 22; echo "[]"\n')
     executable('systemctl', 'exit 0\n')
     executable('su', 'exec /bin/sh -c "$4"\n')
@@ -56,7 +61,6 @@ fi
           git = "{root}/mock";
           coreutils = "{root}/mock";
           just = "{root}/mock";
-          nixos-rebuild = "{root}/mock";
           curl = "{root}/mock";
           systemd = "{root}/mock";
         }};
@@ -95,7 +99,8 @@ fi
     cases = [({}, 'succeeded', 'bookkeeping', True),
              ({'FAIL_PIN':'1'}, 'failed', 'pin', False),
              ({'PIN_REV':'b'*40}, 'failed', 'pin', False),
-             ({'FAIL_BUILD':'1'}, 'failed', 'activate', True),
+             ({'FAIL_BUILD':'1'}, 'failed', 'build', False),
+             ({'FAIL_ACTIVATE':'1'}, 'failed', 'activate', True),
              ({'FAIL_HEALTH':'1'}, 'failed', 'health', True),
              ({'FAIL_BOOKKEEPING':'1'}, 'succeeded-with-warning', 'bookkeeping', True),
              ({'TEST_REV':'b'*40}, 'failed', 'pin', False)]
