@@ -27,6 +27,7 @@
   my.home = {
     apps.enable = true;
     notes.enable = true;
+    aven.enable = true;
   };
 
 }
