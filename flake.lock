@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "aven": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793140583,
+        "narHash": "sha256-kPxxEefQXullZ7e7RJv0vqlSChz/5HAL65Drso2rwP0=",
+        "owner": "raine",
+        "repo": "aven",
+        "rev": "671d201dacc68a61e9e1630573c041a586695a74",
+        "type": "github"
+      },
+      "original": {
+        "owner": "raine",
+        "repo": "aven",
+        "type": "github"
+      }
+    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -254,6 +274,7 @@
     },
     "root": {
       "inputs": {
+        "aven": "aven",
         "catppuccin": "catppuccin",
         "fenix": "fenix",
         "home-manager": "home-manager",

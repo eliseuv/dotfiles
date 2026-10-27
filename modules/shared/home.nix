@@ -15,6 +15,8 @@
 
     notes.enable = lib.mkEnableOption "the notes vault environment and its agent skills";
 
+    aven.enable = lib.mkEnableOption "the aven task manager (evf only)";
+
     cloudSync.enable = lib.mkEnableOption "rclone and its sync services";
 
     remoteAccess.enable = lib.mkEnableOption "ttyd terminal tooling and the Claude Code and Codex remote-control services";

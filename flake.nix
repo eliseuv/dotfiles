@@ -83,6 +83,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Aven task manager (flake; builds its own package from source)
+    aven = {
+      url = "github:raine/aven";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Third-party Rust tool sources (plain source, not a flake), built
     # via rustPlatform.buildRustPackage in modules/home/core/development/languages/rust-tools.nix
     shoin-src = {
