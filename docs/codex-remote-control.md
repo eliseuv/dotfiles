@@ -70,3 +70,7 @@ To deliberately attach a terminal to the service:
 ```sh
 codex --remote "unix://$XDG_RUNTIME_DIR/codex-remote-control/app-server.sock"
 ```
+
+To continue a phone session in the terminal, run `codex-phone` on the host.
+This alias opens the service's resume picker across all project directories.
+To resume a specific session directly, run `codex-phone <session-id>`.

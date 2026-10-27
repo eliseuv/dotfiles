@@ -31,6 +31,9 @@ in
 
     home.packages = [ pair ];
 
+    home.shellAliases.codex-phone =
+      ''codex --remote "unix://$XDG_RUNTIME_DIR/codex-remote-control/app-server.sock" resume --all'';
+
     systemd.user.services.codex-remote-control = {
       Unit = {
         Description = "Codex Remote Control app-server";
