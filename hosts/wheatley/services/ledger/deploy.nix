@@ -1,19 +1,18 @@
 # Auto-deploys ledger-web whenever a new commit is pushed to
 # ~/Services/ledger (see web.nix and pkgs/ledger-web/default.nix).
 #
-# `receive.denyCurrentBranch = updateInstead` (set once, manually, on that
-# repo) already makes a push update its working tree. What's missing is
-# that ledger-web's source is pinned to a commit in
-# pkgs/ledger-web/pin.json, so the push alone doesn't change what's built — see README.md's "Deploying
-# Local Services" for the full manual pipeline this automates.
+# `receive.denyCurrentBranch = updateInstead` (configured at activation)
+# makes a push update its working tree. The source is also pinned to a
+# commit in pkgs/ledger-web/pin.json, so the push alone doesn't change
+# what's built. See README.md's "Deploying Local Services" for the manual
+# pipeline this automates.
 #
 # A post-receive hook (installed below, since .git/hooks isn't a tracked
 # path) records main's revision and a request ID; a systemd.path unit watches it and runs
 # the same three-stage pipeline `just deploy-service` does by hand, split
 # across privilege boundaries so no sudo/password is ever needed:
 #   1. evf: bump the ledger-web pin (`just pin-service ledger-web`)
-#   2. root: build + activate (`nh os switch .` — already root, so nh
-#      never shells out to sudo)
+#   2. root: build + activate (`nixos-rebuild switch --flake .#wheatley`)
 #   3. evf: tag the generation, push, sync home-manager, gc
 #      (`just after-switch`)
 #
@@ -22,7 +21,7 @@
 # which stays alive headless because evf has `loginctl linger` enabled.
 # Caveat: that key's passphrase cache (12h TTL, see modules/home/core/auth/gpg.nix)
 # can go cold with no session to unlock it, in which case step 3's push
-# fails, deployment reports a bookkeeping warning after checking app health.
+# fails; deployment reports a bookkeeping warning after checking app health.
 { config, pkgs, ... }:
 let
   dotfilesPath = config.my.dotfiles.path;
@@ -81,7 +80,7 @@ let
     test "$(${pkgs.jq}/bin/jq -r .rev ${dotfilesPath}/pkgs/ledger-web/pin.json)" = "$rev"
     phase=activate
     write_status running
-    cd ${dotfilesPath} && ${pkgs.nh}/bin/nh os switch .
+    cd ${dotfilesPath} && ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake .#${config.my.host.name}
 
     phase=health
     write_status running
@@ -114,6 +113,7 @@ in
 
   systemd.tmpfiles.rules = [
     "d ${triggerDir} 0755 ${user} users -"
+    "f+ ${triggerDir}/protocol-version 0644 root root - 1"
   ];
 
   system.activationScripts.ledgerDeployHook = ''
@@ -133,12 +133,7 @@ in
     description = "Deploy ledger-web from the latest push";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
-    # `nh os switch` (step 2, run directly as root below rather than via
-    # `su`) shells out to a bare `nix`. Steps 1 and 3 go through `su`,
-    # which pulls in PAM's fuller PATH for evf, but this unit's own PATH
-    # is systemd's bare default (coreutils/findutils/grep/sed/systemd) —
-    # no `nix` on it — so `nh` fails with a cryptic "No output from nix
-    # --version command" instead of "command not found".
+    # nixos-rebuild needs nix in this unit's otherwise minimal PATH.
     path = [ config.nix.package ];
     # Activation may replace this unit while it is running; let it finish
     # its health check and report the result to the waiting client.

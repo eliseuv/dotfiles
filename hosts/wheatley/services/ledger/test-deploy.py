@@ -15,6 +15,7 @@ with tempfile.TemporaryDirectory(prefix='ledger-deploy-test-') as directory:
     root = Path(directory)
     state = root/'state'
     state.mkdir()
+    (state/'protocol-version').write_text('1\n')
     dotfiles = root/'dotfiles'
     (dotfiles/'pkgs/ledger-web').mkdir(parents=True)
     mock = root/'mock/bin'
@@ -33,7 +34,7 @@ else
   [ "${FAIL_BOOKKEEPING:-0}" = 0 ] || exit 13
 fi
 ''')
-    executable('nh', 'echo activated > "$TEST_ROOT/activated"; [ "${FAIL_BUILD:-0}" = 0 ]\n')
+    executable('nixos-rebuild', 'echo activated > "$TEST_ROOT/activated"; [ "${FAIL_BUILD:-0}" = 0 ]\n')
     executable('curl', '[ "${FAIL_HEALTH:-0}" = 0 ] || exit 22; echo "[]"\n')
     executable('systemctl', 'exit 0\n')
     executable('su', 'exec /bin/sh -c "$4"\n')
@@ -44,6 +45,7 @@ fi
         config = {{
           my.dotfiles.path = "{dotfiles}";
           my.host.primaryUser = "test";
+          my.host.name = "wheatley";
           users.users.test.home = "{root}/home";
           homelab.services.ledger.port = 3001;
           nix.package = "{root}/mock";
@@ -54,7 +56,7 @@ fi
           git = "{root}/mock";
           coreutils = "{root}/mock";
           just = "{root}/mock";
-          nh = "{root}/mock";
+          nixos-rebuild = "{root}/mock";
           curl = "{root}/mock";
           systemd = "{root}/mock";
         }};
@@ -151,6 +153,12 @@ jq -n --arg rev "$rev" --arg request "$request" --arg state "${RESULT_STATE:-suc
     receive.write_text('#!/usr/bin/env bash\n'+hook)
     receive.chmod(0o755)
     env = dict(os.environ, PATH=f'{clientbin}:'+os.environ['PATH'], TEST_ROOT=str(root))
+    (state/'protocol-version').unlink()
+    result = subprocess.run(['bash', str(clientfile)], capture_output=True, text=True, env=env)
+    assert result.returncode != 0 and 'activate the updated host config' in result.stderr, result.stderr
+    (state/'protocol-version').write_text('1\n')
+    print('PASS: client refuses to push to an outdated deployment watcher')
+    initial = git('rev-parse', 'HEAD').strip()
     (clientrepo/'README').write_text('release\n')
     result = subprocess.run(['bash', str(clientfile)], capture_output=True, text=True, env=env)
     assert result.returncode != 0 and 'commit or stash' in result.stderr, result.stderr
@@ -173,6 +181,10 @@ jq -n --arg rev "$rev" --arg request "$request" --arg state "${RESULT_STATE:-suc
     result = subprocess.run(['bash', str(clientfile)], capture_output=True, text=True, env=env|{'RESULT_STATE':'failed'})
     assert result.returncode != 0 and 'health failed' in result.stderr, result.stderr
     print('PASS: matching failed request returns nonzero with diagnostic command')
+    result = subprocess.run([realgit, '-C', str(clientrepo), 'push', '--force', 'deploy', f'{initial}:refs/heads/main'], capture_output=True, text=True)
+    assert result.returncode != 0 and 'non-fast-forward' in result.stderr, result.stderr
+    assert git('rev-parse', 'HEAD') == git('rev-parse', 'HEAD', repo=servicerepo)
+    print('PASS: receiving repository rejects forced non-fast-forward deployment')
     (servicerepo/'uncommitted').write_text('dirty\n')
     result = subprocess.run(['bash', str(clientfile)], capture_output=True, text=True, env=env)
     assert result.returncode != 0 and 'Services/ledger has uncommitted' in result.stderr, result.stderr

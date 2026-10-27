@@ -198,8 +198,8 @@ a manual `deploy-service` call:
   deletions are rejected by the receiving repository.
 - A `systemd.path` unit watches that file and runs the deploy chain, split
   by privilege so nothing ever needs sudo or a password: `just
-  pin-service ledger-web` as `evf`, then `nh os switch .` as **root** (the service
-  itself runs as root, so `nh` never shells out to sudo), then `just
+  pin-service ledger-web` as `evf`, then `nixos-rebuild switch --flake
+  .#wheatley` as **root**, then `just
   after-switch` as `evf` again. Pinning failures stop deployment; the pinned
   revision must match the request. After activation, the service checks
   `/api/accounts` before reporting success.
@@ -219,6 +219,9 @@ After committing, `just deploy` runs checks, pushes the current commit to
 Services' `main`, and waits for deployment and API health. Retrying the same
 commit explicitly queues a fresh request. `just deploy-status` shows the
 last result and systemd status. Deployments never copy development data.
+After changing the deployment module, activate it once with
+`sudo nixos-rebuild switch --flake ~/dotfiles#wheatley` before using the
+client. Its protocol-version check prevents pushes to an outdated watcher.
 
 The hook, pipeline and client can be tested without touching the running
 service or databases:
