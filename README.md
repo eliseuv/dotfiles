@@ -178,8 +178,8 @@ Notes:
 Example, deploying ledger to wheatley:
 
 ```bash
-# In ~/Services/ledger:
-git push wheatley wheatley
+# In ~/Projects/project/ledger (deploy points to ~/Services/ledger):
+git push deploy HEAD:main
 
 # Then:
 ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-web'
@@ -187,28 +187,45 @@ ssh -t evf@wheatley.local -- 'cd ~/dotfiles && just deploy-service ledger-web'
 
 #### Automatic deploy-on-push
 
-On wheatley, pushing to `~/Services/ledger` is enough on its own —
+On wheatley, pushing to `main` in `~/Services/ledger` is enough on its own —
 `hosts/wheatley/services/ledger/deploy.nix` runs the pipeline above without
 a manual `deploy-service` call:
 
 - A `post-receive` hook (installed by `system.activationScripts`, since
   `.git/hooks` isn't itself a path the dotfiles repo can track) touches a
-  trigger file on every push.
+  trigger file only when `refs/heads/main` is updated. Each request includes
+  the commit and a unique request ID. Non-fast-forward pushes and branch
+  deletions are rejected by the receiving repository.
 - A `systemd.path` unit watches that file and runs the deploy chain, split
   by privilege so nothing ever needs sudo or a password: `just
   pin-service ledger-web` as `evf`, then `nh os switch .` as **root** (the service
   itself runs as root, so `nh` never shells out to sudo), then `just
-  after-switch` as `evf` again.
+  after-switch` as `evf` again. Pinning failures stop deployment; the pinned
+  revision must match the request. After activation, the service checks
+  `/api/accounts` before reporting success.
 
 The `evf` steps need to push/tag over SSH; they use `evf`'s
 `gpg-agent`-backed SSH auth socket, which — because `evf` has
 `loginctl linger` enabled — stays up with no session logged in. That
 key's passphrase cache (`modules/home/core/auth/gpg.nix`, 12h TTL) can still go cold
-with nothing around to unlock it; if so, the tag/push step fails
-(`systemctl status ledger-deploy` will show it) even though the actual
-deploy — build, activate, `ledger-web.service` restart — already
-succeeded. Re-running `just deploy-service ledger-web` by hand, or just
-pushing again, clears it.
+with nothing around to unlock it; if so, deployment records a bookkeeping
+warning after confirming that the application is healthy. Application failures
+and bookkeeping warnings are separate outcomes in
+`/run/ledger-deploy/status.json` (revision, request ID, phase and state).
+
+Use `just dev` in `~/Projects/project/ledger` to edit against its separate
+local database, or `just dev reset` to refresh that database from production.
+After committing, `just deploy` runs checks, pushes the current commit to
+Services' `main`, and waits for deployment and API health. Retrying the same
+commit explicitly queues a fresh request. `just deploy-status` shows the
+last result and systemd status. Deployments never copy development data.
+
+The hook, pipeline and client can be tested without touching the running
+service or databases:
+
+```bash
+python3 hosts/wheatley/services/ledger/test-deploy.py
+```
 
 To add this for another service, copy `services/ledger/deploy.nix`'s shape,
 swapping the repo path, `pkgs/<pkg>` name, and the hostname/uid it
