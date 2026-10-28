@@ -152,6 +152,17 @@ closure retains the dependency artifacts so post-switch garbage collection
 does not remove them. Keeping older system generations also keeps their caches.
 This consumes extra store space in exchange for faster subsequent builds.
 
+Rust and frontend builds use separate source filesets. Frontend edits only
+rebuild the frontend; Rust edits only rebuild the backend, reusing its compiled
+dependencies. Repository and crate Markdown documentation, development scripts,
+and generated frontend output do not rebuild either package. Rust filesets retain
+all non-Markdown files in the workspace crates, including build scripts, resources,
+and vendored licenses, plus the workspace manifests and optional `.cargo`
+configuration. Keep crate roots in sync with `Cargo.toml`'s workspace members.
+If Rust starts embedding Markdown or the frontend adds build inputs outside
+`src/`, `public/`, and the listed build configuration, update the filesets in
+`pkgs/ledger-web/default.nix` accordingly.
+
 To populate or inspect the dependency cache without activating a system:
 
 ```bash
