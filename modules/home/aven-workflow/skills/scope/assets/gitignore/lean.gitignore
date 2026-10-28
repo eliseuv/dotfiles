@@ -1,0 +1,10 @@
+# Lake's build directory, and the dependencies it clones into it
+/.lake/
+
+# Written by `lake exe cache get` when no home directory is available
+.cache/
+
+# Stray compiled artifacts, if anything is ever built outside .lake/
+*.olean
+*.ilean
+*.trace

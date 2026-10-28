@@ -6,6 +6,11 @@ let
   avenLint = pkgs.writers.writePython3Bin "aven-lint" {
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./aven-lint.py);
+
+  skillsDirectory = ./skills;
+  workflowSkills = lib.mapAttrs (name: _: skillsDirectory + "/${name}") (
+    lib.filterAttrs (_: type: type == "directory") (builtins.readDir skillsDirectory)
+  );
 in
 {
 
@@ -16,6 +21,14 @@ in
     # Imported from the global CLAUDE.md (developer_preferences.md), so every
     # repo sees the conventions without a per-repo import.
     home.file.".claude/includes/aven-conventions.md".source = ./conventions.md;
+
+    # Imported by learning repos' CLAUDE.md; scaffolded there by the scope skill.
+    home.file.".claude/includes/assisted-learning.md".source = ./assisted-learning.md;
+
+    programs = {
+      claude-code.skills = workflowSkills;
+      codex.skills = workflowSkills;
+    };
 
   };
 

@@ -1,0 +1,8 @@
+# Nix / direnv
+.direnv/
+result
+result-*
+
+# OS / editor cruft
+.DS_Store
+*.swp
