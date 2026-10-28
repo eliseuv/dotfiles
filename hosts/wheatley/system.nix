@@ -15,6 +15,7 @@ in
     ./services/pluto.nix
     ./services/drive.nix
     ./services/netdata.nix
+    ./services/aven.nix
   ];
 
   # Keep the MAC and the DHCP client-id from drifting (randomization,
