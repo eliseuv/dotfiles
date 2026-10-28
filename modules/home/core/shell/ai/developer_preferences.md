@@ -43,3 +43,7 @@ to `main` as you go.
 - Use meaningful, descriptive identifier names.
 - Comments should only contain what is not immediately obvious from the code
 itself, such as design decisions and trade-offs.
+
+## Work tracking
+
+@~/.claude/includes/aven-conventions.md
