@@ -33,6 +33,10 @@ in
         in the Nix store.
       '';
     };
+
+    daemon.enable = lib.mkEnableOption "the background sync daemon" // {
+      default = true;
+    };
   };
 
   config = lib.mkMerge [
@@ -44,6 +48,22 @@ in
 
     (lib.mkIf cfg.enable {
       home.packages = [ cfg.package ];
+
+      # Declared here instead of `aven daemon install`, which records the
+      # running binary's store path and goes stale on the next upgrade. An
+      # upgrade changes this unit instead, so the switch restarts it. Until the
+      # database is set up or joined the daemon waits without contacting a
+      # server, so it is safe on a device that does not sync yet.
+      programs.aven.settings.sync.enabled = lib.mkIf cfg.daemon.enable (lib.mkDefault true);
+      systemd.user.services.aven-daemon = lib.mkIf cfg.daemon.enable {
+        Unit.Description = "Aven background sync";
+        Service = {
+          ExecStart = "${lib.getExe' cfg.package "aven"} daemon";
+          Restart = "always";
+          RestartSec = 5;
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
 
       # Updates come from the flake input, not aven's own check.
       programs.aven.settings.update.automatic_checks = lib.mkDefault false;
