@@ -20,6 +20,7 @@ POC_SECTIONS = ["Objective", "Scope"]
 POC_PLANNED_SECTIONS = ["Acceptance", "Verification"]
 CHECKPOINT_PLANNED_SECTIONS = ["Deliverables", "Acceptance", "Verification"]
 SCOPE_SECTIONS = ["Goals", "Non-goals"]
+UNIT_PLANNED_SECTIONS = ["Build", "Milestone", "Checkpoint"]
 
 
 def run_aven(global_args, *args, missing_field_ok=False):
@@ -52,6 +53,7 @@ def lint(tasks, contexts):
         context = contexts.get(task_id)
         return context["metadata"].get("kind") if context else None
 
+    # Projects with POCs or a curriculum must also carry a scope epic.
     projects_with_pocs, projects_with_scope = set(), set()
 
     for task in tasks:
@@ -114,6 +116,21 @@ def lint(tasks, contexts):
                 elif dep_kind not in {"checkpoint", "question"}:
                     errors.append(f"{ref}: prerequisite {dependency['display_ref']} is neither a checkpoint nor a question")
 
+        elif kind == "curriculum":
+            projects_with_pocs.add(task["project"])
+            if not task["is_epic"]:
+                errors.append(f"{ref}: kind=curriculum must be an epic")
+
+        elif kind == "unit":
+            if "unit" not in context["metadata"]:
+                errors.append(f"{ref}: unit has no 'unit' metadata ID")
+            parent = context["epic_parent"]
+            if parent is None or kind_of(parent["id"]) != "curriculum":
+                errors.append(f"{ref}: unit is not in a kind=curriculum epic")
+            if planned:
+                for heading in missing_sections(description, UNIT_PLANNED_SECTIONS):
+                    errors.append(f"{ref}: unit has no '## {heading}' section")
+
         elif kind == "question":
             if status not in CLOSED_STATUSES and not context["dependencies"]["blocks"]:
                 warnings.append(f"{ref}: open question blocks nothing")
@@ -127,7 +144,7 @@ def lint(tasks, contexts):
                 errors.append(f"{ref}: done while blocked by {', '.join(open_blockers)}")
 
     for project in sorted(projects_with_pocs - projects_with_scope, key=str):
-        errors.append(f"project {project}: has POCs but no kind=scope epic")
+        errors.append(f"project {project}: has POCs or a curriculum but no kind=scope epic")
 
     return errors, warnings
 
