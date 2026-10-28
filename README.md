@@ -144,6 +144,27 @@ flake input, and the repo only exists on the one host that runs it, so
 `just update` would fail everywhere else. The `fetchGit` is only forced by
 a host whose config uses the package.
 
+Ledger's Rust package uses Crane to build dependencies separately from the
+application. Source-only changes reuse compiled release dependencies; changes
+to dependency manifests, `Cargo.lock`, or the toolchain/build inputs invalidate
+the cache. The first build populates it and can take longer. Wheatley's system
+closure retains the dependency artifacts so post-switch garbage collection
+does not remove them. Keeping older system generations also keeps their caches.
+This consumes extra store space in exchange for faster subsequent builds.
+
+To populate or inspect the dependency cache without activating a system:
+
+```bash
+nix build .#ledger-web-bin.cargoArtifacts
+```
+
+On Wheatley, verify cache invalidation and retention without building or
+activating a system:
+
+```bash
+python3 pkgs/ledger-web/test-cache.py
+```
+
 One-time setup, per project repo, on the host it deploys to:
 
 ```bash

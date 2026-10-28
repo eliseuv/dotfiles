@@ -2,6 +2,7 @@
 # boot-time system service, backed by its own local Postgres instance.
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -17,11 +18,22 @@ in
   # the Justfile's eval-all).
   options.homelab.ledger.package = lib.mkOption {
     type = lib.types.attrsOf lib.types.package;
-    default = import ../../../../pkgs/ledger-web { inherit pkgs; };
+    default = import ../../../../pkgs/ledger-web {
+      inherit pkgs;
+      inherit (inputs) crane;
+    };
     description = "ledger-web build outputs: `bin` and `webUi`.";
   };
 
   config = {
+
+    # Dependency artifacts are build-time inputs, so the installed binary
+    # alone does not retain them. Keep the cache in the system closure so
+    # post-switch GC cannot discard it before the next deployment. Alternate
+    # packages (including eval-all's stub) need not expose a dependency cache.
+    system.extraDependencies = lib.optional (
+      ledgerWeb.bin ? cargoArtifacts
+    ) ledgerWeb.bin.cargoArtifacts;
 
     # 3000 is taken by ttyd (services/ttyd.nix).
     homelab.services.ledger = {

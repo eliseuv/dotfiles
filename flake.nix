@@ -56,6 +56,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Cache compiled dependencies for local Rust services.
+    crane.url = "github:ipetkov/crane";
+
     # Fenix
     fenix = {
       url = "github:nix-community/fenix";
@@ -129,7 +132,10 @@
 
       packages.${system} =
         let
-          ledgerWeb = import ./pkgs/ledger-web { inherit pkgs; };
+          ledgerWeb = import ./pkgs/ledger-web {
+            inherit pkgs;
+            inherit (inputs) crane;
+          };
         in
         {
           ledger-web-bin = ledgerWeb.bin;
