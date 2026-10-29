@@ -89,6 +89,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # clear replacement with glyph streams
+    matrixclear = {
+      url = "github:eliseuv/matrixclear";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Third-party Rust tool sources (plain source, not a flake), built
     # via rustPlatform.buildRustPackage in modules/home/core/development/languages/rust-tools.nix
     shoin-src = {

@@ -15,9 +15,6 @@
   # Aliases
   home.shellAliases = {
 
-    # Clear
-    c = "clear";
-
     # Create parent directories as needed
     mkdir = "mkdir -pv";
 
