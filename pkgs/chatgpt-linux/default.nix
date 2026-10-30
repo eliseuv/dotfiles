@@ -8,10 +8,10 @@ let
   # the bundled browser, Node runtime and Codex subprocesses.
   app = pkgs.stdenvNoCC.mkDerivation {
     pname = "chatgpt-linux-unwrapped";
-    version = "26.1007.21434";
+    version = "26.1027.30824";
     src = pkgs.fetchurl {
       url = "https://persistent.oaistatic.com/codex-app-prod/linux/deb/latest/chatgpt_amd64.deb";
-      sha256 = "276b5341c3d74b261d3ad52106f7fa7edde06841e4767fe2a40cb54099b1f3ed";
+      sha256 = "4e139a44f7c917a643f2dd014ad32298dd30aec6d324d323524b190f7667684c";
     };
     nativeBuildInputs = [ pkgs.dpkg ];
     # Just an unpack of an unfree .deb, which no binary cache has. Also
