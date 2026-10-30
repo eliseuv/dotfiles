@@ -1,4 +1,4 @@
-# `clear` replacement that pours braille glyph streams over the screen.
+# `clear` replacement that pours Matrix-style glyph streams over the screen.
 # Options are compile-time constants upstream (config.h), passed as -D flags
 # through the package's `defines` argument. The values below are the upstream
 # defaults, listed as a template: edit them to taste, or drop any you don't
@@ -21,10 +21,9 @@ let
       # Pick a random combination of edges every run
       "RANDOM_DIRECTIONS=0"
 
-      # Timing: time until all streams meet, fade length, fade steps, frame rate
-      "DURATION_MS=900"
-      "FADE_MS=350"
-      "FADE_STEPS=10"
+      # Timing: fill, exit, frame rate
+      "DURATION_MS=500"
+      "EXIT_MS=500"
       "FPS=60"
 
       # Colours (0xRRGGBB); the head is COLOR whitened unless HEAD_COLOR_AUTO=0
@@ -40,9 +39,8 @@ let
       "STAGGER=0.9f"
       "GLITCH=0.02f"
 
-      # Glyph code-point range (braille)
-      "CHARS_LO=0x2800"
-      "CHARS_HI=0x28FF"
+      # Halfwidth Katakana, digits, and Latin letters
+      "MATRIX_GLYPHS=1"
 
       # COLOR_MODE_AUTO | COLOR_MODE_TRUECOLOR | COLOR_MODE_ANSI256
       "COLOR_MODE=COLOR_MODE_AUTO"
@@ -55,23 +53,12 @@ in
 
   home.packages = [ matrixclear ];
 
-  # Ctrl+L as a zle widget instead of an alias, so the line being typed
-  # survives: `zle -I` hands the terminal over for the animation and
-  # `reset-prompt` redraws the prompt (and buffer) afterwards.
+  # The zsh function previews the prompt while the glyphs exit. Its Ctrl+L
+  # widget also restores any command being edited.
   programs.zsh.initContent = ''
-    matrixclear-screen() {
-      zle -I
-      ${lib.getExe matrixclear}
-      zle reset-prompt
-    }
-    zle -N matrixclear-screen
-    bindkey '^L' matrixclear-screen
+    MATRIXCLEAR_BIN=${lib.getExe matrixclear}
+    source ${matrixclear}/share/matrixclear/matrixclear.zsh
+    alias c=clear
   '';
-
-  # Set both explicitly rather than relying on `c` expanding to the `clear` alias.
-  home.shellAliases = {
-    clear = "matrixclear";
-    c = "matrixclear";
-  };
 
 }
