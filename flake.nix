@@ -98,13 +98,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Third-party Rust tool sources (plain source, not a flake), built
-    # via rustPlatform.buildRustPackage in modules/home/core/development/languages/rust-tools.nix
-    shoin-src = {
-      url = "github:eliseuv/shoin";
-      flake = false;
-    };
-
   };
 
   outputs =

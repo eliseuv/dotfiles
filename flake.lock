@@ -321,7 +321,6 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-master": "nixpkgs-master",
         "nixpkgs-stable": "nixpkgs-stable",
-        "shoin-src": "shoin-src",
         "sops-nix": "sops-nix",
         "spicetify-nix": "spicetify-nix",
         "yt-x": "yt-x"
@@ -341,22 +340,6 @@
         "owner": "rust-lang",
         "ref": "nightly",
         "repo": "rust-analyzer",
-        "type": "github"
-      }
-    },
-    "shoin-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1789954656,
-        "narHash": "sha256-MagFx8RZxqaCgLnXWtVvIONan6lvTLlc14SnkiTB5Ic=",
-        "owner": "eliseuv",
-        "repo": "shoin",
-        "rev": "f44c97cacac6566bb90f8de2260efc8be37a0cdd",
-        "type": "github"
-      },
-      "original": {
-        "owner": "eliseuv",
-        "repo": "shoin",
         "type": "github"
       }
     },

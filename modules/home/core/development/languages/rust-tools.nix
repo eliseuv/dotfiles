@@ -7,16 +7,6 @@
 }:
 
 let
-  # Each source comes from a flake input (flake = false) pinned in flake.lock;
-  # bump with `nix flake lock --update-input <name>-src`.
-
-  shoin = pkgs.rustPlatform.buildRustPackage {
-    pname = "shoin";
-    version = "0.1.5";
-    src = inputs.shoin-src;
-    cargoLock.lockFile = "${inputs.shoin-src}/Cargo.lock";
-  };
-
   # Excluded:
   # - late-cli (github:mpiorowski/late-sh, late-cli member): transitively
   #   depends on webrtc-sys, whose build.rs downloads a prebuilt WebRTC
@@ -33,9 +23,7 @@ in
 
   config = lib.mkIf config.my.home.development.enable {
 
-    home.packages = [
-      shoin
-    ];
+    home.packages = [ ];
 
   };
 

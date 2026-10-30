@@ -22,10 +22,6 @@ in
         LEARNING_REPOS_DIR = "${config.home.homeDirectory}/Projects/learning";
       };
 
-    home.shellAliases = {
-      n = "cd $NOTES_VAULT && shoin Goals.md";
-    };
-
     # Personal skills that operate on graduated learning/project repos (outside
     # the vault). Declare them as an attribute set so other modules can add
     # skills through the same options. Vault-specific skills remain local to the
