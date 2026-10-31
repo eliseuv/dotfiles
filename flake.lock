@@ -157,11 +157,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793323126,
-        "narHash": "sha256-lsWqjYHzwdjP/vWGPptrxbNhjNArCUvimAOx1HP2IME=",
+        "lastModified": 1793407864,
+        "narHash": "sha256-voSsXiBJYjkY9T+36/iujPpQYNgebGFk5sRqxrr/CgU=",
         "owner": "eliseuv",
         "repo": "matrixclear",
-        "rev": "db9edf5cb560a11ff7d71e05374fac3e8cd93a8b",
+        "rev": "03073d56690205e2e986b29bd4f0e057b978521e",
         "type": "github"
       },
       "original": {
