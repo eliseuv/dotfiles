@@ -514,6 +514,13 @@ in
               (inline ''hl.dsp.exec_cmd(terminalCommand .. " systemctl-tui")'')
             ];
           }
+          # Work tracking
+          {
+            _args = [
+              (inline ''mainMod .. " + ALT + T"'')
+              (inline ''hl.dsp.exec_cmd(terminalCommand .. " aven")'')
+            ];
+          }
 
           # Kill window
           {
@@ -586,7 +593,7 @@ in
           }
           {
             _args = [
-              (inline ''mainMod .. " + ALT + T"'') # dwindle
+              (inline ''mainMod .. " + ALT + J"'') # dwindle
               (inline ''hl.dsp.layout("togglesplit")'')
             ];
           }
