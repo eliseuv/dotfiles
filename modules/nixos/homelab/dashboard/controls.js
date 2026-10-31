@@ -53,9 +53,16 @@
   const rebootWindow = 300 * 1000;
   let apiWentDown = false;
 
+  // Rejects with the status and svcctl's error message, when the body is its
+  // JSON (a failure nginx answers itself has an HTML body).
   const call = (method, path) =>
     fetch(api + path, { method, headers }).then((response) =>
-      response.ok ? response.json() : Promise.reject(response.status),
+      response.ok
+        ? response.json()
+        : response
+            .json()
+            .catch(() => ({}))
+            .then(({ error }) => Promise.reject({ status: response.status, error })),
     );
 
   const refresh = () => {
@@ -190,8 +197,9 @@
         }
         settle();
       })
-      .catch((status) => {
-        if (status !== 401) return alert(`${action} ${name} failed (${status})`);
+      .catch(({ status, error }) => {
+        if (status !== 401)
+          return alert(`${action} ${name} failed (${status})${error ? `: ${error}` : ""}`);
         // The login page; see /api/svc/login in controls.nix.
         if (confirm("Log in to use the dashboard controls?")) location.href = `${api}/login`;
       });
