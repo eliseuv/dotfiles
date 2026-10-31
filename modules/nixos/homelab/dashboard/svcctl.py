@@ -390,6 +390,9 @@ def watch_unit(name):
 
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body=None):
+        # The access line only has the status; the cause is in the body.
+        if status >= 500 and body and "error" in body:
+            sys.stderr.write("%s\n" % body["error"])
         data = json.dumps(body).encode() if body is not None else b""
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
