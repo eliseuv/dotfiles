@@ -58,6 +58,10 @@ in
   };
   services.syncthing.enable = lib.mkForce false;
 
+  # Mutter has no wlr-data-control, so the service runs under XWayland
+  # (the module's forceXWayland default); the tray icon comes from appindicator.
+  services.copyq.enable = true;
+
   # GNOME's viewers over zathura, feh and sxiv. mkForce per type: the
   # option's lists would otherwise concatenate with the modules' entries.
   my.home.defaultApps = lib.mapAttrs (_: lib.mkForce) {
@@ -94,6 +98,14 @@ in
   };
 
   dconf.settings = {
+    "org/gnome/settings-daemon/plugins/media-keys".custom-keybindings = [
+      "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/copyq/"
+    ];
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/copyq" = {
+      name = "CopyQ";
+      command = "copyq toggle";
+      binding = "<Super><Shift>v";
+    };
     "org/gnome/desktop/wm/preferences".button-layout = "appmenu:minimize,maximize,close";
     # Dates, numbers and currency; the UI language is AccountsService's
     "org/gnome/system/locale".region = "pt_BR.UTF-8";
