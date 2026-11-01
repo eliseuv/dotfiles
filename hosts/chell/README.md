@@ -54,4 +54,13 @@ Pluto is in chell's ports menu on the dashboard, served at `/chell/pluto/`; its 
 
 ### Git Safe Directory
 
-The repository is owned by `evf`, so git refuses it for other users as "dubious ownership" unless it is listed in `safe.directory`. Each user's Home Manager git config lists it, and the same module adds it to the system-wide `/etc/gitconfig` for git running as root under `sudo`.
+The repository is owned by `evf`, so git refuses it for other users as "dubious ownership" unless it is listed in `safe.directory`. Each user's Home Manager git config lists it, and the same module adds it to the system-wide `/etc/gitconfig` for git running as root under `sudo`. The dashboard's switch doesn't need that: it switches dani's home as dani.
+
+### Trust Model
+
+Every member of the `dotfiles` group can write the repository, and what gets built is whatever is checked out. So a group member effectively has root, and can run code as every other user of this host, at the next switch, whoever starts it:
+
+- `dj system-switch` activates the checkout as root and switches every home from it.
+- The dashboard's switch (`dotfiles-switch.service`) refuses uncommitted changes, but it rebases local commits onto `origin/master` and builds them. A commit a group member never pushed is activated as root the next time anyone presses the button.
+
+This is deliberate: `dotfiles` membership is only for users trusted with root, which `wheel` already gives them. Don't add an untrusted user to the group. Give them a home that is switched from the checkout instead, or move the dashboard's switch to fast-forward-only.
