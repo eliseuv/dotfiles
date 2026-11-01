@@ -107,7 +107,7 @@ home-switch-self:
 
 # Switch every <user>@<host> home of this host but `except`'s, through sudo,
 # so a shared host's other users never have to run Home Manager themselves.
-# dotfiles-switch.service runs it as root after the primary user's switch.
+# dotfiles-switch.service does the same with its own script.
 # nh is resolved to its store path: the other user can't read this one's
 # home, where it is installed. The user's runtime dir, when they are logged
 # in, lets Home Manager restart their services and write dconf live.

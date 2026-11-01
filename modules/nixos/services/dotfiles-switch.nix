@@ -1,9 +1,9 @@
 # dotfiles-switch.service: pull and switch, for the homelab dashboard
 # (started locally by svcctl on wheatley, or over SSH through
 # services/remote-control.nix). Pulls origin/master, rebasing any local
-# commits onto it, builds and activates this host's system, then runs the
-# Justfile's home-switch (the primary user's home as them, the other users'
-# as root, through sudo). Unlike
+# commits onto it, builds and activates this host's system, then switches the
+# primary user's home through the Justfile, as them, and every other user's
+# of this host from root, through sudo. Unlike
 # `just system-switch` it neither tags the generation (commit-gen pushes,
 # which would need a GitHub credential on every host) nor collects garbage.
 #
@@ -71,6 +71,28 @@ let
     system=$(basename "$(readlink -f ${systemLink})")
     git rev-parse HEAD > ${revisionsDir}/"''${system%%-*}"
   '';
+
+  # The Justfile's home-switch-others, for the service. The users come from
+  # the same host list lib/ generates homeConfigurations from, so root never
+  # evaluates the flake: libgit2 refuses a repo another user owns unless
+  # root's git config lists it in safe.directory, which only shared hosts set
+  # (core/dotfiles.nix). Each user evaluates it as themselves, through their
+  # Home Manager safe.directory. A store script rather than `just`, so root
+  # runs nothing from the checkout.
+  otherUsers = lib.remove user config.my.host.users;
+  homeSwitchOthers = pkgs.writeShellScript "dotfiles-switch-home-others" ''
+    set -euo pipefail
+    for other in ${lib.escapeShellArgs otherUsers}; do
+      # Lets Home Manager restart their services and write dconf live when
+      # they are logged in.
+      runtime=/run/user/$(id -u "$other")
+      session=()
+      [ -d "$runtime" ] && session=(XDG_RUNTIME_DIR="$runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus")
+      echo "dotfiles-switch: home of $other"
+      /run/wrappers/bin/sudo -u "$other" -H env PATH="$PATH" "''${session[@]}" \
+        ${lib.getExe pkgs.nh} home switch ${repo} --configuration "$other@${config.my.host.name}"
+    done
+  '';
 in
 {
 
@@ -92,8 +114,6 @@ in
         pkgs.git
         pkgs.jq
         pkgs.nh
-        # sudo, for home-switch-others
-        "/run/wrappers"
       ];
       serviceConfig = {
         Type = "oneshot";
@@ -107,8 +127,8 @@ in
           "+${activate}"
           record
           "${lib.getExe pkgs.just} home-switch-self"
-          "+${lib.getExe pkgs.just} home-switch-others ${user}"
-        ];
+        ]
+        ++ lib.optional (otherUsers != [ ]) "+${homeSwitchOthers}";
       };
     };
 
