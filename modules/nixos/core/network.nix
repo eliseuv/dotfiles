@@ -29,9 +29,9 @@
     # The mDNS NSS plug-in is wired up by hand below instead.
     nssmdns4 = false;
 
-    publish = {
-      enable = true;
-      addresses = true;
+    settings.publish = {
+      disable-publishing = false;
+      publish-addresses = true;
     };
   };
 
