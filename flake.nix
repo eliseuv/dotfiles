@@ -120,6 +120,12 @@
       };
 
       hosts = import ./lib { inherit inputs system pkgs pkgs-master; };
+
+      patches = import ./lib/patches.nix {
+        inherit (nixpkgs) lib;
+        inherit pkgs;
+        inherit (hosts) nixosConfigurations homeConfigurations;
+      };
     in
     {
 
@@ -133,7 +139,10 @@
         {
           ledger-web-bin = ledgerWeb.bin;
           ledger-web-ui = ledgerWeb.webUi;
+          patches-index = patches.index;
         };
+
+      checks.${system}.patches-index = patches.check;
 
       inherit (hosts) nixosConfigurations homeConfigurations;
 

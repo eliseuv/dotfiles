@@ -92,6 +92,18 @@ eval-all:
         stubbed.config.system.build.toplevel.drvPath)' | jq -S .
     nix eval --json .#homeConfigurations --apply 'builtins.mapAttrs (_: c: c.activationPackage.drvPath)' | jq -S .
 
+# Regenerate PATCHES.md from my.patches. New patch files must be tracked
+# (git add) first, or the flake doesn't see them.
+patches:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cat "$(nix build --no-link --print-out-paths .#patches-index)" > PATCHES.md
+    git add --intent-to-add PATCHES.md
+
+# Check PATCHES.md, the patch files and their in-place markers agree
+patches-check:
+    nix build --no-link .#checks.x86_64-linux.patches-index
+
 # `up` refuses unless it repeats every non-default setting, and the operator
 # (my.services.tailscale's extraSetFlags) is one; sudo for the non-operator.
 vpn:

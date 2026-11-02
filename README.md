@@ -52,6 +52,10 @@ everywhere and switch themselves on from those options.
   commit pinned in `pkgs/<name>/pin.json`. See "Deploying Local Services"
   below.
 - `secrets/`: Encrypted secrets (sops-nix, age): `user.yaml` for home-manager, one file per host for system secrets.
+- `modules/{nixos,home}/patches/<id>.nix`: Temporary workarounds for
+  upstream breakage, one per file, each registering `my.patches.<id>` (why,
+  upstream links, when to remove it). [`PATCHES.md`](PATCHES.md) is the
+  generated index.
 
 ### Adding things
 
@@ -62,6 +66,12 @@ everywhere and switch themselves on from those options.
   `config = lib.mkIf <option> { ... }`.
 - **Checking a refactor**: `just eval-all` prints every configuration's
   derivation; outputs that should not change must print the same.
+- **A workaround**: add `modules/{nixos,home}/patches/<id>.nix` setting the
+  fix and `my.patches.<id>` under the narrowest condition, `git add` it, then
+  run `just patches`. `just patches-check` (also a flake check) fails on a
+  stale index, a patch file active nowhere, or a missing `PATCH(<id>)`
+  marker in an in-place change. A patch whose `staleWhen` test passes warns
+  during evaluation.
 
 ## Usage
 
