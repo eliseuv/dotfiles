@@ -5,4 +5,13 @@
 Temporary workarounds for upstream breakage, one module per patch under
 `modules/nixos/patches/` and `modules/home/patches/`.
 
-No active patches.
+## rtkit-rttime-hyprland-dpms
+
+Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.
+
+- **Module**: [`modules/nixos/patches/rtkit-rttime-hyprland-dpms.nix`](modules/nixos/patches/rtkit-rttime-hyprland-dpms.nix)
+- **Upstream**: none known
+- **Remove when**: Idle DPMS-off no longer logs "Realtime budget exceeded (SIGXCPU)" from Hyprland (journalctl -g 'Realtime budget'), or Hyprland stops requesting realtime scheduling through rtkit.
+- **Added**: 2026-11-02
+- **Status** (2026-11-02): Not reported upstream. SIGXCPU logged ~1s after DPMS-off on Nov 1 21:19 and Nov 2 13:04 (survived); Hyprland killed without a report after DPMS-off on Nov 2 12:33 and 12:47 (before the 2s limit).
+- **Active on**: GLaDOS, chell, tardis
