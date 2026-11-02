@@ -5,7 +5,13 @@
 {
 
   warnings = lib.mapAttrsToList (
-    id: patch: "patch ${id} may be obsolete (see PATCHES.md); remove when: ${lib.trim patch.removeWhen}"
+    id: patch:
+    let
+      removeWhen = lib.concatStringsSep " " (
+        lib.filter (line: line != "") (map lib.trim (lib.splitString "\n" patch.removeWhen))
+      );
+    in
+    "patch ${id} may be obsolete (see PATCHES.md); remove when: ${removeWhen}"
   ) (lib.filterAttrs (_: patch: patch.staleWhen == true) config.my.patches);
 
 }
