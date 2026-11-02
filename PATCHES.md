@@ -5,6 +5,17 @@
 Temporary workarounds for upstream breakage, one module per patch under
 `modules/nixos/patches/` and `modules/home/patches/`.
 
+## hyprland-debug-logs
+
+Enables Hyprland's own debug log while the DPMS-off kill (rtkit-rttime-hyprland-dpms) is unresolved. Diagnostic only; the log lives on tmpfs (/run/user) and grows quickly.
+
+- **Module**: [`modules/home/patches/hyprland-debug-logs.nix`](modules/home/patches/hyprland-debug-logs.nix)
+- **Upstream**: none known
+- **Remove when**: rtkit-rttime-hyprland-dpms is removed, or the DPMS-off kill is diagnosed and no longer needs the log.
+- **Added**: 2026-11-02
+- **Status** (2026-11-02): Enabled; no unexplained Hyprland exit captured with it yet (the session it was first active in ended in a reboot, losing the log).
+- **Active on**: evf@GLaDOS, evf@chell, evf@tardis
+
 ## rtkit-rttime-hyprland-dpms
 
 Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.
