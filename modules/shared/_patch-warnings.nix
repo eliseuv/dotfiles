@@ -5,7 +5,7 @@
 {
 
   warnings = lib.mapAttrsToList (
-    id: patch: "patch ${id} may be obsolete (see PATCHES.md); remove when: ${patch.removeWhen}"
+    id: patch: "patch ${id} may be obsolete (see PATCHES.md); remove when: ${lib.trim patch.removeWhen}"
   ) (lib.filterAttrs (_: patch: patch.staleWhen == true) config.my.patches);
 
 }

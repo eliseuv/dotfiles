@@ -71,6 +71,10 @@ let
 
   link = path: "[`${path}`](${path})";
 
+  # Metadata is written as indented multi-line strings; each field renders
+  # as one list item, so lines are joined
+  oneLine = text: lib.concatStringsSep " " (lib.filter (line: line != "") (map lib.trim (lib.splitString "\n" text)));
+
   renderPatch =
     id:
     let
@@ -79,7 +83,7 @@ let
     ''
       ## ${id}
 
-      ${patch.description}
+      ${oneLine patch.description}
 
       - **Module**: ${if files ? ${id} then link files.${id} else "(missing)"}
     ''
@@ -90,9 +94,9 @@ let
       - **Upstream**: ${
         if patch.upstream == [ ] then "none known" else lib.concatStringsSep ", " patch.upstream
       }
-      - **Remove when**: ${patch.removeWhen}
+      - **Remove when**: ${oneLine patch.removeWhen}
       - **Added**: ${patch.added}
-      - **Status** (${patch.status.checked}): ${patch.status.note}
+      - **Status** (${patch.status.checked}): ${oneLine patch.status.note}
       - **Active on**: ${lib.concatStringsSep ", " (lib.sort lib.lessThan activeOn)}
     ''
     + lib.optionalString (patch.staleWhen == true) ''
