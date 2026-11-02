@@ -26,3 +26,15 @@ Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR ma
 - **Added**: 2026-11-02
 - **Status** (2026-11-02): Not reported upstream. SIGXCPU logged ~1s after DPMS-off on Nov 1 21:19 and Nov 2 13:04 (survived); Hyprland killed without a report after DPMS-off on Nov 2 12:33 and 12:47 (before the 2s limit).
 - **Active on**: GLaDOS, chell, tardis
+
+## zotero-firefox-esr
+
+Zotero is left out of home.packages. Zotero 10 runs on Firefox ESR 140, which nixpkgs dropped; the fix that landed builds it against a prebuilt Firefox 140 ESR that is marked insecure, so it doesn't evaluate without permitting that package. Don't GC the old zotero store path meanwhile, so its profile compatibility stays around.
+
+- **Module**: [`modules/home/patches/zotero-firefox-esr.nix`](modules/home/patches/zotero-firefox-esr.nix)
+- **Also changes**: [`modules/home/apps/documents/default.nix`](modules/home/apps/documents/default.nix)
+- **Upstream**: https://github.com/NixOS/nixpkgs/issues/568692, https://github.com/NixOS/nixpkgs/pull/572466
+- **Remove when**: pkgs.zotero evaluates without permitting an insecure package (expected with Zotero 11 on Firefox ESR 153), or permitting firefox-esr-140-bin-unwrapped is accepted.
+- **Added**: 2026-10-01
+- **Status** (2026-11-02): #568692 closed 2026-10-15; #572466 merged and in the locked nixpkgs, but zotero-10.0.4 refuses to evaluate: it depends on insecure firefox-esr-140-bin-unwrapped-140.17.0esr.
+- **Active on**: dani@chell, evf@GLaDOS, evf@chell, evf@tardis

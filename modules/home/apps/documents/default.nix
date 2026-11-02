@@ -15,10 +15,7 @@
 
     ];
 
-    # Temporarily disabled: zotero fails to build since nixpkgs dropped
-    # firefox-esr-140 (NixOS/nixpkgs#568692). Re-enable once
-    # NixOS/nixpkgs#569006 lands in nixos-unstable. Avoid GC until then so the
-    # old store path (and its profile compatibility) stays around.
+    # PATCH(zotero-firefox-esr): zotero disabled; see PATCHES.md.
     # home.packages = with pkgs; [ zotero ];
 
     programs = {
