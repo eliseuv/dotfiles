@@ -204,6 +204,13 @@ in
             new_status = "master";
           };
 
+          # Hyprland's own logging is off by default, leaving only aquamarine
+          # trace in hyprland.log; an exit that bypasses the crash reporter
+          # (no report, no core) is otherwise undiagnosable.
+          debug = {
+            disable_logs = false;
+          };
+
           misc = {
             disable_hyprland_logo = true;
           };
