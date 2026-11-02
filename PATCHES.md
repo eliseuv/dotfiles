@@ -16,6 +16,17 @@ Enables Hyprland's own debug log while the DPMS-off kill (rtkit-rttime-hyprland-
 - **Status** (2026-11-02): Enabled; no unexplained Hyprland exit captured with it yet (the session it was first active in ended in a reboot, losing the log).
 - **Active on**: evf@GLaDOS, evf@chell, evf@tardis
 
+## hyprpaper-wait-for-hyprland
+
+Delays hyprpaper.service until Hyprland answers IPC. Started as soon as WAYLAND_DISPLAY is set, hyprpaper found its outputs but never rendered the wallpaper on them until the service was restarted (seen on GLaDOS).
+
+- **Module**: [`modules/home/patches/hyprpaper-wait-for-hyprland.nix`](modules/home/patches/hyprpaper-wait-for-hyprland.nix)
+- **Upstream**: none known
+- **Remove when**: With the ExecStartPre wait removed, the wallpaper renders at login without restarting hyprpaper.service, over a few logins.
+- **Added**: 2026-08-13
+- **Status** (2026-11-02): No upstream report known. Not re-tested without the wait since it was added (hyprpaper 0.8.4 in the current lock).
+- **Active on**: evf@GLaDOS, evf@chell, evf@tardis
+
 ## rtkit-rttime-hyprland-dpms
 
 Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.
