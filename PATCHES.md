@@ -5,6 +5,18 @@
 Temporary workarounds for upstream breakage, one module per patch under
 `modules/nixos/patches/` and `modules/home/patches/`.
 
+## brave-fullscreen-video-washout
+
+Launches Brave with WaylandWpColorManagerV1 disabled. In fullscreen, native-Wayland Brave hands video to Hyprland through wp_color_management_v1, and Hyprland's conversion washes it out (seen with an SDR BT.709 YouTube stream, output in sRGB); windowed, Chromium converts it itself and it looks right. Without the protocol Chromium also converts fullscreen video, at the cost of HDR passthrough.
+
+- **Module**: [`modules/home/patches/brave-fullscreen-video-washout.nix`](modules/home/patches/brave-fullscreen-video-washout.nix)
+- **Also changes**: [`modules/home/desktop/browser/default.nix`](modules/home/desktop/browser/default.nix)
+- **Upstream**: none known
+- **Remove when**: Launched without the flag (brave --disable-features=OutdatedBuildDetector,UseChromeOSDirectVideoDecoder), a fullscreen YouTube video on Hyprland looks the same as windowed. Also drop it if an output is switched to HDR (cm = "hdr"), which the flag prevents Brave from using.
+- **Added**: 2026-11-07
+- **Status** (2026-11-07): Reproduced on GLaDOS (Hyprland 0.57.1, Brave 1.98.63 / Chromium 156, NVIDIA, Odyssey G40B in sRGB): fullscreen washed out, windowed correct; with the flag fullscreen matches windowed. No matching Hyprland issue found.
+- **Active on**: evf@GLaDOS, evf@chell, evf@tardis
+
 ## hyprland-debug-logs
 
 Enables Hyprland's own debug log while the DPMS-off kill (rtkit-rttime-hyprland-dpms) is unresolved. Diagnostic only; the log lives on tmpfs (/run/user) and grows quickly.

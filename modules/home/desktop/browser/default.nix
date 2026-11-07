@@ -10,7 +10,17 @@
   config = lib.mkIf config.my.desktop.enable {
 
     home.packages = with pkgs; [
-      brave
+      # PATCH(brave-fullscreen-video-washout): Chromium keeps only the last
+      # --disable-features, so this repeats the nixpkgs wrapper's own list
+      # (make-brave.nix) — recheck it when that list changes.
+      (
+        if config.my.desktop.hyprland.enable then
+          brave.override {
+            commandLineArgs = "--disable-features=OutdatedBuildDetector,UseChromeOSDirectVideoDecoder,WaylandWpColorManagerV1";
+          }
+        else
+          brave
+      )
       (import ./_wheatley-dashboard.nix { inherit pkgs; })
     ];
 
