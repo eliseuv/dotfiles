@@ -1,0 +1,4 @@
+/* Appended after upstream's userChrome.css, so these :root values win. */
+:root {
+	--navbar-height-setting: 22px;
+}

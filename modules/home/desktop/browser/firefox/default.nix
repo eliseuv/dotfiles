@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 let
@@ -18,7 +19,9 @@ in
       }
       (lib.mkIf customUI {
         nativeMessagingHosts = [ pkgs.tridactyl-native ];
-        profiles.${config.home.username}.userChrome = builtins.readFile ./userChrome.css;
+        profiles.${config.home.username}.userChrome =
+          builtins.readFile "${inputs.firefox-qutebrowser-userchrome}/userChrome.css"
+          + builtins.readFile ./userChrome-overrides.css;
       })
     ];
 
