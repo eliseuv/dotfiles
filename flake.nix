@@ -95,6 +95,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Firefox userChrome base; local tweaks are appended from
+    # modules/home/desktop/browser/firefox/userChrome-overrides.css
+    firefox-qutebrowser-userchrome = {
+      url = "github:Dook97/firefox-qutebrowser-userchrome";
+      flake = false;
+    };
+
   };
 
   outputs =

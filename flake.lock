@@ -71,6 +71,22 @@
         "type": "github"
       }
     },
+    "firefox-qutebrowser-userchrome": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1789833441,
+        "narHash": "sha256-dAMmRRzKWHdTujZXGoTdvAbyzN+dSpm8/PFUJMNgqfA=",
+        "owner": "Dook97",
+        "repo": "firefox-qutebrowser-userchrome",
+        "rev": "f8aca8434c01c5dee4f14dda07c1b334d469e34f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Dook97",
+        "repo": "firefox-qutebrowser-userchrome",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -251,6 +267,7 @@
         "catppuccin": "catppuccin",
         "crane": "crane",
         "fenix": "fenix",
+        "firefox-qutebrowser-userchrome": "firefox-qutebrowser-userchrome",
         "home-manager": "home-manager",
         "matrixclear": "matrixclear",
         "nix-index-database": "nix-index-database",
