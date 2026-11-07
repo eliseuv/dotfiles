@@ -86,9 +86,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Aven task manager (flake; builds its own package from source)
+    # Aven task manager: upstream's per-release flake wrapping the static
+    # prebuilt binary, instead of the source flake whose ~7 min Rust build
+    # reran on every nixpkgs bump. Tracks tagged releases only; the lock pins
+    # the narHash, `nix flake update aven` moves to the latest release.
     aven = {
-      url = "github:raine/aven";
+      url = "https://github.com/raine/aven/releases/latest/download/aven-nix.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

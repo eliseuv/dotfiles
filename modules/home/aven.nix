@@ -20,7 +20,7 @@ in
     package = lib.mkOption {
       type = lib.types.package;
       default = inputs.aven.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      description = "The aven package, built from the upstream flake.";
+      description = "The aven package, the prebuilt release binary from the upstream release flake.";
     };
 
     settings = lib.mkOption {

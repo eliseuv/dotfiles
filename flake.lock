@@ -7,17 +7,14 @@
         ]
       },
       "locked": {
-        "lastModified": 1793958055,
-        "narHash": "sha256-CyzRmuWGzpb4hgn69ajreo24qTkbK54O/SbQJb+Hx5I=",
-        "owner": "raine",
-        "repo": "aven",
-        "rev": "7c913709118c4b0b54e3ad272b9ea6f91ada4271",
-        "type": "github"
+        "lastModified": 1793959198,
+        "narHash": "sha256-YWgl2AR3q76KK2sBCKLL6W7kny3pDGv6hHhsPkRp0Dg=",
+        "type": "tarball",
+        "url": "https://github.com/raine/aven/releases/latest/download/aven-nix.tar.gz"
       },
       "original": {
-        "owner": "raine",
-        "repo": "aven",
-        "type": "github"
+        "type": "tarball",
+        "url": "https://github.com/raine/aven/releases/latest/download/aven-nix.tar.gz"
       }
     },
     "catppuccin": {
