@@ -39,6 +39,22 @@ let
     mocha = "#cba6f7";
   };
 
+  # The server links the SSH_AUTH_SOCK it starts with into every pane and
+  # never refreshes it on reattach, so a forwarded agent goes stale once the
+  # SSH login that spawned the server closes. Pinning the local gpg-agent
+  # socket trades agent forwarding inside panes for a socket that outlives
+  # any connection.
+  herdrWithGpgAgent = pkgs.symlinkJoin {
+    name = "herdr-gpg-agent-${pkgs.herdr.version}";
+    paths = [ pkgs.herdr ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/herdr \
+        --run 'export SSH_AUTH_SOCK="$(${config.programs.gpg.package}/bin/gpgconf --list-dirs agent-ssh-socket)"'
+    '';
+    inherit (pkgs.herdr) meta;
+  };
+
   hookCommand = script: "bash '${script}' session";
   claudeHookScript = "${config.home.homeDirectory}/.claude/hooks/herdr-agent-state.sh";
   codexHookScript = "${config.home.homeDirectory}/.codex/herdr-agent-state.sh";
@@ -48,6 +64,7 @@ in
   config = lib.mkIf (config.home.username == "evf") {
     programs.herdr = {
       enable = true;
+      package = herdrWithGpgAgent;
       # Herdr's settings screen writes config.toml itself.
       mutableSettings = true;
       # Herdr only ships mocha ("catppuccin") and latte; frappe and macchiato

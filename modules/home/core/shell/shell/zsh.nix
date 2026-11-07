@@ -9,7 +9,7 @@ let
   attachCommand = {
     tmux = "${lib.getExe pkgs.tmux} new-session -A -s ssh";
     zellij = "${lib.getExe pkgs.zellij} attach --create ssh";
-    herdr = "${lib.getExe pkgs.herdr} --session ssh";
+    herdr = "${lib.getExe config.programs.herdr.package} --session ssh";
   };
 in
 {
