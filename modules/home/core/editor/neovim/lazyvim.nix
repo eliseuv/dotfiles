@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   lib,
   ...
@@ -7,7 +8,7 @@ let
   # lazy.nvim sync script
   lazy-sync = pkgs.writeShellScriptBin "lazy-sync" ''
     # Notifications are best-effort: headless hosts have no notification daemon
-    if ${lib.getExe pkgs.neovim} --headless "+Lazy! sync" +qa; then
+    if ${lib.getExe config.programs.neovim.finalPackage} --headless "+Lazy! sync" +qa; then
       ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync completed" || true
     else
       ${pkgs.libnotify}/bin/notify-send "lazy.nvim" "Sync failed" -u critical || true
