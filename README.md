@@ -16,7 +16,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 - **Home Environment**: standalone Home Manager, driven by the same host spec as NixOS
 - **Web Terminal**: `ttyd` for browser-based terminal access on headless nodes
 - **Secrets**: [sops-nix](https://github.com/Mic92/sops-nix)
-- **Editor**: Neovim (Nightly)
+- **Editor**: Neovim
 - **Helper Tools**: `nh`, `just`
 - **Codex Remote Control**: private service socket and [app pairing helper](docs/codex-remote-control.md)
 - **Other Inputs**: `spicetify-nix`, `yt-x`, `catppuccin`, `nix-minecraft`

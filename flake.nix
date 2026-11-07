@@ -50,12 +50,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Neovim
-    neovim-nightly-overlay = {
-      url = "github:nix-community/neovim-nightly-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Cache compiled dependencies for local Rust services.
     crane.url = "github:ipetkov/crane";
 
@@ -110,9 +104,6 @@
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
-        overlays = [
-          inputs.neovim-nightly-overlay.overlays.default
-        ];
       };
 
       # Imported once here and shared via extraSpecialArgs, rather than
