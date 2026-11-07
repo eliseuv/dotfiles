@@ -38,6 +38,9 @@
 
   };
 
-  home.shellAliases.gg = "lazygit";
+  # Unlock the SSH keys first: a passphrase prompt from pinentry-curses during
+  # a push would otherwise fight lazygit for the tty and corrupt its input.
+  # ';' not '&&' so lazygit still starts when there are no keys to unlock.
+  home.shellAliases.gg = "ssh-unlock >/dev/null; lazygit";
 
 }
