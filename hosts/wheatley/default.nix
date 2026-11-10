@@ -30,6 +30,7 @@
 
   my.home = {
     notes.enable = true;
+    aven.enable = true;
     remoteAccess.enable = true;
   };
 
