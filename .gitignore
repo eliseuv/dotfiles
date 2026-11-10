@@ -9,3 +9,6 @@
 # Agent settings are per-machine; project skills are shared
 .claude/*
 !.claude/skills/
+
+# Python bytecode
+__pycache__/
