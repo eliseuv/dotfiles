@@ -24,10 +24,21 @@ in
   config = lib.mkIf config.my.home.remoteAccess.enable {
 
     home.file."Projects/.claude/settings.json".text = builtins.toJSON {
-      permissions.additionalDirectories = [
-        config.my.dotfiles.path
-      ]
-      ++ lib.optional config.my.homelab.enable "${config.home.homeDirectory}/Services";
+      permissions = {
+        additionalDirectories = [
+          config.my.dotfiles.path
+        ]
+        ++ lib.optional config.my.homelab.enable "${config.home.homeDirectory}/Services";
+      }
+      // lib.optionalAttrs config.programs.aven.enable {
+        # The aven skills (capture, triage, scope, audit) drive the CLI and the
+        # linter unattended. Deleting stays a manual act, and deny wins over allow.
+        allow = [
+          "Bash(aven:*)"
+          "Bash(aven-lint:*)"
+        ];
+        deny = [ "Bash(aven delete:*)" ];
+      };
     };
 
     systemd.user.services.claude-remote-control = {
