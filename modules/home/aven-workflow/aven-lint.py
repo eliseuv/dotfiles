@@ -167,6 +167,19 @@ def lint(tasks, contexts):
                 for heading in missing_sections(description, UNIT_PLANNED_SECTIONS):
                     errors.append(f"{ref}: unit has no '## {heading}' section")
 
+        elif kind == "goal":
+            # Membership is `related` links: an epic would take members out of
+            # their own project epic, since a task has only one epic parent.
+            if task["is_epic"]:
+                errors.append(f"{ref}: kind=goal must be a task linked with 'aven related', not an epic")
+            members = [r for r in context["related"] if not r["deleted"]]
+            if status not in CLOSED_STATUSES and not members:
+                warnings.append(f"{ref}: open goal has no related tasks")
+            if status == "done":
+                unfinished = [r["display_ref"] for r in members if r["status"] not in CLOSED_STATUSES]
+                if unfinished:
+                    errors.append(f"{ref}: goal done with unfinished related tasks {', '.join(unfinished)}")
+
         elif kind == "question":
             if status not in CLOSED_STATUSES and not context["dependencies"]["blocks"]:
                 warnings.append(f"{ref}: open question blocks nothing")

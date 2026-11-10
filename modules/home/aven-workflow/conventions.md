@@ -24,7 +24,7 @@ Structure is expressed with aven's own primitives plus a `kind` metadata key.
 | Evidence | note beginning `Evidence:`, appended before a checkpoint or POC goes `done` |
 | Handoff | the latest note beginning `Handoff:` on the project epic — `aven context` shows it |
 | Learning unit | task `kind=unit unit=U2`, child of a `track=learning` project epic, sections `## Theory`, `## Build`, `## Milestone`, `## Checkpoint`; progress as notes; units chained in order with `dep add`. A track with parallel strands tags each unit `topic=<letter>` and chains within the strand |
-| Goal spanning projects | epic `kind=goal`; children may belong to any project |
+| Goal spanning projects | task `kind=goal` in the project it mainly serves; its members are `aven related add <goal> <task>` links, which may cross projects. It is not an epic, so members stay in their own project epic |
 
 ## Status meanings
 
