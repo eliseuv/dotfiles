@@ -28,6 +28,31 @@ in
     programs = {
       claude-code.skills = workflowSkills;
       codex.skills = workflowSkills;
+
+      # Global exec policy: matching commands run without a prompt and outside
+      # the sandbox, which would otherwise block aven's database under
+      # ~/.local/share. Deleting stays manual; the strictest decision wins.
+      codex.rules.aven = ''
+        prefix_rule(
+          pattern = ["aven"],
+          decision = "allow",
+          justification = "Local aven task manager, driven by the workflow skills.",
+          match = ["aven list", "aven note T-1 text"],
+        )
+        prefix_rule(
+          pattern = ["aven-lint"],
+          decision = "allow",
+          justification = "Read-only structure checker for aven projects.",
+          match = ["aven-lint --project demo"],
+        )
+        prefix_rule(
+          pattern = ["aven", "delete"],
+          decision = "forbidden",
+          justification = "Task deletion is a manual act.",
+          match = ["aven delete T-1"],
+          not_match = ["aven list"],
+        )
+      '';
     };
 
   };
