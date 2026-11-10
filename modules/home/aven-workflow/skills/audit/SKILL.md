@@ -22,8 +22,9 @@ aven list --blocked
 aven-lint
 ```
 
-Read `aven context` on the active POC or curriculum epic (its latest note is
-the handoff), on the scope epic, and on any checkpoint or unit you discuss.
+Read `aven context` on the project epic (scope, decisions, and the handoff: its
+latest note beginning `Handoff:`), on the active POC, and on any checkpoint or
+unit you discuss.
 Read the README and recent `git log` — that, not `updated_at`, is the activity
 signal. An empty inbox means a general review.
 
@@ -61,9 +62,9 @@ first. **Write each accepted finding immediately**:
 
 | Finding | Where it goes |
 |---|---|
-| New work | checkpoint in the right POC, or a new draft POC for a separate outcome |
-| Scope boundary | the POC's `## Scope` or the scope epic's `## Non-goals` |
-| Decision, ruled-out approach, assumption, risk | note on the scope epic |
+| New work | checkpoint tagged with the right `poc=`, or a new draft POC for a separate outcome |
+| Scope boundary | the POC's `## Scope` or the project epic's `## Non-goals` |
+| Decision, ruled-out approach, assumption, risk | note on the project epic |
 | Unresolved decision | `kind=question` task blocking what it gates |
 | Implementation found complete | run its acceptance; record `Evidence:` then `done` — or leave it `active` with a note saying what is missing |
 | Superseded checkpoint | cancel with a note naming the replacement; move its dependents |
@@ -77,7 +78,7 @@ canceled with a note saying where it went.
 aven-lint
 ```
 
-Rewrite the handoff as a new note on the active POC or curriculum epic: the
-current checkpoint or unit and an executable next action. Update the README
+Rewrite the handoff as a new `Handoff:` note on the project epic: the current
+POC and checkpoint (or unit) and an executable next action. Update the README
 only for capabilities you confirmed. Report findings recorded, entries drained,
 and anything left for the user to decide — then ask whether that covers it.

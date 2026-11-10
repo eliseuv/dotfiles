@@ -42,9 +42,10 @@ recommendation and real trade-offs. **Write every settled answer into aven
 immediately** — no batching behind "shall I apply?"; the answer is the go-ahead.
 Keep going until the user is satisfied, checking back in ("does this cover it?").
 
-**The scope epic** — `aven add "<name> scope" --epic --metadata kind=scope
---metadata track=project|learning --metadata language=<flake>`, description
-sections in this order, as they settle:
+**The project epic** — the project's only epic, holding the scope and, as
+children, every POC, checkpoint and unit: `aven add "<name>" --epic --metadata
+kind=project --metadata track=project|learning --metadata language=<flake>`,
+description sections in this order, as they settle:
 
 - `## Problem` (project) or `## Motivation` (learning)
 - `## Goals` — measurable. For learning, a capability ("implement a TLS
@@ -59,17 +60,22 @@ sections in this order, as they settle:
 `language` names a fragment in `~/Projects/flakes/` (`<language>.flake.nix`); a
 track wanting something without one is a legitimate answer, but say a fragment
 must be written before scaffolding. Decisions, ruled-out approaches and
-assumptions are notes on the scope epic.
+assumptions are notes on the project epic.
 
 ### Project: POCs and checkpoints
 
-- **POC** — epic, `kind=poc poc=P<n>`, sections `## Objective`, `## Scope`
+aven cannot nest epics, so POCs and checkpoints are both plain tasks in the
+project epic (`aven epic add <task> <project-epic>`).
+
+- **POC** — task, `kind=poc poc=P<n>`, sections `## Objective`, `## Scope`
   (POC-specific exclusions too), and once planned `## Acceptance` (an integrated,
   end-to-end scenario — completing checkpoints does not prove integration) and
-  `## Verification`. Later POCs may stay `backlog` (draft) with only objective and
-  scope; don't pretend their implementation is decided.
-- **Checkpoint** — task in the POC epic (`aven epic add`), `kind=checkpoint
-  cp=CP-<n>`, sections `## Deliverables`, `## Acceptance` (pass/fail),
+  `## Verification`. It depends on each of its checkpoints (`aven dep add
+  <poc> <checkpoint>`), so it closes last, on its own `Evidence:` note. Later
+  POCs may stay `backlog` (draft) with only objective and scope; don't pretend
+  their implementation is decided.
+- **Checkpoint** — task, `kind=checkpoint cp=CP-<n> poc=P<n>` (the `poc` value
+  names its POC), sections `## Deliverables`, `## Acceptance` (pass/fail),
   `## Verification` (reproducible: commands, fixtures, expected output).
   Prerequisites are `aven dep add`; order of listing is not dependency.
   Prefer a narrow vertical slice that exposes the architectural risk over a
@@ -85,9 +91,11 @@ naming its replacement and redirect its dependents.
 ### Learning: the curriculum
 
 Not before goals, prerequisites and non-goals are settled — units guessed early
-get thrown away. One epic `kind=curriculum`; each unit a task in it, `kind=unit
+get thrown away. Each unit is a task in the project epic, `kind=unit
 unit=U<n>`, sections `## Theory`, `## Build`, `## Milestone`, `## Checkpoint` (a
-question the user answers without notes), chained with `dep add` in order.
+question the user answers without notes), chained with `dep add` in order. A
+track with independent strands tags each unit `topic=<letter>` and chains
+units within their strand.
 
 - Every unit ends in something built; "understand X" cannot be checked.
 - Order by dependency, not by textbook tradition.
@@ -104,8 +112,8 @@ aven-lint --project <key>
 ```
 
 Resolve substantive gaps rather than filling placeholders. Leave a note on the
-active POC epic (or the curriculum epic) naming the current checkpoint/unit and
-an executable next action — that note is the handoff. Present the acceptance
+project epic beginning `Handoff:`, naming the current POC and checkpoint (or
+unit) and an executable next action — the latest such note is the handoff. Present the acceptance
 scenario, first slice, boundaries, decisive choices and open questions, and get
 sign-off unless it was already given this session.
 
@@ -114,9 +122,9 @@ sign-off unless it was already given this session.
 **The gate.** Refuse, and say why, unless all hold:
 
 - `aven-lint --project <key>` reports no errors;
-- a scope epic exists with goals and non-goals;
+- the project epic exists with goals and non-goals;
 - project: at least one POC in `todo`/`active` with at least one checkpoint;
-  learning: a curriculum epic with at least one unit;
+  learning: at least one unit;
 - the destination directory does not exist.
 
 Destination: `~/Projects/project/<name>` or `~/Projects/learning/<name>`.
