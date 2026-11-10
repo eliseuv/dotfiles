@@ -50,7 +50,6 @@ def missing_sections(description, headings):
 
 def lint(tasks, contexts):
     errors, warnings = [], []
-    by_id = {t["id"]: t for t in tasks}
 
     def kind_of(task_id):
         context = contexts.get(task_id)
@@ -114,11 +113,13 @@ def lint(tasks, contexts):
             for heading in missing_sections(description, required):
                 errors.append(f"{ref}: POC has no '## {heading}' section")
             label = context["metadata"].get("poc")
-            checkpoints = [
-                t for t in tasks
-                if t["project"] == task["project"] and t["id"] in contexts
-                and kind_of(t["id"]) == "checkpoint" and contexts[t["id"]]["metadata"].get("poc") == label
-            ]
+
+            def is_own_checkpoint(candidate):
+                if candidate["project"] != task["project"] or kind_of(candidate["id"]) != "checkpoint":
+                    return False
+                return contexts[candidate["id"]]["metadata"].get("poc") == label
+
+            checkpoints = [t for t in tasks if is_own_checkpoint(t)]
             if planned and not checkpoints:
                 errors.append(f"{ref}: POC has no checkpoints")
             depends_on = {d["id"] for d in context["dependencies"]["depends_on"]}
