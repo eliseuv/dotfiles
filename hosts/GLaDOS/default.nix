@@ -6,6 +6,7 @@
     hyprland.enable = true;
     gnome.enable = true;
     gdmMonitors = ./monitors.xml;
+    bootvine.enable = true;
     waybar.disks = [
       {
         path = "/";
