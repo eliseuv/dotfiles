@@ -27,6 +27,9 @@
     # Systemd TUI
     systemctl-tui
 
+    # rsync TUI
+    lazyrsync
+
     # Command cheatsheets
     tldr
 
