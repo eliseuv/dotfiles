@@ -2,7 +2,7 @@
 
 A port of the vault's `spec validate` rubric onto aven primitives. Requirement
 coverage (`covers:` goal IDs) is deliberately not ported: goals are prose in the
-scope epic now, and an ID cross-reference would need a second ID scheme.
+project epic now, and an ID cross-reference would need a second ID scheme.
 """
 
 import argparse
@@ -19,7 +19,10 @@ STALE_INBOX_DAYS = 30
 POC_SECTIONS = ["Objective", "Scope"]
 POC_PLANNED_SECTIONS = ["Acceptance", "Verification"]
 CHECKPOINT_PLANNED_SECTIONS = ["Deliverables", "Acceptance", "Verification"]
-SCOPE_SECTIONS = ["Goals", "Non-goals"]
+PROJECT_SECTIONS = ["Goals", "Non-goals"]
+TRACKS = {"project", "learning"}
+# Superseded by the single kind=project epic; flagged until migrated or canceled.
+RETIRED_KINDS = {"scope", "curriculum"}
 UNIT_PLANNED_SECTIONS = ["Build", "Milestone", "Checkpoint"]
 
 
@@ -53,8 +56,21 @@ def lint(tasks, contexts):
         context = contexts.get(task_id)
         return context["metadata"].get("kind") if context else None
 
-    # Projects with POCs or a curriculum must also carry a scope epic.
-    projects_with_pocs, projects_with_scope = set(), set()
+    def project_epic_of(context):
+        """The parent's context when the parent is a kind=project epic, else None."""
+        parent = context["epic_parent"]
+        if parent is None or kind_of(parent["id"]) != "project":
+            return None
+        return contexts[parent["id"]]
+
+    project_epics = {}         # aven project -> [refs of kind=project epics]
+    projects_with_work = set()  # aven projects holding POCs, checkpoints or units
+    pocs_by_label = {}         # (aven project, "P1") -> context of the kind=poc task
+
+    for task in tasks:
+        context = contexts.get(task["id"])
+        if context and context["metadata"].get("kind") == "poc" and "poc" in context["metadata"]:
+            pocs_by_label[(task["project"], context["metadata"]["poc"])] = context
 
     for task in tasks:
         ref, status = task["ref"], task["status"]
@@ -70,39 +86,63 @@ def lint(tasks, contexts):
         description = context["task"]["description"]
         planned = status not in DRAFT_STATUSES and status != "canceled"
 
-        if kind == "scope":
-            projects_with_scope.add(task["project"])
+        if kind in RETIRED_KINDS and status != "canceled":
+            errors.append(f"{ref}: kind={kind} is retired; its content belongs on the kind=project epic")
+
+        elif kind == "project":
+            if status != "canceled":
+                project_epics.setdefault(task["project"], []).append(ref)
             if not task["is_epic"]:
-                errors.append(f"{ref}: kind=scope must be an epic")
-            for heading in missing_sections(description, SCOPE_SECTIONS):
-                errors.append(f"{ref}: scope has no '## {heading}' section")
+                errors.append(f"{ref}: kind=project must be an epic")
+            if context["metadata"].get("track") not in TRACKS:
+                errors.append(f"{ref}: project epic needs track=project or track=learning")
+            for heading in missing_sections(description, PROJECT_SECTIONS):
+                errors.append(f"{ref}: project epic has no '## {heading}' section")
+            if status == "active" and not any(n["body"].lstrip().startswith("Handoff:") for n in context["notes"]):
+                warnings.append(f"{ref}: active project epic has no 'Handoff:' note")
 
         elif kind == "poc":
-            projects_with_pocs.add(task["project"])
-            if not task["is_epic"]:
-                errors.append(f"{ref}: kind=poc must be an epic")
+            projects_with_work.add(task["project"])
+            if task["is_epic"]:
+                errors.append(f"{ref}: kind=poc must be a task, not an epic")
+            parent = project_epic_of(context)
+            if parent is None or parent["metadata"].get("track") != "project":
+                errors.append(f"{ref}: POC is not in a track=project project epic")
             if "poc" not in context["metadata"]:
                 errors.append(f"{ref}: POC has no 'poc' metadata ID")
             required = POC_SECTIONS + (POC_PLANNED_SECTIONS if planned else [])
             for heading in missing_sections(description, required):
                 errors.append(f"{ref}: POC has no '## {heading}' section")
-            children = context["epic_children"]
-            checkpoints = [c for c in children if kind_of(c["id"]) == "checkpoint"]
+            label = context["metadata"].get("poc")
+            checkpoints = [
+                t for t in tasks
+                if t["project"] == task["project"] and t["id"] in contexts
+                and kind_of(t["id"]) == "checkpoint" and contexts[t["id"]]["metadata"].get("poc") == label
+            ]
             if planned and not checkpoints:
                 errors.append(f"{ref}: POC has no checkpoints")
-            if status == "done":
-                unfinished = [c["ref"] for c in checkpoints if c["status"] not in CLOSED_STATUSES]
-                if unfinished:
-                    errors.append(f"{ref}: done with unfinished checkpoints {', '.join(unfinished)}")
+            depends_on = {d["id"] for d in context["dependencies"]["depends_on"]}
+            for checkpoint in checkpoints:
+                if checkpoint["status"] != "canceled" and checkpoint["id"] not in depends_on:
+                    errors.append(f"{ref}: POC does not depend on its checkpoint {checkpoint['ref']}")
+            if status == "done" and not any(n["body"].lstrip().startswith("Evidence:") for n in context["notes"]):
+                errors.append(f"{ref}: done without an 'Evidence:' note")
 
         elif kind == "checkpoint":
+            projects_with_work.add(task["project"])
             if "cp" not in context["metadata"]:
                 errors.append(f"{ref}: checkpoint has no 'cp' metadata ID")
-            parent = context["epic_parent"]
-            if parent is None or kind_of(parent["id"]) != "poc":
-                errors.append(f"{ref}: checkpoint is not in a kind=poc epic")
-            elif status not in CLOSED_STATUSES and by_id[parent["id"]]["status"] in CLOSED_STATUSES:
-                errors.append(f"{ref}: open checkpoint in closed POC {parent['ref']}")
+            parent = project_epic_of(context)
+            if parent is None or parent["metadata"].get("track") != "project":
+                errors.append(f"{ref}: checkpoint is not in a track=project project epic")
+            label = context["metadata"].get("poc")
+            poc = pocs_by_label.get((task["project"], label))
+            if label is None:
+                errors.append(f"{ref}: checkpoint has no 'poc' metadata naming its POC")
+            elif poc is None:
+                errors.append(f"{ref}: checkpoint names poc={label}, which no kind=poc task carries")
+            elif status not in CLOSED_STATUSES and poc["task"]["status"] in CLOSED_STATUSES:
+                errors.append(f"{ref}: open checkpoint in closed POC {poc['task']['ref']}")
             if planned:
                 for heading in missing_sections(description, CHECKPOINT_PLANNED_SECTIONS):
                     errors.append(f"{ref}: checkpoint has no '## {heading}' section")
@@ -113,20 +153,16 @@ def lint(tasks, contexts):
                 dep_kind = kind_of(dependency["id"])
                 if dependency["status"] == "canceled":
                     errors.append(f"{ref}: prerequisite {dependency['display_ref']} was canceled; pick its replacement")
-                elif dep_kind not in {"checkpoint", "question"}:
-                    errors.append(f"{ref}: prerequisite {dependency['display_ref']} is neither a checkpoint nor a question")
-
-        elif kind == "curriculum":
-            projects_with_pocs.add(task["project"])
-            if not task["is_epic"]:
-                errors.append(f"{ref}: kind=curriculum must be an epic")
+                elif dep_kind not in {"checkpoint", "question", "poc"}:
+                    errors.append(f"{ref}: prerequisite {dependency['display_ref']} is not a checkpoint, POC or question")
 
         elif kind == "unit":
+            projects_with_work.add(task["project"])
             if "unit" not in context["metadata"]:
                 errors.append(f"{ref}: unit has no 'unit' metadata ID")
-            parent = context["epic_parent"]
-            if parent is None or kind_of(parent["id"]) != "curriculum":
-                errors.append(f"{ref}: unit is not in a kind=curriculum epic")
+            parent = project_epic_of(context)
+            if parent is None or parent["metadata"].get("track") != "learning":
+                errors.append(f"{ref}: unit is not in a track=learning project epic")
             if planned:
                 for heading in missing_sections(description, UNIT_PLANNED_SECTIONS):
                     errors.append(f"{ref}: unit has no '## {heading}' section")
@@ -143,8 +179,11 @@ def lint(tasks, contexts):
             if open_blockers:
                 errors.append(f"{ref}: done while blocked by {', '.join(open_blockers)}")
 
-    for project in sorted(projects_with_pocs - projects_with_scope, key=str):
-        errors.append(f"project {project}: has POCs or a curriculum but no kind=scope epic")
+    for project, refs in sorted(project_epics.items(), key=lambda item: str(item[0])):
+        if len(refs) > 1:
+            errors.append(f"project {project}: more than one kind=project epic ({', '.join(refs)})")
+    for project in sorted(projects_with_work - set(project_epics), key=str):
+        errors.append(f"project {project}: has POCs, checkpoints or units but no kind=project epic")
 
     return errors, warnings
 
