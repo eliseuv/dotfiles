@@ -124,6 +124,8 @@ in
       description = "Plymouth splash and a silent boot.";
     };
 
+    bootvine.enable = lib.mkEnableOption "bootvine's live systemd unit tree on the boot and shutdown console";
+
   };
 
 }
