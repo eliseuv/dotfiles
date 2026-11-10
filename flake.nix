@@ -95,6 +95,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Live systemd unit tree on the boot console. Built from source: its
+    # nixConfig Cachix isn't trusted here, and following our nixpkgs would
+    # miss it anyway.
+    bootvine = {
+      url = "git+https://codeberg.org/wvhulle/bootvine";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Firefox userChrome base; local tweaks are appended from
     # modules/home/desktop/browser/firefox/userChrome-overrides.css
     firefox-qutebrowser-userchrome = {
