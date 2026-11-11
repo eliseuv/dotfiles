@@ -37,22 +37,38 @@ bump-aven:
 update-nix:
     {{just_executable()}} update nixpkgs nixpkgs-master nixpkgs-stable
 
+# Tag HEAD as the current generation, `<host>-<generation>`, and print the
+# tag's name and whether it was `created` or already `exists`. Shared with
+# dotfiles-switch.service, which only pushes the tag.
+[private]
+tag-gen:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    gen="$(nixos-rebuild list-generations | rg "True$" | sd '^(\d+)\W+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\W+([\w\.]+)\W+([\w\.]+).+True$' '$1 NixOS $2 Linux $3')"
+    tag="$(hostname)-${gen%% *}"
+    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+        # A switch that lands on the same generation (nothing to activate)
+        # re-runs this; the generation is already tagged, so no-op.
+        echo "$tag exists"
+    else
+        git tag --annotate "$tag" \
+            --message "$(hostname) @ ${gen}" \
+            --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
+        echo "$tag created"
+    fi
+
 commit-gen:
     #!/usr/bin/env bash
     set -euo pipefail
     git diff --quiet && git diff --cached --quiet || \
         (echo "commit-gen: uncommitted changes present, commit before switching" >&2 && exit 1)
-    gen="$(nixos-rebuild list-generations | rg "True$" | sd '^(\d+)\W+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\W+([\w\.]+)\W+([\w\.]+).+True$' '$1 NixOS $2 Linux $3')"
-    tag="$(hostname)-${gen%% *}"
-    if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-        # A switch that lands on the same generation (nothing to activate)
-        # re-runs commit-gen; the generation is already tagged, so no-op.
+    # Not `read < <(...)`: a failed tag-gen would go unnoticed.
+    tagged=$({{just_executable()}} tag-gen)
+    read -r tag outcome <<<"$tagged"
+    if [ "$outcome" = exists ]; then
         echo "commit-gen: $tag already exists, generation unchanged, skipping"
         exit 0
     fi
-    git tag --annotate "$tag" \
-        --message "$(hostname) @ ${gen}" \
-        --message "$(ls -dv1 /nix/var/nix/profiles/system-*-link | tail -2 | xargs -r nvd diff)"
     # A user without push access (dani on chell) keeps the tag local; the
     # next push by someone with access carries it along, as --follow-tags
     # pushes every missing annotated tag reachable from what it pushes. Any

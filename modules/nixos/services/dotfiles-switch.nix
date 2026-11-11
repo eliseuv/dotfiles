@@ -3,9 +3,10 @@
 # services/remote-control.nix). Pulls origin/master, rebasing any local
 # commits onto it, builds and activates this host's system, then switches the
 # primary user's home through the Justfile, as them, and every other user's
-# of this host from root, through sudo. Unlike
-# `just system-switch` it neither tags the generation (commit-gen pushes,
-# which would need a GitHub credential on every host) nor collects garbage.
+# of this host from root, through sudo. Like `just system-switch` it tags the
+# generation, but only tries to push the tag: commit-gen pushes the branch
+# too, and either needs a GitHub credential the unit usually lacks. Unlike it,
+# it doesn't collect garbage.
 #
 # Builds, git and Home Manager run as the primary user in their own checkout;
 # only activation and becoming the other users run as root, through systemd's
@@ -90,6 +91,23 @@ let
     git rev-parse HEAD > ${revisionsDir}/"''${system%%-*}"
   '';
 
+  # After every run, successful or not: tags the generation when the system
+  # built in this run is the profile, which a failed activation can leave it
+  # as too, and tries to push only the tag. Without an agent or a key the push
+  # usually fails; the tag stays local until the next `git push --follow-tags`
+  # from here.
+  finish = pkgs.writeShellScript "dotfiles-switch-finish" ''
+    set -uo pipefail
+    built=$(readlink -f ${systemLink} 2>/dev/null) || exit 0
+    [ "$(readlink -f /nix/var/nix/profiles/system)" = "$built" ] || exit 0
+    tagged=$(${lib.getExe pkgs.just} tag-gen) || exit 0
+    read -r tag outcome <<<"$tagged"
+    echo "dotfiles-switch: $tag $outcome"
+    GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" \
+      timeout 60 git push --quiet origin "refs/tags/$tag" \
+      || echo "dotfiles-switch: couldn't push $tag, kept local" >&2
+  '';
+
   # The Justfile's home-switch-others, for the service. The users come from
   # the same host list lib/ generates homeConfigurations from, so root never
   # evaluates the flake: libgit2 refuses a repo another user owns unless
@@ -132,6 +150,13 @@ in
         pkgs.git
         pkgs.jq
         pkgs.nh
+        # For the Justfile's tag-gen, and the tag push.
+        config.system.build.nixos-rebuild
+        pkgs.hostname
+        pkgs.nvd
+        pkgs.openssh
+        pkgs.ripgrep
+        pkgs.sd
       ];
       serviceConfig = {
         Type = "oneshot";
@@ -149,6 +174,8 @@ in
           "${lib.getExe pkgs.just} home-switch-self"
         ]
         ++ lib.optional (otherUsers != [ ]) "+${homeSwitchOthers}";
+        # `-`: tagging never turns a switch into a failure.
+        ExecStopPost = "-${finish}";
       };
     };
 
