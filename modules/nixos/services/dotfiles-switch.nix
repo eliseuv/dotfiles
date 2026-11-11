@@ -34,19 +34,37 @@ let
 
   pull = pkgs.writeShellScript "dotfiles-switch-pull" ''
     set -euo pipefail
-    git diff --quiet && git diff --cached --quiet || {
-      echo "dotfiles-switch: uncommitted changes in ${repo}, refusing" >&2
+    fail() {
+      echo "dotfiles-switch: $1" >&2
       exit 1
     }
+    # Another branch would be rebased onto master and built; switching
+    # branches unattended could strand its work instead.
+    branch=$(git symbolic-ref --quiet --short HEAD) || fail "detached HEAD, not on master"
+    [ "$branch" = master ] || fail "on branch $branch, not master"
+    # Uncommitted changes become a commit of their own, kept after the switch
+    # for the user to amend or squash, so the build is always of a commit.
+    # Untracked files stay as they are: the flake doesn't see them anyway.
+    # --no-verify: an unattended snapshot mustn't fail on a hook.
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+      git add --update
+      git commit --quiet --no-verify \
+        --message "wip: uncommitted changes at dashboard switch on ${config.my.host.name}"
+      echo "dotfiles-switch: committed uncommitted changes as $(git rev-parse --short HEAD)"
+    fi
     git fetch ${upstream} master:refs/remotes/origin/master
     # Unlike the Justfile's pull, a failed rebase is fatal: carrying on would
     # build whatever happened to be checked out. Abort so the checkout isn't
-    # left mid-rebase for the next run (or the user) to trip over.
-    git rebase origin/master || {
-      git rebase --abort
-      echo "dotfiles-switch: rebase onto origin/master failed, aborted" >&2
-      exit 1
-    }
+    # left mid-rebase for the next run (or the user) to trip over; the local
+    # commits, the one above included, are back as they were.
+    if ! git rebase --quiet origin/master >&2; then
+      conflicts=$(git diff --name-only --diff-filter=U | paste -sd, -)
+      # Nothing to abort when the rebase refused to start (an untracked file
+      # in the way, say).
+      git rebase --abort 2>/dev/null || true
+      [ -n "$conflicts" ] || fail "rebase onto origin/master failed, aborted"
+      fail "rebase onto origin/master conflicts in $conflicts, aborted"
+    fi
   '';
 
   build = pkgs.writeShellScript "dotfiles-switch-build" ''
@@ -65,7 +83,7 @@ let
     exec "$system/bin/switch-to-configuration" switch
   '';
 
-  # The pull refused uncommitted changes, so HEAD is what was built.
+  # The pull committed any uncommitted changes, so HEAD is what was built.
   record = pkgs.writeShellScript "dotfiles-switch-record" ''
     set -euo pipefail
     system=$(basename "$(readlink -f ${systemLink})")
