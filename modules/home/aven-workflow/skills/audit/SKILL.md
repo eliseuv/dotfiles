@@ -19,14 +19,20 @@ aven list --status inbox            # what the user wrote: this pass's agenda
 aven list --all --json               # the whole structure, drafts and done included
 aven list --ready
 aven list --blocked
-aven-lint
+aven-lint --epic <ref>
 ```
 
-Read `aven context` on the project epic (scope, decisions, and the handoff: its
+Select the epic whose `repo` metadata matches this repository; if several
+epics share it, use the user's named scope or review them separately.
+Project membership alone does not identify the repo. Read `aven context` on
+that epic (scope, decisions, and the handoff: its
 latest note beginning `Handoff:`), on the active POC, and on any checkpoint or
 unit you discuss.
 Read the README and recent `git log` — that, not `updated_at`, is the activity
 signal. An empty inbox means a general review.
+
+Limit the structure review to the selected epic and its children, and use its
+repo for code and history checks.
 
 A repo with no structure in aven yet (only a project, or plain tasks) gets one
 built from what is here: goals from what the README says the project is,
@@ -75,7 +81,7 @@ canceled with a note saying where it went.
 ## 4. Finish
 
 ```sh
-aven-lint
+aven-lint --epic <ref>
 ```
 
 Rewrite the handoff as a new `Handoff:` note on the project epic: the current

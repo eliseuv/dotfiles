@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 DRAFT_STATUSES = {"inbox", "backlog"}
 CLOSED_STATUSES = {"done", "canceled"}
@@ -21,7 +22,7 @@ POC_PLANNED_SECTIONS = ["Acceptance", "Verification"]
 CHECKPOINT_PLANNED_SECTIONS = ["Deliverables", "Acceptance", "Verification"]
 PROJECT_SECTIONS = ["Goals", "Non-goals"]
 TRACKS = {"project", "learning"}
-# Superseded by the single kind=project epic; flagged until migrated or canceled.
+# Superseded by kind=project epics; flagged until migrated or canceled.
 RETIRED_KINDS = {"scope", "curriculum"}
 UNIT_PLANNED_SECTIONS = ["Build", "Milestone", "Checkpoint"]
 
@@ -62,14 +63,16 @@ def lint(tasks, contexts):
             return None
         return contexts[parent["id"]]
 
-    project_epics = {}         # aven project -> [refs of kind=project epics]
-    projects_with_work = set()  # aven projects holding POCs, checkpoints or units
-    pocs_by_label = {}         # (aven project, "P1") -> context of the kind=poc task
+    pocs_by_label = {}  # (parent epic ID, "P1") -> context of the POC task
 
     for task in tasks:
         context = contexts.get(task["id"])
         if context and context["metadata"].get("kind") == "poc" and "poc" in context["metadata"]:
-            pocs_by_label[(task["project"], context["metadata"]["poc"])] = context
+            parent = context["epic_parent"]
+            key = (parent["id"] if parent else None, context["metadata"]["poc"])
+            if key in pocs_by_label:
+                errors.append(f"{task['ref']}: duplicate poc={key[1]} in the same epic")
+            pocs_by_label[key] = context
 
     for task in tasks:
         ref, status = task["ref"], task["status"]
@@ -79,6 +82,12 @@ def lint(tasks, contexts):
                 warnings.append(f"{ref}: in inbox for over {STALE_INBOX_DAYS} days")
 
         context = contexts.get(task["id"])
+        if task["is_epic"] and status != "canceled":
+            repo = context["metadata"].get("repo", "") if context else ""
+            if not repo.strip():
+                errors.append(f"{ref}: epic needs repo=<absolute-path> metadata")
+            elif not Path(repo).is_absolute():
+                errors.append(f"{ref}: epic repo must be an absolute path")
         if context is None:
             continue
         kind = context["metadata"].get("kind")
@@ -89,8 +98,6 @@ def lint(tasks, contexts):
             errors.append(f"{ref}: kind={kind} is retired; its content belongs on the kind=project epic")
 
         elif kind == "project":
-            if status != "canceled":
-                project_epics.setdefault(task["project"], []).append(ref)
             if not task["is_epic"]:
                 errors.append(f"{ref}: kind=project must be an epic")
             if context["metadata"].get("track") not in TRACKS:
@@ -101,7 +108,6 @@ def lint(tasks, contexts):
                 warnings.append(f"{ref}: active project epic has no 'Handoff:' note")
 
         elif kind == "poc":
-            projects_with_work.add(task["project"])
             if task["is_epic"]:
                 errors.append(f"{ref}: kind=poc must be a task, not an epic")
             parent = project_epic_of(context)
@@ -117,7 +123,9 @@ def lint(tasks, contexts):
             def is_own_checkpoint(candidate):
                 if candidate["project"] != task["project"] or kind_of(candidate["id"]) != "checkpoint":
                     return False
-                return contexts[candidate["id"]]["metadata"].get("poc") == label
+                candidate_context = contexts[candidate["id"]]
+                return (candidate_context["metadata"].get("poc") == label
+                        and candidate_context["epic_parent"] == context["epic_parent"])
 
             checkpoints = [t for t in tasks if is_own_checkpoint(t)]
             if planned and not checkpoints:
@@ -130,14 +138,13 @@ def lint(tasks, contexts):
                 errors.append(f"{ref}: done without an 'Evidence:' note")
 
         elif kind == "checkpoint":
-            projects_with_work.add(task["project"])
             if "cp" not in context["metadata"]:
                 errors.append(f"{ref}: checkpoint has no 'cp' metadata ID")
             parent = project_epic_of(context)
             if parent is None or parent["metadata"].get("track") != "project":
                 errors.append(f"{ref}: checkpoint is not in a track=project project epic")
             label = context["metadata"].get("poc")
-            poc = pocs_by_label.get((task["project"], label))
+            poc = pocs_by_label.get((parent["task"]["id"] if parent else None, label))
             if label is None:
                 errors.append(f"{ref}: checkpoint has no 'poc' metadata naming its POC")
             elif poc is None:
@@ -158,7 +165,6 @@ def lint(tasks, contexts):
                     errors.append(f"{ref}: prerequisite {dependency['display_ref']} is not a checkpoint, POC or question")
 
         elif kind == "unit":
-            projects_with_work.add(task["project"])
             if "unit" not in context["metadata"]:
                 errors.append(f"{ref}: unit has no 'unit' metadata ID")
             parent = project_epic_of(context)
@@ -193,12 +199,6 @@ def lint(tasks, contexts):
             if open_blockers:
                 errors.append(f"{ref}: done while blocked by {', '.join(open_blockers)}")
 
-    for project, refs in sorted(project_epics.items(), key=lambda item: str(item[0])):
-        if len(refs) > 1:
-            errors.append(f"project {project}: more than one kind=project epic ({', '.join(refs)})")
-    for project in sorted(projects_with_work - set(project_epics), key=str):
-        errors.append(f"project {project}: has POCs, checkpoints or units but no kind=project epic")
-
     return errors, warnings
 
 
@@ -207,21 +207,34 @@ def main():
     scope = parser.add_mutually_exclusive_group()
     scope.add_argument("-p", "--project", help="lint one project (default: inferred from cwd)")
     scope.add_argument("-A", "--all-projects", action="store_true")
+    scope.add_argument("--epic", help="lint one epic and its children")
     parser.add_argument("--db", help="aven database path")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
     global_args = ["--db", args.db] if args.db else []
     list_args = ["list", "--all", "--json"]
-    if args.project:
+    if args.epic:
+        list_args.append("--all-projects")
+    elif args.project:
         list_args += ["--project", args.project]
     elif args.all_projects:
         list_args.append("--all-projects")
 
     tasks = [t for t in run_aven(global_args, *list_args) if not t["deleted"]]
-    # Contexts are fetched only for structured tasks; metadata is absent from `list`.
+    # All epics need repo metadata, including epics without a kind.
     structured = run_aven(global_args, *list_args, "--has-metadata", "kind", missing_field_ok=True)
-    contexts = {t["id"]: run_aven(global_args, "context", t["ref"], "--json") for t in structured if not t["deleted"]}
+    needing_context = {t["id"]: t for t in structured if not t["deleted"]}
+    needing_context.update({t["id"]: t for t in tasks if t["is_epic"]})
+    contexts = {tid: run_aven(global_args, "context", t["ref"], "--json")
+                for tid, t in needing_context.items()}
+
+    if args.epic:
+        epic = run_aven(global_args, "show", args.epic, "--json")
+        if not epic["is_epic"] or epic["deleted"]:
+            parser.error("--epic must name a nondeleted epic")
+        tasks = [t for t in tasks if t["id"] == epic["id"] or
+                 (t["epic_parent"] and t["epic_parent"]["id"] == epic["id"])]
 
     errors, warnings = lint(tasks, contexts)
 

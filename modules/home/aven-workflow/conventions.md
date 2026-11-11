@@ -14,8 +14,8 @@ Structure is expressed with aven's own primitives plus a `kind` metadata key.
 | Concept | In aven |
 |---|---|
 | Captured, untriaged thought | task, `status=inbox` — in the project inferred from cwd, else unassigned |
-| Project or learning track | aven project; mapped to a repo path only once the repo exists |
-| Project epic (scope and all planned work) | the one epic of the aven project, `kind=project track=project\|learning language=<flake>`; sections `## Goals` (measurable), `## Non-goals`, and as needed `## Problem`/`## Motivation`, `## Prerequisites`, `## Constraints`, `## Architecture`, `## Interfaces`. Every POC, checkpoint and unit is its child |
+| Project | aven project; groups related epics and tasks, with no repo requirement |
+| Project or learning epic (scope and all planned work) | an epic in an aven project, `kind=project track=project\|learning language=<flake> repo=<absolute-path>`; sections `## Goals` (measurable), `## Non-goals`, and as needed `## Problem`/`## Motivation`, `## Prerequisites`, `## Constraints`, `## Architecture`, `## Interfaces`. Every POC, checkpoint and unit is its child |
 | Decision, ruled-out approach, assumption, risk | note on the project epic |
 | Proof of concept | task `kind=poc poc=P1`, child of the project epic, sections `## Objective`, `## Scope`, `## Acceptance` (the integrated scenario), `## Verification`; depends on each of its checkpoints, so it closes last |
 | Checkpoint | task `kind=checkpoint cp=CP-3 poc=P1`, child of the project epic, sections `## Deliverables`, `## Acceptance`, `## Verification` |
@@ -52,11 +52,16 @@ with `--available-at`; frozen means it has no open tasks.
 - Notes record facts about the subject — decisions, scope settled, approaches
   ruled out, evidence. Never tooling actions ("migrated", "added metadata").
 - Never invent a next step. If a project has none recorded, say so.
-- One epic per aven project. aven cannot nest epics, so POCs are tasks, not
-  epics; a checkpoint names its POC through `poc=` metadata.
+- An aven project may contain multiple epics. Every non-canceled epic requires
+  `repo=<absolute-path>` metadata (an intended path before scaffolding). Repos
+  belong to epics; projects are grouping containers. Epics may share a repo.
+  Aven project path mappings only route cwd to the containing project.
+- aven cannot nest epics, so POCs are tasks, not epics; a checkpoint names its
+  POC through `poc=` metadata within the same epic. POC and checkpoint IDs are
+  local to their epic; unit IDs are local to their epic and topic strand.
 - No repo is created without a project epic with goals and non-goals, a planned
   POC with at least one checkpoint (or at least one unit), and a clean
-  `aven-lint --project <key>`. The `scope` skill owns that gate.
+  `aven-lint --epic <ref>`. The `scope` skill owns that gate.
 - Skills: `capture` (never asks), `triage` (drains the inbox), `scope` (settles
   structure, scaffolds repos), `audit` (reviews a project against its repo).
 - Keep task refs out of commits, PRs and anything external.

@@ -36,8 +36,8 @@ option. **Apply each answer immediately** — the answer is the go-ahead.
 
 | Destination | What to do |
 |---|---|
-| Fits an existing project | Move it out of inbox in that project. If the project has POCs, decide with the user whether it is a new checkpoint (give it `kind=checkpoint`, the next free `cp=` ID, its sections, epic membership and deps), scope for a POC (fold into the epic's description and cancel the entry), or a plain task (`backlog`/`todo`). For a learning track, a new or changed unit — restructuring the curriculum is in scope here |
-| A new project or learning track | Hand it to the `scope` skill with this entry as its seed material |
+| Fits an existing project | Move it out of inbox in that project. Choose the relevant epic by scope and its `repo` metadata; projects may hold several epics. If that epic has POCs, decide with the user whether it is a new checkpoint (give it `kind=checkpoint`, the next free `cp=` ID within that epic, its sections, epic membership and deps), scope for a POC (fold into the epic's description and cancel the entry), or a plain task (`backlog`/`todo`). For a learning track, a new or changed unit — restructuring the curriculum is in scope here |
+| A new repo epic or learning track | Hand it to the `scope` skill with this entry as its seed material |
 | Really an idea | Append it to `~/Documents/ideas/Inbox.md` in capture's format, then cancel the task with a note saying where it went |
 | Not worth doing | `--status canceled` and a one-line note saying why |
 | Names two projects | Handle each destination before closing the entry |

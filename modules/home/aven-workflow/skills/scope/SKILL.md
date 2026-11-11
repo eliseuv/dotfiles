@@ -21,7 +21,11 @@ Read the user's goals list if they have one for context, never as something to
 edit. On a resume, **fold the project's inbox in first** — the user's own input
 outranks your agenda — then gap-fill rather than re-interview.
 
-A new project is created path-less; a path is mapped only at scaffolding:
+Choose an existing aven project as the grouping container, or create one when
+needed. A project may hold several independent epics and needs no repo. The
+epic owns its repo through `repo=<absolute-path>` metadata; record the intended
+path while scoping, before scaffolding. Epics may share a repo. Aven project
+path mappings only provide cwd inference and are added after the repo exists:
 
 ```sh
 aven project create <name> --prefix <PREFIX>
@@ -42,9 +46,10 @@ recommendation and real trade-offs. **Write every settled answer into aven
 immediately** — no batching behind "shall I apply?"; the answer is the go-ahead.
 Keep going until the user is satisfied, checking back in ("does this cover it?").
 
-**The project epic** — the project's only epic, holding the scope and, as
-children, every POC, checkpoint and unit: `aven add "<name>" --epic --metadata
-kind=project --metadata track=project|learning --metadata language=<flake>`,
+**The project epic** — one epic for this repo or learning track, holding its
+scope and, as children, every POC, checkpoint and unit: `aven add "<name>" --epic --metadata
+kind=project --metadata track=project|learning --metadata language=<flake>
+--metadata repo=<absolute-path> --project <key> --status backlog`,
 description sections in this order, as they settle:
 
 - `## Problem` (project) or `## Motivation` (learning)
@@ -75,7 +80,8 @@ project epic (`aven epic add <task> <project-epic>`).
   POCs may stay `backlog` (draft) with only objective and scope; don't pretend
   their implementation is decided.
 - **Checkpoint** — task, `kind=checkpoint cp=CP-<n> poc=P<n>` (the `poc` value
-  names its POC), sections `## Deliverables`, `## Acceptance` (pass/fail),
+  names its POC within the same epic), sections `## Deliverables`,
+  `## Acceptance` (pass/fail),
   `## Verification` (reproducible: commands, fixtures, expected output).
   Prerequisites are `aven dep add`; order of listing is not dependency.
   Prefer a narrow vertical slice that exposes the architectural risk over a
@@ -108,7 +114,7 @@ units within their strand.
 ## 3. Finish a scoping pass
 
 ```sh
-aven-lint --project <key>
+aven-lint --epic <ref>
 ```
 
 Resolve substantive gaps rather than filling placeholders. Leave a note on the
@@ -121,13 +127,16 @@ sign-off unless it was already given this session.
 
 **The gate.** Refuse, and say why, unless all hold:
 
-- `aven-lint --project <key>` reports no errors;
+- `aven-lint --epic <ref>` reports no errors;
 - the project epic exists with goals and non-goals;
 - project: at least one POC in `todo`/`active` with at least one checkpoint;
   learning: at least one unit;
 - the destination directory does not exist.
 
-Destination: `~/Projects/project/<name>` or `~/Projects/learning/<name>`.
+Destination: the epic's `repo` path, normally
+`~/Projects/project/<name>` or `~/Projects/learning/<name>`.
+Scope and lint this epic independently of other epics in the same project.
+POC, checkpoint and unit IDs are local to the epic (and topic for units).
 
 ```sh
 REPO=~/Projects/<project|learning>/<name>
@@ -137,6 +146,7 @@ cat "$FRAGMENTS/base.gitignore" "$FRAGMENTS/<language>.gitignore" > "$REPO/.giti
 command cp -f ~/Projects/flakes/<language>.flake.nix "$REPO/flake.nix"
 echo "use flake" > "$REPO/.envrc"
 git -C "$REPO" init
+aven edit <ref> --metadata "repo=$REPO"
 aven project path add <key> "$REPO"
 ```
 
