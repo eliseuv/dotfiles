@@ -74,3 +74,34 @@ codex --remote "unix://$XDG_RUNTIME_DIR/codex-remote-control/app-server.sock"
 To continue a phone session in the terminal, run `codex-phone` on the host.
 This alias opens the service's resume picker across all project directories.
 To resume a specific session directly, run `codex-phone <session-id>`.
+
+## Aven from remote sessions
+
+Remote sessions use the host's local aven client, not the encrypted sync-server
+SQLite file. With aven enabled, Home Manager installs the `capture`, `triage`,
+`scope`, and `audit` skills, loads the shared conventions into Codex's global
+`AGENTS.md`, and allows access to the aven state/configuration directories and
+`~/Documents/ideas`. The existing aven command policy also applies remotely.
+
+A host running the sync server still needs its own client joined to the sync.
+To join Wheatley's empty client to existing data:
+
+1. On an already synced device such as GLaDOS, run `aven sync invite` and leave
+   it running.
+2. In a terminal on Wheatley, run `aven sync join` and paste the invitation.
+3. After joining, enable background sync and start the client daemon:
+
+   ```sh
+   aven config set sync.enabled true
+   systemctl --user restart aven-daemon.service
+   aven sync status
+   aven project list
+   ```
+
+Keep invitations out of files, commits, and logs. Do not run `aven sync setup`
+on the empty client to access existing data: `join` gets its keys and data
+from an already authorized device. The encrypted server database is not a
+client database and must not be passed to `aven --db`.
+
+Start a new remote chat after changing global instructions or sandbox roots.
+Use `aven doctor` to confirm the client database and sync state on that host.

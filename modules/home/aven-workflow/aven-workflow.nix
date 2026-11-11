@@ -18,8 +18,8 @@ in
 
     home.packages = [ avenLint ];
 
-    # Imported from the global CLAUDE.md (developer_preferences.md), so every
-    # repo sees the conventions without a per-repo import.
+    # Both agents load the same conventions globally, including remote sessions.
+    # Codex does not expand Claude-style @ imports.
     home.file.".claude/includes/aven-conventions.md".source = ./conventions.md;
 
     # Imported by learning repos' CLAUDE.md; scaffolded there by the scope skill.
@@ -28,10 +28,18 @@ in
     programs = {
       claude-code.skills = workflowSkills;
       codex.skills = workflowSkills;
+      codex.context = ./conventions.md;
+      codex.settings.sandbox_workspace_write.writable_roots = [
+        "${config.home.homeDirectory}/Projects"
+        "${config.home.homeDirectory}/dotfiles"
+        "${config.xdg.stateHome}/aven"
+        "${config.xdg.configHome}/aven"
+        "${config.home.homeDirectory}/Documents/ideas"
+      ];
 
       # Global exec policy: matching commands run without a prompt and outside
       # the sandbox, which would otherwise block aven's database under
-      # ~/.local/share. Deleting stays manual; the strictest decision wins.
+      # ~/.local/state/aven. Deleting stays manual; the strictest decision wins.
       codex.rules.aven = ''
         prefix_rule(
           pattern = ["aven"],

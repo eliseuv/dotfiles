@@ -124,8 +124,9 @@ def lint(tasks, contexts):
                 if candidate["project"] != task["project"] or kind_of(candidate["id"]) != "checkpoint":
                     return False
                 candidate_context = contexts[candidate["id"]]
-                return (candidate_context["metadata"].get("poc") == label
-                        and candidate_context["epic_parent"] == context["epic_parent"])
+                same_poc = candidate_context["metadata"].get("poc") == label
+                same_epic = candidate_context["epic_parent"] == context["epic_parent"]
+                return same_poc and same_epic
 
             checkpoints = [t for t in tasks if is_own_checkpoint(t)]
             if planned and not checkpoints:
@@ -233,8 +234,8 @@ def main():
         epic = run_aven(global_args, "show", args.epic, "--json")
         if not epic["is_epic"] or epic["deleted"]:
             parser.error("--epic must name a nondeleted epic")
-        tasks = [t for t in tasks if t["id"] == epic["id"] or
-                 (t["epic_parent"] and t["epic_parent"]["id"] == epic["id"])]
+        epic_ids = {epic["id"], *(child["id"] for child in epic["epic_children"])}
+        tasks = [t for t in tasks if t["id"] in epic_ids]
 
     errors, warnings = lint(tasks, contexts)
 
