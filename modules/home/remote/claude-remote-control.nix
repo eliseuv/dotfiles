@@ -32,12 +32,12 @@ in
       }
       // lib.optionalAttrs config.programs.aven.enable {
         # The aven skills (capture, triage, scope, audit) drive the CLI and the
-        # linter unattended. Deleting stays a manual act, and deny wins over allow.
+        # linter unattended. Deleting stays a manual act: it prompts for approval.
         allow = [
           "Bash(aven:*)"
           "Bash(aven-lint:*)"
         ];
-        deny = [ "Bash(aven delete:*)" ];
+        ask = [ "Bash(aven delete:*)" ];
       };
     };
 
