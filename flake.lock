@@ -7,14 +7,14 @@
         ]
       },
       "locked": {
-        "lastModified": 1793959198,
-        "narHash": "sha256-YWgl2AR3q76KK2sBCKLL6W7kny3pDGv6hHhsPkRp0Dg=",
+        "lastModified": 1794436843,
+        "narHash": "sha256-061ACvdv55CMdXvx7Hyt511hl04m7EVN1kL/m+fApc8=",
         "type": "tarball",
-        "url": "https://github.com/raine/aven/releases/latest/download/aven-nix.tar.gz"
+        "url": "https://github.com/raine/aven/releases/download/v0.1.56/aven-nix.tar.gz"
       },
       "original": {
         "type": "tarball",
-        "url": "https://github.com/raine/aven/releases/latest/download/aven-nix.tar.gz"
+        "url": "https://github.com/raine/aven/releases/download/v0.1.56/aven-nix.tar.gz"
       }
     },
     "bootvine": {

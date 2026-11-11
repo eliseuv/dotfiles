@@ -82,10 +82,11 @@
 
     # Aven task manager: upstream's per-release flake wrapping the static
     # prebuilt binary, instead of the source flake whose ~7 min Rust build
-    # reran on every nixpkgs bump. Tracks tagged releases only; the lock pins
-    # the narHash, `nix flake update aven` moves to the latest release.
+    # reran on every nixpkgs bump. Use a versioned archive: a moving latest
+    # URL can change underneath the lock hash. Bump the version here, then
+    # run `nix flake update aven`.
     aven = {
-      url = "https://github.com/raine/aven/releases/latest/download/aven-nix.tar.gz";
+      url = "https://github.com/raine/aven/releases/download/v0.1.56/aven-nix.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
