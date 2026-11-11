@@ -5,8 +5,9 @@
 #
 # Tiles come from the service registry: a service gets one by setting
 # `homelab.services.<name>.dashboard` next to its own config. Widgets query
-# services server-side over loopback; API keys (`widgetKey`) come from sops
-# through an env file rendered at activation.
+# services server-side over loopback; API keys and other credentials
+# (`widgetKey`, `widgetSecrets`) come from sops through an env file rendered
+# at activation.
 {
   config,
   inputs,
@@ -25,7 +26,13 @@ let
   groups = import ./_groups.nix;
 
   tiled = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
-  withKey = lib.filterAttrs (_: service: service.dashboard.widgetKey != null) tiled;
+  # Field -> sops secret for each tile's main widget; `widgetKey` is shorthand
+  # for the `key` field.
+  widgetSecrets =
+    service:
+    service.dashboard.widgetSecrets
+    // lib.optionalAttrs (service.dashboard.widgetKey != null) { key = service.dashboard.widgetKey; };
+  withSecrets = lib.filterAttrs (_: service: widgetSecrets service != { }) tiled;
   controlledTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
     lib.filterAttrs (_: service: service.dashboard.unit != null) tiled
   );
@@ -81,7 +88,8 @@ let
       );
     }
   ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiled);
-  keyVar = name: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name)}_KEY";
+  secretVar =
+    name: field: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] "${name}_${field}")}";
 
   tile =
     name: service:
@@ -92,7 +100,7 @@ let
       mainWidget =
         lib.optionalAttrs (service.port != null) { url = local; }
         // tileCfg.widget
-        // lib.optionalAttrs (tileCfg.widgetKey != null) { key = "{{${keyVar name}}}"; };
+        // lib.mapAttrs (field: _: "{{${secretVar name field}}}") (widgetSecrets service);
     in
     {
       inherit (tileCfg) icon;
@@ -216,6 +224,11 @@ let
       default = null;
       description = "sops secret holding the widget's API key.";
     };
+    widgetSecrets = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "Further fields of `widget` taken from sops secrets, field -> secret name, for widgets that log in with more than a key.";
+    };
     unit = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -314,19 +327,24 @@ in
       message = "homelab.services.${name}.dashboard.group: unknown group ${service.dashboard.group}";
     }) tiled;
 
-    # Declared here too so a widgetKey is all a service needs; modules that also
-    # use the key declare it themselves, with owners and restartUnits.
-    sops.secrets = lib.mapAttrs' (
-      _: service: lib.nameValuePair service.dashboard.widgetKey { }
-    ) withKey;
+    # Declared here too so naming a secret is all a service needs; modules that
+    # also use it declare it themselves, with owners and restartUnits.
+    sops.secrets = lib.genAttrs (lib.concatMap (service: lib.attrValues (widgetSecrets service)) (
+      lib.attrValues withSecrets
+    )) (_: { });
 
     # Rendered root:0400; systemd reads EnvironmentFile before dropping to the
     # service's DynamicUser, so Homepage itself never needs file access.
     sops.templates."homepage-dashboard.env" = {
       content = lib.concatLines (
-        lib.mapAttrsToList (
-          name: service: "${keyVar name}=${config.sops.placeholder.${service.dashboard.widgetKey}}"
-        ) withKey
+        lib.concatLists (
+          lib.mapAttrsToList (
+            name: service:
+            lib.mapAttrsToList (
+              field: secret: "${secretVar name field}=${config.sops.placeholder.${secret}}"
+            ) (widgetSecrets service)
+          ) withSecrets
+        )
       );
       restartUnits = [ "homepage-dashboard.service" ];
     };
