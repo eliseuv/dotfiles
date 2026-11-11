@@ -25,6 +25,7 @@ TRACKS = {"project", "learning"}
 # Superseded by kind=project epics; flagged until migrated or canceled.
 RETIRED_KINDS = {"scope", "curriculum"}
 UNIT_PLANNED_SECTIONS = ["Build", "Milestone", "Checkpoint"]
+MANUAL_PLANNED_SECTIONS = ["Context", "Hazards", "Steps", "Afterwards"]
 
 
 def run_aven(global_args, *args, missing_field_ok=False):
@@ -162,8 +163,8 @@ def lint(tasks, contexts):
                 dep_kind = kind_of(dependency["id"])
                 if dependency["status"] == "canceled":
                     errors.append(f"{ref}: prerequisite {dependency['display_ref']} was canceled; pick its replacement")
-                elif dep_kind not in {"checkpoint", "question", "poc"}:
-                    errors.append(f"{ref}: prerequisite {dependency['display_ref']} is not a checkpoint, POC or question")
+                elif dep_kind not in {"checkpoint", "question", "poc", "manual"}:
+                    errors.append(f"{ref}: prerequisite {dependency['display_ref']} is not a checkpoint, POC, question or manual task")
 
         elif kind == "unit":
             if "unit" not in context["metadata"]:
@@ -187,6 +188,13 @@ def lint(tasks, contexts):
                 unfinished = [r["display_ref"] for r in members if r["status"] not in CLOSED_STATUSES]
                 if unfinished:
                     errors.append(f"{ref}: goal done with unfinished related tasks {', '.join(unfinished)}")
+
+        elif kind == "manual":
+            if task["is_epic"]:
+                errors.append(f"{ref}: kind=manual must be a task, not an epic")
+            if planned:
+                for heading in missing_sections(description, MANUAL_PLANNED_SECTIONS):
+                    errors.append(f"{ref}: manual task has no '## {heading}' section")
 
         elif kind == "question":
             if status not in CLOSED_STATUSES and not context["dependencies"]["blocks"]:
