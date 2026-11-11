@@ -139,11 +139,13 @@ in
         WorkingDirectory = repo;
         RuntimeDirectory = "dotfiles-switch";
         # Run in order, stopping at the first failure.
+        # record before activating: a failed activation has already made
+        # the new system the profile, and often the running one.
         ExecStart = [
           pull
           build
-          "+${activate}"
           record
+          "+${activate}"
           "${lib.getExe pkgs.just} home-switch-self"
         ]
         ++ lib.optional (otherUsers != [ ]) "+${homeSwitchOthers}";
