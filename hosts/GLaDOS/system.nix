@@ -1,8 +1,6 @@
 { ... }:
 {
 
-  imports = [ ./netdata.nix ];
-
   boot.loader.timeout = 2;
 
   # Shared with wheatley, whose nginx hands it to her Pluto as a cookie.

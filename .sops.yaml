@@ -24,14 +24,6 @@ creation_rules:
     - age:
       - *primary
       - *rattmann
-  # wheatley's netdata parent and its streaming children
-  - path_regex: secrets/shared/netdata\.yaml$
-    key_groups:
-    - age:
-      - *primary
-      - *wheatley
-      - *GLaDOS
-      - *rattmann
   # GLaDOS's Pluto, reverse-proxied by wheatley
   - path_regex: secrets/shared/pluto-GLaDOS\.yaml$
     key_groups:

@@ -14,7 +14,6 @@ in
     ./services/ttyd.nix
     ./services/pluto.nix
     ./services/drive.nix
-    ./services/netdata.nix
     ./services/beszel.nix
     ./services/aven.nix
   ];

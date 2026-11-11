@@ -374,7 +374,6 @@ html.dark .service-card {
    Monochrome icons (Bazarr, Ledger) and new tiles use a theme-aware gray;
    the custom host portraits keep their own --host-accent above. */
 li.service[data-name="Drive"] { --icon-accent: 0 100 152; }
-li.service[data-name="Netdata"] { --icon-accent: 0 171 68; }
 li.service[data-name="Jellyfin"] { --icon-accent: 170 92 195; }
 li.service[data-name="Seerr"] { --icon-accent: 141 97 235; }
 li.service[data-name="Navidrome"] { --icon-accent: 0 132 255; }

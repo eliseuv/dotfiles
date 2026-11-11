@@ -11,8 +11,6 @@ let
 in
 {
 
-  imports = [ ./netdata.nix ];
-
   # Kiosk: cage runs a single full-screen Firefox on the laptop panel, logged
   # in as the primary user so its profile keeps the dashboard's basic-auth
   # login. A whole desktop (my.desktop) would bring audio, printing and
