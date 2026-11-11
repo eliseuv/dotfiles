@@ -235,7 +235,10 @@ let
   needsKey =
     lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
     || !lib.all isLocal (
-      targetHosts "reboot" ++ targetHosts "switch" ++ targetHosts "tailscale" ++ targetHosts "unitHost"
+      targetHosts "reboot"
+      ++ targetHosts "switch"
+      ++ targetHosts "tailscale"
+      ++ targetHosts "unitHost"
       ++ lib.concatMap (
         service:
         lib.optional (
@@ -274,6 +277,7 @@ in
     users.users.svcctl = {
       isSystemUser = true;
       group = "svcctl";
+      extraGroups = lib.optional canSwitchHere "systemd-journal";
     };
     users.groups.svcctl = { };
 

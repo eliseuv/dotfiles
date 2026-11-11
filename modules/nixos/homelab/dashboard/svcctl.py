@@ -434,6 +434,38 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.guarded():
             return
+        prefix = "/api/svc/switch-log/"
+        if self.path.startswith(prefix):
+            name = unquote(self.path[len(prefix):])
+            if name not in switchable:
+                return self.reply(404)
+            target = switchable[name]
+            try:
+                if target["hosts"]:
+                    if not ssh_key:
+                        return self.reply(503, {"error": "no SSH key"})
+                    result = remote_any(target["hosts"], "switch-log", target["user"])
+                else:
+                    result = subprocess.run(
+                        ["journalctl", "--quiet", "--no-pager", "--boot",
+                         f"--unit={SWITCH_UNIT}", "--lines=300", "--output=short-iso"],
+                        capture_output=True, timeout=15,
+                    )
+                if result.returncode:
+                    error = result.stderr
+                    if isinstance(error, bytes):
+                        error = error.decode("utf-8", errors="replace")
+                    return self.reply(502, {"error": error.strip() or "Switch output unavailable"})
+                output = result.stdout
+                if isinstance(output, str):
+                    output = output.encode("utf-8")
+                limit = 256 * 1024
+                return self.reply(200, {
+                    "output": output[-limit:].decode("utf-8", errors="replace"),
+                    "fetched_at": time.time(), "truncated": len(output) > limit,
+                })
+            except subprocess.TimeoutExpired:
+                return self.reply(504, {"error": "Switch output request timed out"})
         if self.path == "/api/svc/usage":
             return self.reply(
                 200, {"cores": os.cpu_count(), "memory_total": memory_total(), "services": usage}

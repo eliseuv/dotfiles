@@ -21,9 +21,37 @@
       <h1><span id="title"></span></h1>
     </header>
     <main>
-      <section class="card" id="summary"></section>
+      <p class="eyebrow">Host configuration / Deployment control</p>
+      <div class="toolbar"><button id="refresh" type="button">Refresh host report</button><span id="load-status" role="status">Loading host report…</span></div>
+      <section class="card" aria-label="Deployment overview" id="summary"></section>
+      <section class="card" aria-labelledby="comparison-title">
+        <h2 id="comparison-title">Compare generations</h2>
+        <div class="toolbar">
+          <label>From <select id="compare-from"></select></label>
+          <button type="button" id="swap">Swap</button>
+          <label>To <select id="compare-to"></select></label>
+          <button type="button" id="compare">Compare</button>
+        </div>
+        <div class="toolbar">
+          <label>Package <input type="search" id="package-search" placeholder="Search changes" /></label>
+          <label>Change <select id="change-kind"><option value="">All types</option><option>added</option><option>removed</option><option>updated</option><option>resized</option></select></label>
+        </div>
+        <div id="comparison" aria-live="polite">Choose two kept generations to compare.</div>
+      </section>
+      <section class="card" id="switch-panel" hidden>
+        <h2>Switch to master</h2>
+        <p class="muted">Rebases local commits onto master, builds and activates the system, then switches Home Manager.</p>
+        <p id="switch-status" role="status">Checking switch status…</p>
+        <details id="switch-output">
+          <summary>Recent switch output</summary>
+          <div class="toolbar"><button type="button" id="refresh-log">Refresh output</button><span id="log-status" role="status"></span></div>
+          <p class="muted">Latest 300 journal lines from this boot; may include several switches.</p>
+          <pre id="log-output" tabindex="0" aria-label="Recent switch output"></pre>
+        </details>
+      </section>
       <section class="card">
         <h2>Generations</h2>
+        <div class="toolbar"><label>Find generation <input type="search" id="history-search" placeholder="Number, revision, version or status" /></label><span id="history-count" role="status"></span></div>
         <ol id="generations"></ol>
       </section>
     </main>

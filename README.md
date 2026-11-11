@@ -294,3 +294,23 @@ already derives at runtime.
    # Or manually using nixos-rebuild:
    sudo nixos-rebuild switch --flake .#<hostname>
    ```
+
+### Dashboard host deployments
+
+Open a host's configuration page from its tile on Wheatley's dashboard. The
+page shows running and booted systems, master's evaluated system, and report
+freshness. **Refresh host report** requests a fresh report (limited to once
+every 30 seconds per host).
+
+Search generation history by number, revision, version, or status. Use **From**
+and **To** to compare any two kept generations, then search or filter the
+package changes. Expanding a history row still compares it with the preceding
+kept generation. Comparisons require the updated host-report on remote hosts.
+
+**Switch** uses the existing dashboard login and rebases local commits onto
+master before building, activating, and switching Home Manager. Recent switch
+output shows the latest 300 journal lines from the current boot, capped at
+256 KiB; it refreshes while expanded during a switch. Like host status, this
+output is readable within the dashboard's LAN/tailnet reach. Remote output
+requires the updated remote-control command. Roll out host configuration
+changes before using the new remote features.

@@ -422,3 +422,24 @@ body[data-repo] dd { min-width: 0; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   #switch[data-state="switching"], #switch[data-state="switching"]::before { animation: none; }
 }
+
+/* Deployment workspace controls share the facility palette. */
+[hidden] { display: none !important; }
+.eyebrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0 0 1rem; }
+.toolbar label { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; font-size: 0.9rem; }
+button, input, select { font: inherit; color: var(--text); background: var(--block-bg); border: 1px solid var(--card-border); border-radius: 3px; padding: 0.5rem 0.7rem; max-width: 100%; box-sizing: border-box; }
+button { cursor: pointer; }
+button:hover:not(:disabled) { border-color: rgb(var(--portal-orange)); }
+button:disabled { cursor: default; opacity: 0.6; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, pre:focus-visible { outline: 2px solid rgb(var(--portal-blue)); outline-offset: 3px; }
+.toolbar > span { color: var(--muted); font-size: 0.85rem; }
+#comparison { overflow-wrap: anywhere; }
+#comparison .changes { max-height: 36rem; overflow: auto; }
+#log-output { max-height: 28rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 1rem; background: var(--block-bg); font: 0.75rem/1.6 var(--font-mono); }
+#switch-output summary { cursor: pointer; margin-bottom: 1rem; }
+#summary { border-top: 3px solid rgb(var(--portal-orange)); }
+@media (max-width: 40rem) {
+  .toolbar label { width: 100%; }
+  .toolbar input, .toolbar select { flex: 1; min-width: 0; }
+}

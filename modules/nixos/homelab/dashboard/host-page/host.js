@@ -8,8 +8,18 @@
   const svcHeaders = { "X-Svcctl": "1" };
   let data = null;
   let loadTimer = null;
+  let loading = false;
+  let requestingSwitch = false;
+  let switchError = "";
+  let comparison = null;
+  let comparisonRequest = 0;
+  let logLoading = false;
+  let logTimer = null;
+  let lastHistory = "";
   // "idle"/"switching"/"failed"/"unknown", from svcctl's status.
   let switchState = null;
+  let switchTimer = null;
+  let switchPollRequest = 0;
   // Generation number -> {diff} or {error} once fetched, for expanded rows.
   const diffs = {};
   const expanded = new Set();
@@ -67,6 +77,10 @@
   // --------------------------------------------------------------- loading
 
   const load = (refresh = false) => {
+    if (loading) return;
+    loading = true;
+    document.getElementById("refresh").disabled = true;
+    document.getElementById("load-status").textContent = "Fetching host report…";
     clearTimeout(loadTimer);
     fetch(`/api/hosts/${encodeURIComponent(host)}${refresh ? "?refresh=1" : ""}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
@@ -74,12 +88,17 @@
         const first = data === null;
         data = next;
         render();
+        document.getElementById("load-status").textContent = data.refreshing
+          ? "Refreshing host report…" : `Report updated ${ago(data.fetched_at)}`;
         if (first && data.switch) pollSwitch();
       })
       .catch((status) => {
         if (status === 404) return renderMissing();
+        document.getElementById("load-status").textContent = "Connection failed. Showing the last available report; retry with Refresh.";
       })
       .finally(() => {
+        loading = false;
+        document.getElementById("refresh").disabled = false;
         if (data === null && document.body.dataset.missing) return;
         // Quickly while hostctl is fetching a report, so it shows as soon as
         // it lands.
@@ -88,35 +107,59 @@
   };
 
   const pollSwitch = () => {
+    clearTimeout(switchTimer);
+    const request = ++switchPollRequest;
     fetch("/api/svc/status", { headers: svcHeaders })
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
       .then((status) => {
+        if (request !== switchPollRequest) return;
         const next = status.switch[data.tile] ?? "unknown";
         // A finished switch made a new generation; fetch it now rather than
         // at the next background refresh.
-        if (switchState === "switching" && next !== "switching") load(true);
+        if (switchState === "switching" && next !== "switching") {
+          load(true);
+          if (document.getElementById("switch-output").open) loadLog();
+        }
         switchState = next;
         renderSwitch();
       })
-      .catch(() => {})
-      .finally(() => setTimeout(pollSwitch, switchState === "switching" ? 3000 : 15000));
+      .catch(() => {
+        if (request !== switchPollRequest) return;
+        switchState = "unknown";
+        renderSwitch();
+      })
+      .finally(() => {
+        if (request === switchPollRequest)
+          switchTimer = setTimeout(pollSwitch, switchState === "switching" ? 3000 : 15000);
+      });
   };
 
-  const doSwitch = () => {
-    if (!confirm(`Pull origin/master on ${data.tile} and switch to it?`)) return;
-    fetch(`/api/svc/switch/${encodeURIComponent(data.tile)}`, {
-      method: "POST",
-      headers: svcHeaders,
-    }).then((response) => {
+  const doSwitch = async () => {
+    if (requestingSwitch || switchState === "switching") return;
+    if (!confirm(`Rebase local commits onto origin/master on ${data.tile}, build and switch?`)) return;
+    requestingSwitch = true;
+    switchError = "";
+    renderSwitch();
+    try {
+      const response = await fetch(`/api/svc/switch/${encodeURIComponent(data.tile)}`, {
+        method: "POST", headers: svcHeaders,
+      });
       if (response.status === 401) {
-        // svcctl's login page (controls.nix), as on the dashboard.
+        switchError = "Login required to switch this host.";
         if (confirm("Log in to use the dashboard controls?")) location.href = "/api/svc/login";
         return;
       }
-      if (!response.ok) return alert(`Switch ${data.tile} failed (${response.status})`);
+      if (!response.ok) throw new Error(`Switch request failed (${response.status})`);
       switchState = "switching";
+      clearTimeout(switchTimer);
+      switchPollRequest++;
+      switchTimer = setTimeout(pollSwitch, 3000);
+    } catch (error) {
+      switchError = `${error.message}. Refresh status before retrying if the connection was lost.`;
+    } finally {
+      requestingSwitch = false;
       renderSwitch();
-    });
+    }
   };
 
   const toggle = (number) => {
@@ -155,8 +198,17 @@
     if (!button) return;
     const state = switchState ?? "unknown";
     button.dataset.state = state;
-    button.disabled = state === "switching";
-    button.textContent = switchLabels[state];
+    button.disabled = requestingSwitch || state === "switching";
+    button.textContent = requestingSwitch ? "Requesting…" : switchLabels[state];
+    document.getElementById("switch-panel").hidden = !data.switch;
+    document.getElementById("switch-status").textContent = switchError || (requestingSwitch
+      ? "Submitting switch request…" : {
+        idle: "Switch service is idle. Deployment status is shown above.",
+        switching: "Switch in progress. Open recent output for build and activation messages.",
+        failed: "Last switch failed. Inspect recent output before retrying.",
+        unknown: "Switch status unavailable. Refresh before starting another switch.",
+      }[state]);
+    scheduleLog();
     button.title =
       state === "failed"
         ? "The last switch failed; see journalctl -u dotfiles-switch on the host. Click to retry."
@@ -198,6 +250,7 @@
         commit(master.rev),
         status.generation != null && ` · generation ${status.generation}`,
         ` · checked ${ago(master.checked_at)}`,
+        master.evaluated_at && ` · evaluated ${date(master.evaluated_at)}`,
         master.error && el("pre", { class: "error" }, master.error),
       ];
 
@@ -222,11 +275,13 @@
         el("dt", {}, "Running"),
         el("dd", {}, runningRow),
         bootedRow && el("dt", {}, "Booted"),
-        bootedRow && el("dd", {}, bootedRow),
+        bootedRow && el("dd", {}, bootedRow, booted && [" · ", commit(booted.revision)]),
         el("dt", {}, "Master"),
         el("dd", {}, masterRow),
         el("dt", {}, "Report"),
         el("dd", {}, reportRow),
+        unreachable && el("dt", {}, "Report error"),
+        unreachable && el("dd", { class: "error" }, data.error),
       ),
     );
     renderSwitch();
@@ -265,6 +320,10 @@
         detail = `${versions(from) || "unversioned"} → ${versions(to) || "unversioned"}`;
       }
     }
+    return { name, kind, detail, size };
+  };
+
+  const changeRow = ({ name, kind, detail, size }) => {
     const shrunk = size?.startsWith("-");
     return el(
       "li",
@@ -280,7 +339,12 @@
   const details = (generation, previous) => {
     const fetched = diffs[generation.number];
     if (!fetched) return el("div", { class: "details muted" }, "Loading changes…");
-    if (fetched.error) return el("div", { class: "details error" }, fetched.error);
+    if (fetched.error) return el("div", { class: "details error" }, fetched.error, " ",
+      el("button", { type: "button", onclick: () => {
+        delete diffs[generation.number];
+        expanded.delete(generation.number);
+        toggle(generation.number);
+      } }, "Retry changes"));
     const { diff } = fetched;
     if (diff.base == null) return el("div", { class: "details muted" }, "Oldest kept generation.");
     const base = generations().find((other) => other.number === diff.base) ?? previous;
@@ -300,7 +364,7 @@
       { class: "details" },
       el("p", {}, `Changes from generation ${diff.base}`, compare && [" · ", compare]),
       lines.length
-        ? el("ul", { class: "changes" }, lines.map(change))
+        ? el("ul", { class: "changes" }, lines.map(change).map(changeRow))
         : el("p", { class: "muted" }, "No version changes; configuration only."),
     );
   };
@@ -309,9 +373,15 @@
     const list = document.getElementById("generations");
     const report = data.report;
     if (!report) {
+      lastHistory = "";
       list.replaceChildren(el("li", { class: "muted" }, "No report yet."));
+      filterHistory();
       return;
     }
+    const historyKey = JSON.stringify([data.report, data.master?.path, [...expanded], diffs]);
+    if (lastHistory === historyKey) { filterHistory(); return; }
+    lastHistory = historyKey;
+    const focused = document.activeElement?.closest("[data-generation]")?.dataset.generation;
     const masterPath = data.master?.path;
     const all = generations();
     list.replaceChildren(
@@ -331,6 +401,7 @@
               "div",
               {
                 class: "row",
+                "data-generation": generation.number,
                 role: "button",
                 tabindex: "0",
                 "aria-expanded": String(open),
@@ -360,24 +431,154 @@
         })
         .reverse(),
     );
+    if (focused) list.querySelector(`[data-generation="${focused}"]`)?.focus({ preventScroll: true });
+    if (!all.length) list.replaceChildren(el("li", { class: "muted" }, "No kept generations."));
+    filterHistory();
   };
 
   const render = () => {
     const name = data.tile || host;
     document.title = `${name} · Aperture Science`;
     document.getElementById("title").textContent = name;
+    const focused = document.activeElement?.id;
     renderSummary();
+    if (focused === "switch") document.getElementById("switch")?.focus({ preventScroll: true });
     renderGenerations();
+    updateSelectors();
   };
 
   const renderMissing = () => {
     document.body.dataset.missing = "true";
+    document.getElementById("load-status").textContent = "Host unavailable.";
     document.getElementById("title").textContent = host || "No host";
     document
       .getElementById("summary")
       .replaceChildren(el("p", { class: "muted" }, `No host page for "${host}".`));
   };
 
+  const filterHistory = () => {
+    const query = document.getElementById("history-search").value.trim().toLowerCase();
+    const rows = [...document.querySelectorAll("#generations > .generation")];
+    for (const row of rows) row.hidden = !row.querySelector(".row").textContent.toLowerCase().includes(query);
+    document.getElementById("history-count").textContent = `${rows.filter(row => !row.hidden).length} of ${rows.length} generations`;
+  };
+
+  const updateSelectors = () => {
+    const all = generations();
+    const target = byPath(data.report?.current) || all.at(-1);
+    const previous = all[all.indexOf(target) - 1] || all.at(-2) || target;
+    for (const [id, fallback] of [["compare-from", previous], ["compare-to", target]]) {
+      const select = document.getElementById(id);
+      const key = JSON.stringify(all.map(g => [g.number, g.revision, g.path]));
+      if (select.dataset.key !== key) {
+        const selected = select.value;
+        select.replaceChildren(...all.map(g => el("option", { value: g.number }, `#${g.number} · ${g.revision?.slice(0, 7) || "unknown revision"}`)));
+        select.value = all.some(g => String(g.number) === selected) ? selected : String(fallback?.number || "");
+        select.dataset.key = key;
+        if (selected && select.value !== selected) invalidateComparison();
+      }
+      select.disabled = !all.length;
+    }
+    document.getElementById("compare").disabled = !all.length;
+    document.getElementById("swap").disabled = !all.length;
+  };
+
+  const renderComparison = () => {
+    const panel = document.getElementById("comparison");
+    if (!comparison) return;
+    const { diff, from, to } = comparison;
+    const changes = diff.changes.split("\n").filter(Boolean).map(change);
+    const query = document.getElementById("package-search").value.toLowerCase().trim();
+    const kind = document.getElementById("change-kind").value;
+    const visible = changes.filter(c => (!kind || c.kind === kind) && `${c.name} ${c.detail}`.toLowerCase().includes(query));
+    const counts = ["added", "removed", "updated", "resized"].map(k => `${changes.filter(c => c.kind === k).length} ${k}`).join(" · ");
+    const a = splitRevision(from?.revision), b = splitRevision(to?.revision);
+    const link = a.rev && b.rev && a.rev !== b.rev && !a.dirty && !b.dirty
+      ? el("a", { href: `${repo}/compare/${a.rev}...${b.rev}`, target: "_blank", rel: "noopener" }, "Configuration changes") : null;
+    panel.replaceChildren(
+      el("p", {}, `Generation ${diff.base} → ${diff.number}`, link && [" · ", link]),
+      el("p", { class: "muted" }, counts),
+      changes.length ? el("p", { class: "muted" }, `${visible.length} of ${changes.length} changes`) : el("p", {}, "No closure version or size changes reported."),
+      el("ul", { class: "changes" }, visible.map(changeRow)),
+      changes.length && !visible.length && el("p", {}, "No changes match these filters."),
+    );
+  };
+
+  const invalidateComparison = () => {
+    comparisonRequest++;
+    comparison = null;
+    document.getElementById("comparison").textContent = "Selection changed. Choose Compare to load changes.";
+  };
+
+  const doCompare = async () => {
+    const request = ++comparisonRequest;
+    const base = document.getElementById("compare-from").value;
+    const number = document.getElementById("compare-to").value;
+    const panel = document.getElementById("comparison");
+    comparison = null;
+    panel.textContent = "Comparing closures…";
+    try {
+      const response = await fetch(`/api/hosts/${encodeURIComponent(host)}/compare/${base}/${number}`);
+      if (!response.ok) throw new Error(response.status === 404 ? "Comparison unavailable on this dashboard" : (await response.json()).error || "Comparison unavailable");
+      const diff = await response.json();
+      if (request !== comparisonRequest) return;
+      comparison = { diff, from: generations().find(g => g.number === Number(base)), to: generations().find(g => g.number === Number(number)) };
+      renderComparison();
+    } catch (error) {
+      if (request === comparisonRequest) panel.textContent = `${error.message}. Refresh the host report or retry; remote hosts may need updating.`;
+    }
+  };
+
+  const scheduleLog = () => {
+    if (!document.getElementById("switch-output").open || switchState !== "switching") {
+      clearTimeout(logTimer);
+      logTimer = null;
+    } else if (logTimer === null && !logLoading) {
+      logTimer = setTimeout(() => { logTimer = null; loadLog(); }, 3000);
+    }
+  };
+
+  const loadLog = async () => {
+    if (logLoading || !data?.switch) return;
+    logLoading = true;
+    const status = document.getElementById("log-status");
+    status.textContent = "Fetching output…";
+    document.getElementById("refresh-log").disabled = true;
+    try {
+      const response = await fetch(`/api/svc/switch-log/${encodeURIComponent(data.tile)}`, { headers: svcHeaders });
+      if (!response.ok) throw new Error(response.status === 404 ? "Switch output unavailable on this host" : (await response.json()).error || "Switch output unavailable");
+      const result = await response.json();
+      const output = document.getElementById("log-output");
+      const atBottom = output.scrollHeight - output.scrollTop - output.clientHeight < 24;
+      const position = output.scrollTop;
+      output.textContent = result.output || "No switch output recorded in this boot.";
+      output.scrollTop = atBottom ? output.scrollHeight : position;
+      status.textContent = `Fetched ${date(result.fetched_at)}${result.truncated ? " · output truncated" : ""}`;
+    } catch (error) {
+      status.textContent = `${error.message}. Previous output retained.`;
+    } finally {
+      logLoading = false;
+      document.getElementById("refresh-log").disabled = false;
+      scheduleLog();
+    }
+  };
+
+  document.getElementById("refresh").addEventListener("click", () => load(true));
+  document.getElementById("history-search").addEventListener("input", filterHistory);
+  document.getElementById("compare").addEventListener("click", doCompare);
+  for (const id of ["compare-from", "compare-to"]) document.getElementById(id).addEventListener("change", invalidateComparison);
+  document.getElementById("swap").addEventListener("click", () => {
+    const from = document.getElementById("compare-from"), to = document.getElementById("compare-to");
+    [from.value, to.value] = [to.value, from.value];
+    invalidateComparison();
+  });
+  document.getElementById("package-search").addEventListener("input", renderComparison);
+  document.getElementById("change-kind").addEventListener("change", renderComparison);
+  document.getElementById("refresh-log").addEventListener("click", loadLog);
+  document.getElementById("switch-output").addEventListener("toggle", () => {
+    if (document.getElementById("switch-output").open) loadLog();
+    else { clearTimeout(logTimer); logTimer = null; }
+  });
   document.getElementById("title").textContent = host;
   load(true);
 })();

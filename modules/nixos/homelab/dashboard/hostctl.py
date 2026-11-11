@@ -20,7 +20,9 @@ import socket
 import subprocess
 import sys
 import threading
+import tempfile
 import time
+import weakref
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -67,9 +69,15 @@ def load_addresses():
 
 
 def write_atomically(path, data):
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data))
-    tmp.replace(path)
+    # Adjacent and arbitrary comparisons can produce the same cache entry.
+    with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as file:
+        tmp = Path(file.name)
+        try:
+            json.dump(data, file)
+            file.close()
+            tmp.replace(path)
+        finally:
+            tmp.unlink(missing_ok=True)
 
 
 # Host -> its last resolved LAN address.
@@ -261,6 +269,27 @@ def diff(host, number):
     return result
 
 
+# Serialize requests for each host/pair so concurrent clients share the cache.
+comparison_lock = threading.Lock()
+comparison_locks = weakref.WeakValueDictionary()
+
+
+def compare(host, base, number):
+    with comparison_lock:
+        lock = comparison_locks.setdefault((host, base, number), threading.Lock())
+    with lock:
+        report = state[host]["report"]
+        kept = {g["number"]: g for g in (report or {}).get("generations", [])}
+        if base not in kept or number not in kept:
+            raise RuntimeError("Generation unavailable; refresh the host report")
+        cached = diff_file(kept[number]["path"], kept[base]["path"])
+        if cached.exists():
+            return {**json.loads(cached.read_text()), "base": base, "number": number}
+        result = run_report(host, "compare", str(base), str(number))
+        write_atomically(diff_file(result["path"], result["base_path"]), result)
+        return result
+
+
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body=None):
         data = json.dumps(body).encode() if body is not None else b""
@@ -305,6 +334,12 @@ class Handler(BaseHTTPRequestHandler):
                     "status": deploy_status(entry["report"], master),
                 },
             )
+        if (len(parts) == 6 and parts[3] == "compare"
+                and all(re.fullmatch(r"[0-9]+", part) for part in parts[4:])):
+            try:
+                return self.reply(200, compare(host, int(parts[4]), int(parts[5])))
+            except RuntimeError as error:
+                return self.reply(502, {"error": str(error)})
         if len(parts) == 5 and parts[3] == "diff" and re.fullmatch(r"[0-9]+", parts[4]):
             try:
                 return self.reply(200, diff(host, int(parts[4])))

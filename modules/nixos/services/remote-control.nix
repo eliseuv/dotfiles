@@ -51,6 +51,13 @@ let
     ${lib.optionalString services.dotfilesSwitch.enable ''
       switch) exec ${systemctl} start --no-block ${switchUnit} ;;
       switch-status) exec ${systemctl} show --property=ActiveState,Result --value ${switchUnit} ;;
+      switch-log) exec ${config.systemd.package}/bin/journalctl --quiet --no-pager --boot --unit=${switchUnit} --lines=300 --output=short-iso ;;
+      compare\ *)
+        if [[ $SSH_ORIGINAL_COMMAND =~ ^compare\ ([0-9]+)\ ([0-9]+)$ ]]; then
+          exec ${hostReport} compare "''${BASH_REMATCH[1]}" "''${BASH_REMATCH[2]}"
+        fi
+        exit 1
+        ;;
       generations) exec ${hostReport} generations ;;
       # host-report checks the number itself.
       diff\ *) exec ${hostReport} diff "''${SSH_ORIGINAL_COMMAND#diff }" ;;
@@ -83,6 +90,7 @@ in
     users.users.${user} = {
       isSystemUser = true;
       group = user;
+      extraGroups = lib.optional services.dotfilesSwitch.enable "systemd-journal";
       useDefaultShell = true;
       openssh.authorizedKeys.keys = [ ''restrict,command="${dispatch}" ${svcctlKey}'' ];
     };

@@ -5,6 +5,7 @@
 # one argument itself.
 #
 #   host-report generations   current and booted systems, every generation
+#   host-report compare <FROM> <TO>  closure diff between kept generations
 #   host-report diff <N>      closure diff of generation N against the
 #                             previous generation that still exists
 #
@@ -69,13 +70,21 @@ pkgs.writeShellApplication {
           --argjson uptime "$(awk '{ print int($1) }' /proc/uptime)" \
           '{$host, $current, $booted, $uptime, generations: .}'
       ;;
-    diff)
+    diff|compare)
       number=''${2:-}
+      if [ "$1" = compare ]; then number=''${3:-}; fi
       [[ $number =~ ^[0-9]+$ ]] && [ -e "$profiles/system-$number-link" ] || {
         echo "host-report: no generation ''${number:-<none>}" >&2
         exit 1
       }
       base=$(numbers | awk -v n="$number" '$1 < n { base = $1 } END { print base }')
+      if [ "$1" = compare ]; then
+        base=''${2:-}
+        [[ $base =~ ^[0-9]+$ ]] && [ -e "$profiles/system-$base-link" ] || {
+          echo "host-report: no base generation" >&2
+          exit 1
+        }
+      fi
       path=$(readlink -f "$profiles/system-$number-link")
       if [ -z "$base" ]; then
         jq -n --argjson number "$number" --arg path "$path" \
@@ -83,16 +92,19 @@ pkgs.writeShellApplication {
         exit 0
       fi
       base_path=$(readlink -f "$profiles/system-$base-link")
+      # Keep command failures fatal; a failed command substitution inside jq
+      # would otherwise look like an empty successful comparison.
+      changes=$(nix store diff-closures "$base_path" "$path")
       jq -n \
         --argjson number "$number" \
         --arg path "$path" \
         --argjson base "$base" \
         --arg base_path "$base_path" \
-        --arg changes "$(nix store diff-closures "$base_path" "$path")" \
+        --arg changes "$changes" \
         '{$number, $path, $base, $base_path, $changes}'
       ;;
     *)
-      echo "Usage: host-report generations | diff <N>" >&2
+      echo "Usage: host-report generations | diff <N> | compare <FROM> <TO>" >&2
       exit 1
       ;;
     esac
