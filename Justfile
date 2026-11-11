@@ -4,11 +4,35 @@
 pull:
     -git pull --rebase
 
+# A bare `update` or one naming aven also moves aven to its newest release
+# (see bump-aven); a failed lookup (offline) only skips that.
 update *inputs: pull
+    #!/usr/bin/env bash
+    set -euo pipefail
+    flake_before=$(sha256sum flake.nix)
+    case " {{inputs}} " in
+        "  "|*" aven "*) {{just_executable()}} bump-aven || echo "update: aven bump skipped" >&2 ;;
+    esac
     nix flake update {{inputs}} --verbose
     git restore --staged .
     git add flake.lock
+    [ "$flake_before" = "$(sha256sum flake.nix)" ] || git add flake.nix
     git commit --message "[flake] update {{inputs}}"
+
+# Point the aven input at the newest release. The URL is versioned because a
+# moving `latest` URL changes underneath the lock's narHash; the lock itself
+# is refreshed by `update`. No-op when already on the newest tag.
+bump-aven:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    latest=$(gh release view --repo raine/aven --json tagName --jq .tagName)
+    current=$(rg -o 'releases/download/(v[0-9.]+)/aven-nix' -r '$1' --no-line-number flake.nix)
+    if [ "$latest" = "$current" ]; then
+        echo "bump-aven: already on $latest, skipping"
+        exit 0
+    fi
+    sed -i "s#releases/download/$current/aven-nix#releases/download/$latest/aven-nix#" flake.nix
+    echo "bump-aven: $current -> $latest"
 
 update-nix:
     {{just_executable()}} update nixpkgs nixpkgs-master nixpkgs-stable
