@@ -18,6 +18,7 @@
       enable = true;
       basePath = "/rattmann/terminal";
     };
+    beszelAgent.enable = true;
   };
 
   my.secrets.system.enable = true;

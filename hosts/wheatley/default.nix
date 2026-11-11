@@ -13,6 +13,7 @@
     };
     nas.enable = true;
     dotfilesSwitch.enable = true;
+    beszelAgent.enable = true;
     # Central git hub for every host's projects (modules/nixos/services/git-hub.nix)
     gitHub = {
       enable = true;

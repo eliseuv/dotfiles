@@ -76,6 +76,7 @@
       bindAddress = "0.0.0.0";
     };
     remoteUnits = [ "pluto.service" ];
+    beszelAgent.enable = true;
   };
 
   # Its firewall for the above and its dev servers (homelab/workstation.nix).

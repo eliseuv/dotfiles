@@ -98,6 +98,8 @@
         };
       };
 
+      beszelAgent.enable = lib.mkEnableOption "the Beszel agent, polled by wheatley's hub (services/beszel-agent.nix)";
+
     };
 
     gaming.enable = lib.mkEnableOption "games (Steam on NixOS)";
