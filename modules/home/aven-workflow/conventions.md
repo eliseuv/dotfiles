@@ -22,7 +22,8 @@ Structure is expressed with aven's own primitives plus a `kind` metadata key.
 | Prerequisite | `aven dep add <checkpoint> <prerequisite>` |
 | Open question | task `kind=question` that blocks what it gates (`dep add`) |
 | Evidence | note beginning `Evidence:`, appended before a checkpoint or POC goes `done` |
-| Handoff | the latest note beginning `Handoff:` on the project epic — `aven context` shows it |
+| Handoff (between agent sessions) | the latest note beginning `Handoff:` on the project epic — `aven context` shows it |
+| Manual steps (what only the user can do: secrets, deploys, browser logins, hardware) | task `kind=manual`, `status=todo`, in the project the work belongs to, sections `## Context`, `## Hazards`, `## Steps` (numbered; exact commands, each ending in what to observe), `## Afterwards`. It never holds a secret value. Blocks the checkpoint it gates (`dep add`) and is `related` to other work it finishes |
 | Learning unit | task `kind=unit unit=U2`, child of a `track=learning` project epic, sections `## Theory`, `## Build`, `## Milestone`, `## Checkpoint`; progress as notes; units chained in order with `dep add`. A track with parallel strands tags each unit `topic=<letter>` and chains within the strand |
 | Goal spanning projects | task `kind=goal` in the project it mainly serves; its members are `aven related add <goal> <task>` links, which may cross projects. It is not an epic, so members stay in their own project epic |
 
@@ -43,6 +44,9 @@ with `--available-at`; frozen means it has no open tasks.
 - **User → agent**: the user runs `aven add "..."` from inside a repo, landing
   in that project's inbox. Never create inbox tasks on the user's behalf unless
   asked — mixing your proposals in makes their input unreadable.
+- **Agent → user, manual steps**: when work ends with steps only the user can
+  do, offer a `kind=manual` task in one line and create it only on a yes (the
+  `human-handoff` skill).
 - **Agent → user**: `README.md` — a brief presentation and usage instructions.
   Keeping it accurate is part of finishing work. It never restates scope, POCs
   or checkpoints; those live in aven.
@@ -63,5 +67,6 @@ with `--available-at`; frozen means it has no open tasks.
   POC with at least one checkpoint (or at least one unit), and a clean
   `aven-lint --epic <ref>`. The `scope` skill owns that gate.
 - Skills: `capture` (never asks), `triage` (drains the inbox), `scope` (settles
-  structure, scaffolds repos), `audit` (reviews a project against its repo).
+  structure, scaffolds repos), `audit` (reviews a project against its repo),
+  `human-handoff` (files the steps only the user can do).
 - Keep task refs out of commits, PRs and anything external.
