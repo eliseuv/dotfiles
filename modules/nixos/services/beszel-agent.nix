@@ -7,9 +7,7 @@
 let
   # The hub's public key, which agents accept connections from. The hub
   # generates its key pair on first start, so this is only known once it has
-  # run: copy it from the hub's "Add system" dialog, then switch the agents.
-  # Not a secret.
-  hubKey = null;
+  hubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID85SvH6HrhB+7sYnobiXyoUJClLBrbw/dxAXNPY6Abn";
 
   port = 45876;
   isHub = config.my.host.name == "wheatley";
