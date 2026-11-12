@@ -49,6 +49,7 @@
     containers.enable = true;
     virtualisation.enable = true;
     dotfilesSwitch.enable = true;
+    beszelAgent.enable = true;
     remoteTailscale.enable = true;
     remotePowerOff.enable = true;
     # Served through wheatley's dashboard nginx, which proxies this subpath to

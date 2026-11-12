@@ -1,5 +1,5 @@
-# Beszel hub: system metrics with history and alerts for wheatley, GLaDOS and
-# rattmann. It polls their agents (modules/nixos/services/beszel-agent.nix)
+# Beszel hub: system metrics with history and alerts for wheatley, GLaDOS, rattmann
+# and chell. It polls their agents (modules/nixos/services/beszel-agent.nix)
 # over SSH: wheatley's on loopback, the others' over the tailnet. Open to the
 # LAN like Homepage itself.
 #
@@ -26,7 +26,7 @@ let
     wheatley = "127.0.0.1";
   }
   // lib.filterAttrs (_: address: address != null) {
-    inherit (config.homelab.network.tailnet) GLaDOS rattmann;
+    inherit (config.homelab.network.tailnet) GLaDOS rattmann chell;
   };
 
   # JSON is YAML.
