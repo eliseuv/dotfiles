@@ -184,14 +184,20 @@ home-switch-others except=env('USER'):
 
 after-switch: record-gen commit-gen home-switch gc
 
-system-test: pull sudo-keepalive && home-switch
+# Both would rebase and build the same checkout at once.
+[private]
+no-service-switch:
+    @! systemctl is-active --quiet dotfiles-switch.service || \
+        (echo "a dashboard switch (dotfiles-switch.service) is running, wait for it" >&2 && exit 1)
+
+system-test: no-service-switch pull sudo-keepalive && home-switch
     nh os test .
 
-system-switch: pull sudo-keepalive && after-switch
+system-switch: no-service-switch pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os switch .
 
-system-boot: pull sudo-keepalive && after-switch
+system-boot: no-service-switch pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os boot .
 
