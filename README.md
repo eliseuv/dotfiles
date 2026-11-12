@@ -308,7 +308,16 @@ package changes. Expanding a history row still compares it with the preceding
 kept generation. Comparisons require the updated host-report on remote hosts.
 
 **Switch** uses the existing dashboard login and rebases local commits onto
-master before building, activating, and switching Home Manager. Recent switch
+master before building, activating, and switching Home Manager. Uncommitted
+changes to tracked files are first committed as a `wip:` commit, kept for you
+to amend or squash; a checkout on any branch but master is refused, and a
+rebase conflict aborts the switch with the tree as it was. Each switched
+generation is tagged `<host>-<generation>` like `just commit-gen` does; the
+service only tries to push the tag, so it usually stays local until the next
+`git push --follow-tags` from that host. The page shows the stage a switch is
+at and, when one fails, the stage and reason. `just system-switch`,
+`system-boot` and `system-test` refuse to run while a dashboard switch is in
+progress. Recent switch
 output shows the latest 300 journal lines from the current boot, capped at
 256 KiB; it refreshes while expanded during a switch. Like host status, this
 output is readable within the dashboard's LAN/tailnet reach. Remote output
