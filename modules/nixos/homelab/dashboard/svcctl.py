@@ -49,6 +49,11 @@ ssh_key = sys.argv[9] if len(sys.argv) > 9 else None
 
 ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
+# switch-status (services/_switch-status.nix), for this host's own switch.
+SWITCH_STATUS = os.environ.get("SVCCTL_SWITCH_STATUS")
+# A switch started from here that hasn't begun to run this long after is
+# taken not to have started at all.
+SWITCH_START_GRACE = 60
 
 
 local_units = {name: target["unit"] for name, target in units.items() if not target["hosts"]}
@@ -66,11 +71,24 @@ for targets in (rebootable, switchable, tailscalable, remote_units, port_targets
 # request: a sleeping host's mDNS lookup alone takes ~9s to fail.
 reachable = {name: "unknown" for name in probed}
 
-# Tile name -> "idle"/"switching"/"failed" for remote switch tiles, from
-# watch_switch(); the local one is read from systemd on each request.
+# Tile name -> "idle"/"switching"/"failed" for remote switch tiles, and the
+# status the host keeps of its latest run, from watch_switch(); the local one
+# is read on each request.
 remote_switch = {
     name: "unknown" for name, target in switchable.items() if target["hosts"]
 }
+remote_switch_detail = {name: None for name in remote_switch}
+
+# Tile name -> {previous, modern, since} for switches started from here that
+# haven't been seen to end: `previous` is the run before, so its result isn't
+# taken for the new one's. See track_switch().
+pending_switch = {}
+
+# Remote switch tiles with a watch_switch() running; starting and ending one
+# hold the lock, so a switch can't land between a watcher's last look and its
+# end.
+switch_watchers = set()
+switch_watchers_lock = threading.Lock()
 
 
 # Tile name -> "on"/"off"/"unknown" for Tailscale tiles, from watch_tailscale().
@@ -315,29 +333,109 @@ def switch_state(show_output):
     return "idle"
 
 
-def local_switch_state():
-    result = subprocess.run(
-        ["systemctl", "show", "--property=ActiveState,Result", "--value", SWITCH_UNIT],
-        capture_output=True,
-        text=True,
-    )
-    return switch_state(result.stdout)
+def parse_switch(output):
+    # (state, detail, run) from switch-status's JSON. A host not redeployed
+    # since it gained switch-status still prints switch_state()'s two lines,
+    # which tell neither the run nor its detail. `detail` is the status the
+    # host keeps of the run, only once it's this run's.
+    try:
+        status = json.loads(output)
+    except ValueError:
+        return switch_state(output), None, None
+    if not isinstance(status, dict) or "ActiveState" not in status:
+        return "unknown", None, None
+    last = status.get("last") if isinstance(status.get("last"), dict) else None
+    # systemd unloads the unit once it's inactive, forgetting its
+    # InvocationID and Result; the unit's own status still has them.
+    run = status.get("InvocationID") or (last or {}).get("invocation")
+    if last and last.get("invocation") != run:
+        last = None
+    if status["ActiveState"] in ("activating", "active", "deactivating"):
+        state = "switching"
+    elif status["ActiveState"] == "failed" or (last or {}).get("result") not in (None, "success"):
+        state = "failed"
+    else:
+        state = "idle"
+    return state, last, run
 
 
-def watch_switch(name, until_done):
-    # Polled over SSH only around switches started from here, plus once at
-    # startup, rather than on every status request: each poll is a login.
-    hosts = switchable[name]["hosts"]
+def begin_switch(name, before):
+    # Called with what the host reported just before the start: switch-status
+    # JSON, or nothing from a host that doesn't print it.
+    previous = parse_switch(before)[2] if before.strip() else None
+    pending_switch[name] = {
+        "previous": previous,
+        "modern": bool(before.strip()),
+        "since": time.monotonic(),
+    }
+
+
+def track_switch(name, state, detail, run):
+    # A switch started from here counts as switching until its run is seen:
+    # `start --no-block` returns before the run begins, and until it does the
+    # unit still shows the run before, idle or failed.
+    pending = pending_switch.get(name)
+    if pending is None:
+        return state, detail
+    if state == "switching" or (run is not None and run != pending["previous"]):
+        pending["seen"] = True
+    if state == "switching":
+        return state, detail
+    if pending.get("seen"):
+        pending_switch.pop(name, None)
+        return state, detail
+    if time.monotonic() - pending["since"] < SWITCH_START_GRACE:
+        return "switching", None
+    pending_switch.pop(name, None)
+    if not pending["modern"]:
+        # No run to tell apart: a switch over between two polls looks like
+        # one that never started.
+        return state, detail
+    return "failed", {"message": "the switch didn't start"}
+
+
+def local_switch():
+    if SWITCH_STATUS:
+        command = [SWITCH_STATUS]
+    else:
+        command = ["systemctl", "show", "--property=ActiveState,Result", "--value", SWITCH_UNIT]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        return "unknown", None, None
+    return parse_switch(result.stdout)
+
+
+def watch_switch(name):
+    # Polled over SSH only while a switch started from here hasn't been seen
+    # to end, and from startup until the host first answers, rather than on
+    # every status request: each poll is a login. Only while the host answers
+    # pings, so one that's off costs nothing.
+    target = switchable[name]
     while True:
-        try:
-            result = remote_any(hosts, "switch-status", switchable[name]["user"])
-            if result.returncode == 0:
-                remote_switch[name] = switch_state(result.stdout)
-        except subprocess.TimeoutExpired:
-            pass
-        if not until_done or remote_switch[name] != "switching":
+        answered = False
+        if reachable.get(name) == "up":
+            try:
+                result = remote_any(target["hosts"], "switch-status", target["user"])
+                if result.returncode == 0:
+                    answered = True
+                    state, detail = track_switch(name, *parse_switch(result.stdout))
+                    remote_switch[name] = state
+                    remote_switch_detail[name] = detail
+            except subprocess.TimeoutExpired:
+                pass
+        with switch_watchers_lock:
+            if answered and remote_switch[name] != "switching" and name not in pending_switch:
+                switch_watchers.discard(name)
+                return
+        time.sleep(10 if answered else 30)
+
+
+def start_switch_watch(name):
+    with switch_watchers_lock:
+        if name in switch_watchers:
             return
-        time.sleep(10)
+        switch_watchers.add(name)
+    threading.Thread(target=watch_switch, args=(name,), daemon=True).start()
 
 
 def tailscale_backend(status_output):
@@ -411,12 +509,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def host_action(self, target, verb, local_command):
         # Runs `local_command` here when the target's `hosts` is empty, else
-        # `verb` over SSH on the first of them that connects. Replies, and says
-        # whether it worked.
+        # `verb` over SSH on the first of them that connects. Replies, and
+        # returns the finished process if it worked, None otherwise.
         hosts = target["hosts"]
         if hosts and not ssh_key:
             self.reply(404)
-            return False
+            return None
         try:
             if hosts:
                 result = remote_any(hosts, verb, target["user"])
@@ -424,12 +522,12 @@ class Handler(BaseHTTPRequestHandler):
                 result = subprocess.run(local_command, capture_output=True, text=True)
         except subprocess.TimeoutExpired:
             self.reply(504, {"error": "ssh timed out"})
-            return False
+            return None
         if result.returncode != 0:
             self.reply(500, {"error": result.stderr.strip()})
-            return False
+            return None
         self.reply(202, {"ok": True})
-        return True
+        return result
 
     def do_GET(self):
         if not self.guarded():
@@ -480,10 +578,12 @@ class Handler(BaseHTTPRequestHandler):
             (name, "up") for name, target in rebootable.items() if not target["hosts"]
         )
         switch = dict(remote_switch)
+        switch_detail = dict(remote_switch_detail)
         local = [name for name, target in switchable.items() if not target["hosts"]]
         if local:
-            state = local_switch_state()
-            switch.update((name, state) for name in local)
+            reported = local_switch()
+            for name in local:
+                switch[name], switch_detail[name] = track_switch(name, *reported)
         if local_units:
             names = list(local_units)
             # One state per line, in argument order; non-zero exit when any
@@ -505,6 +605,7 @@ class Handler(BaseHTTPRequestHandler):
             {
                 "tiles": states,
                 "switch": switch,
+                "switch_detail": switch_detail,
                 "tailscale": tailscale_state,
                 "ping": latency,
                 "ports": port_state,
@@ -539,13 +640,20 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         if action == "switch" and name in switchable:
-            hosts = switchable[name]["hosts"]
+            target = switchable[name]
+            # The remote verb prints the status before the start itself.
+            before = ""
+            if not target["hosts"] and SWITCH_STATUS:
+                before = subprocess.run([SWITCH_STATUS], capture_output=True, text=True).stdout
             started = self.host_action(
-                switchable[name], "switch", ["systemctl", "--no-block", "start", SWITCH_UNIT]
+                target, "switch", ["systemctl", "--no-block", "start", SWITCH_UNIT]
             )
-            if started and hosts:
-                remote_switch[name] = "switching"
-                threading.Thread(target=watch_switch, args=(name, True), daemon=True).start()
+            if started:
+                begin_switch(name, started.stdout if target["hosts"] else before)
+                if target["hosts"]:
+                    remote_switch[name] = "switching"
+                    remote_switch_detail[name] = None
+                    start_switch_watch(name)
             return
         if action in ("tailscale-on", "tailscale-off") and name in tailscalable:
             if self.host_action(tailscalable[name], action, None):
@@ -583,7 +691,7 @@ for name, target in port_targets.items():
     threading.Thread(target=watch_ports, args=(name, target), daemon=True).start()
 if ssh_key:
     for name in remote_switch:
-        threading.Thread(target=watch_switch, args=(name, False), daemon=True).start()
+        start_switch_watch(name)
     for name in tailscalable:
         threading.Thread(target=watch_tailscale, args=(name,), daemon=True).start()
     for name in remote_units:

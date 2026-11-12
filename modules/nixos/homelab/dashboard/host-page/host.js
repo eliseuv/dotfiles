@@ -18,6 +18,8 @@
   let lastHistory = "";
   // "idle"/"switching"/"failed"/"unknown", from svcctl's status.
   let switchState = null;
+  // The status the host keeps of that run, from svcctl's status, or null.
+  let switchDetail = null;
   let switchTimer = null;
   let switchPollRequest = 0;
   // Generation number -> {diff} or {error} once fetched, for expanded rows.
@@ -114,6 +116,7 @@
       .then((status) => {
         if (request !== switchPollRequest) return;
         const next = status.switch[data.tile] ?? "unknown";
+        switchDetail = status.switch_detail?.[data.tile] ?? null;
         // A finished switch made a new generation; fetch it now rather than
         // at the next background refresh.
         if (switchState === "switching" && next !== "switching") {
@@ -126,6 +129,7 @@
       .catch(() => {
         if (request !== switchPollRequest) return;
         switchState = "unknown";
+        switchDetail = null;
         renderSwitch();
       })
       .finally(() => {
@@ -136,7 +140,7 @@
 
   const doSwitch = async () => {
     if (requestingSwitch || switchState === "switching") return;
-    if (!confirm(`Rebase local commits onto origin/master on ${data.tile}, build and switch?`)) return;
+    if (!confirm(`Commit any uncommitted changes on ${data.tile}, rebase onto origin/master, build and switch?`)) return;
     requestingSwitch = true;
     switchError = "";
     renderSwitch();
@@ -151,6 +155,7 @@
       }
       if (!response.ok) throw new Error(`Switch request failed (${response.status})`);
       switchState = "switching";
+      switchDetail = null;
       clearTimeout(switchTimer);
       switchPollRequest++;
       switchTimer = setTimeout(pollSwitch, 3000);
@@ -193,6 +198,29 @@
     unknown: "Switch",
   };
 
+  // The unit's stages (services/dotfiles-switch.nix).
+  const stageLabels = {
+    pull: "pulling origin/master",
+    build: "building the system",
+    record: "recording the commit",
+    activate: "activating the system",
+    home: "switching Home Manager",
+    "home-others": "switching the other users' homes",
+  };
+
+  const switchStatusText = (state) => {
+    const detail = switchDetail || {};
+    const stage = stageLabels[detail.stage] || detail.stage;
+    if (state === "switching")
+      return `Switch in progress${stage ? `: ${stage}` : ""}. Open recent output for build and activation messages.`;
+    if (state === "failed")
+      return `Last switch failed${stage ? ` while ${stage}` : ""}${detail.message ? `: ${detail.message}` : ""}. Inspect recent output before retrying.`;
+    if (state === "idle" && detail.result === "success")
+      return `Last switch succeeded ${ago(detail.finished_at)}${detail.tag ? `, tagged ${detail.tag}` : ""}. Deployment status is shown above.`;
+    if (state === "idle") return "Switch service is idle. Deployment status is shown above.";
+    return "Switch status unavailable. Refresh before starting another switch.";
+  };
+
   const renderSwitch = () => {
     const button = document.getElementById("switch");
     if (!button) return;
@@ -202,17 +230,12 @@
     button.textContent = requestingSwitch ? "Requesting…" : switchLabels[state];
     document.getElementById("switch-panel").hidden = !data.switch;
     document.getElementById("switch-status").textContent = switchError || (requestingSwitch
-      ? "Submitting switch request…" : {
-        idle: "Switch service is idle. Deployment status is shown above.",
-        switching: "Switch in progress. Open recent output for build and activation messages.",
-        failed: "Last switch failed. Inspect recent output before retrying.",
-        unknown: "Switch status unavailable. Refresh before starting another switch.",
-      }[state]);
+      ? "Submitting switch request…" : switchStatusText(state));
     scheduleLog();
     button.title =
       state === "failed"
         ? "The last switch failed; see journalctl -u dotfiles-switch on the host. Click to retry."
-        : "Pull origin/master and switch to it";
+        : "Commit any uncommitted changes, rebase onto origin/master and switch";
   };
 
   const generationSummary = (generation) =>

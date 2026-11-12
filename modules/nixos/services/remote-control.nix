@@ -34,6 +34,12 @@ let
       inherit (services.dotfilesSwitch) revisionsDir;
     }
   );
+  switchStatus = lib.getExe (
+    import ./_switch-status.nix {
+      inherit pkgs;
+      systemd = config.systemd.package;
+    }
+  );
   # The tailscale CLI only obeys its operator, the primary user (see
   # services/tailscale.nix), so these root units run it on remote-control's
   # behalf; polkit lets that user start them and nothing else.
@@ -49,8 +55,13 @@ let
       reboot) exec ${systemctl} --no-block --check-inhibitors=no reboot ;;
     ''}
     ${lib.optionalString services.dotfilesSwitch.enable ''
-      switch) exec ${systemctl} start --no-block ${switchUnit} ;;
-      switch-status) exec ${systemctl} show --property=ActiveState,Result --value ${switchUnit} ;;
+      # The status before this run, so the dashboard can tell the last run
+      # from the one this starts.
+      switch)
+        ${switchStatus}
+        exec ${systemctl} start --no-block ${switchUnit}
+        ;;
+      switch-status) exec ${switchStatus} ;;
       switch-log) exec ${config.systemd.package}/bin/journalctl --quiet --no-pager --boot --unit=${switchUnit} --lines=300 --output=short-iso ;;
       compare\ *)
         if [[ $SSH_ORIGINAL_COMMAND =~ ^compare\ ([0-9]+)\ ([0-9]+)$ ]]; then

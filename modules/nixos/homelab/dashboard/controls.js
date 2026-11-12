@@ -17,8 +17,10 @@
   const api = "/api/svc";
   const headers = { "X-Svcctl": "1" };
   let states = {};
-  // Tile name -> "idle"/"switching"/"failed" for switch tiles.
+  // Tile name -> "idle"/"switching"/"failed" for switch tiles, and the status
+  // the host keeps of that run ({stage, result, message, tag, ...}) or null.
   let switchStates = {};
+  let switchDetails = {};
   // Tile name -> "on"/"off"/"unknown" for tailscale tiles.
   let tailscaleStates = {};
   // Round-trip ms of the last /status request from this browser to the host
@@ -72,6 +74,7 @@
         latency = performance.now() - started;
         states = next.tiles;
         switchStates = next.switch;
+        switchDetails = next.switch_detail || {};
         tailscaleStates = next.tailscale;
         portStates = next.ports;
         syncUptimes();
@@ -451,6 +454,8 @@
       if (tooltip && card.title !== tooltip) card.title = tooltip;
       const state = displayState(name);
       const switchState = kinds.switch || kinds.config ? switchStates[name] || "unknown" : "";
+      const switchDetail = (switchState && switchDetails[name]) || {};
+      const switchReason = [switchDetail.stage, switchDetail.message].filter(Boolean).join(": ");
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
       let ping = "";
       if (state === "up" && uptimes[name]) {
@@ -469,11 +474,13 @@
         bar.dataset.ping === ping &&
         bar.dataset.state === state &&
         (bar.dataset.switch || "") === switchState &&
+        (bar.dataset.switchReason || "") === switchReason &&
         (bar.dataset.tailscale || "") === tailscaleState
       )
         continue;
       bar.dataset.state = state;
       bar.dataset.switch = switchState;
+      bar.dataset.switchReason = switchReason;
       bar.dataset.ping = ping;
       // Hosts read off, or the ping and uptime alone when up (the readings
       // already say so); units their systemd state; anything in between shows
@@ -551,9 +558,9 @@
         element.disabled = state !== "up" || switchState === "switching";
         element.title =
           switchState === "switching"
-            ? `Switching ${name}\u2026`
+            ? `Switching ${name}${switchDetail.stage ? ` (${switchDetail.stage})` : ""}\u2026`
             : switchState === "failed"
-              ? `Last switch of ${name} failed; see \`journalctl -u dotfiles-switch\` there`
+              ? `Last switch of ${name} failed${switchReason ? ` (${switchReason})` : ""}; see \`journalctl -u dotfiles-switch\` there`
               : `Pull origin/master on ${name} and switch to it`;
       }
     }

@@ -335,6 +335,13 @@ in
         pkgs.iputils
         pkgs.openssh
       ];
+      # For this host's own switch tile; remote ones run it over SSH.
+      environment.SVCCTL_SWITCH_STATUS = lib.getExe (
+        import ../../services/_switch-status.nix {
+          inherit pkgs;
+          systemd = config.systemd.package;
+        }
+      );
       serviceConfig = {
         ExecStart = lib.concatStringsSep " " (
           [

@@ -13,6 +13,10 @@
 # `+` prefix rather than sudo, so the user gains no passwordless sudo from
 # this.
 #
+# Each run keeps its status in its StateDirectory, for the dashboard
+# (_switch-status.nix reads it): the stage it got to, its result, the reason
+# it failed and the generation's tag.
+#
 # Each switch records the commit it built in `revisionsDir`, keyed by the
 # system's store hash, for the dashboard's host pages (_host-report.nix); the
 # Justfile's record-gen does the same for switches by hand. Kept out of the
@@ -33,10 +37,38 @@ let
   systemLink = "/run/dotfiles-switch/system";
   inherit (config.my.services.dotfilesSwitch) revisionsDir;
 
+  # Runs one step of the unit as stage `name` of this run's status, keeping
+  # its stderr for the finish step to find the reason in should it fail. A
+  # step may name the reason itself, in $STATE_DIRECTORY/reason. The `+`
+  # steps run it as root: status.json is replaced, never written in place,
+  # so its owner doesn't matter.
+  stage = pkgs.writeShellScript "dotfiles-switch-stage" ''
+    set -uo pipefail
+    name=$1
+    shift
+    dir=$STATE_DIRECTORY
+    status=$(jq --compact-output --arg run "$INVOCATION_ID" \
+      'select(.invocation == $run)' "$dir/status.json" 2>/dev/null)
+    if [ -z "$status" ]; then
+      rm -f "$dir/reason"
+      status=$(jq --null-input --compact-output --arg run "$INVOCATION_ID" \
+        --argjson now "$(date +%s)" '{invocation: $run, started_at: $now}')
+    fi
+    jq --null-input --argjson status "$status" --arg stage "$name" \
+      '$status + {stage: $stage}' > "$dir/status.json.new"
+    mv --force "$dir/status.json.new" "$dir/status.json"
+    rm -f "$dir/stderr"
+    # stdout straight through, stderr through tee.
+    exec 3>&1
+    "$@" 2>&1 1>&3 3>&- | tee "$dir/stderr" >&2
+    exit "''${PIPESTATUS[0]}"
+  '';
+
   pull = pkgs.writeShellScript "dotfiles-switch-pull" ''
     set -euo pipefail
     fail() {
       echo "dotfiles-switch: $1" >&2
+      echo "$1" > "$STATE_DIRECTORY/reason"
       exit 1
     }
     # Another branch would be rebased onto master and built; switching
@@ -95,17 +127,40 @@ let
   # built in this run is the profile, which a failed activation can leave it
   # as too, and tries to push only the tag. Without an agent or a key the push
   # usually fails; the tag stays local until the next `git push --follow-tags`
-  # from here.
+  # from here. Then completes the run's status.
   finish = pkgs.writeShellScript "dotfiles-switch-finish" ''
     set -uo pipefail
-    built=$(readlink -f ${systemLink} 2>/dev/null) || exit 0
-    [ "$(readlink -f /nix/var/nix/profiles/system)" = "$built" ] || exit 0
-    tagged=$(${lib.getExe pkgs.just} tag-gen) || exit 0
-    read -r tag outcome <<<"$tagged"
-    echo "dotfiles-switch: $tag $outcome"
-    GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" \
-      timeout 60 git push --quiet origin "refs/tags/$tag" \
-      || echo "dotfiles-switch: couldn't push $tag, kept local" >&2
+    dir=$STATE_DIRECTORY
+    tag=""
+    built=$(readlink -f ${systemLink} 2>/dev/null)
+    if [ -n "$built" ] && [ "$(readlink -f /nix/var/nix/profiles/system)" = "$built" ] \
+      && tagged=$(${lib.getExe pkgs.just} tag-gen); then
+      read -r tag outcome <<<"$tagged"
+      echo "dotfiles-switch: $tag $outcome"
+      GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" \
+        timeout 60 git push --quiet origin "refs/tags/$tag" \
+        || echo "dotfiles-switch: couldn't push $tag, kept local" >&2
+    fi
+
+    result=''${SERVICE_RESULT:-unknown}
+    message=""
+    if [ "$result" != success ]; then
+      # The step's own reason, else the first error nix or git gave (an
+      # evaluation error's first `error:` line is bare; its cause follows,
+      # indented), else just how it ended.
+      message=$(cat "$dir/reason" 2>/dev/null)
+      [ -n "$message" ] || message=$(grep --max-count=1 --extended-regexp \
+        '^[[:space:]]*(error|fatal): .+' "$dir/stderr" 2>/dev/null | sed 's/^[[:space:]]*//')
+      [ -n "$message" ] || message="$result (''${EXIT_STATUS:-?})"
+    fi
+    status=$(jq --compact-output --arg run "$INVOCATION_ID" \
+      'select(.invocation == $run)' "$dir/status.json" 2>/dev/null)
+    [ -n "$status" ] || status=$(jq --null-input --compact-output --arg run "$INVOCATION_ID" '{invocation: $run}')
+    jq --null-input --argjson status "$status" --arg result "$result" \
+      --arg message "''${message:0:500}" --arg tag "$tag" --argjson now "$(date +%s)" \
+      '$status + {result: $result, message: ($message | if . == "" then null end), tag: ($tag | if . == "" then null end), finished_at: $now}' \
+      > "$dir/status.json.new"
+    mv --force "$dir/status.json.new" "$dir/status.json"
   '';
 
   # The Justfile's home-switch-others, for the service. The users come from
@@ -163,17 +218,21 @@ in
         User = user;
         WorkingDirectory = repo;
         RuntimeDirectory = "dotfiles-switch";
+        # The run's status, for _switch-status.nix; read by remote-control
+        # and svcctl.
+        StateDirectory = "dotfiles-switch";
+        StateDirectoryMode = "0755";
         # Run in order, stopping at the first failure.
         # record before activating: a failed activation has already made
         # the new system the profile, and often the running one.
         ExecStart = [
-          pull
-          build
-          record
-          "+${activate}"
-          "${lib.getExe pkgs.just} home-switch-self"
+          "${stage} pull ${pull}"
+          "${stage} build ${build}"
+          "${stage} record ${record}"
+          "+${stage} activate ${activate}"
+          "${stage} home ${lib.getExe pkgs.just} home-switch-self"
         ]
-        ++ lib.optional (otherUsers != [ ]) "+${homeSwitchOthers}";
+        ++ lib.optional (otherUsers != [ ]) "+${stage} home-others ${homeSwitchOthers}";
         # `-`: tagging never turns a switch into a failure.
         ExecStopPost = "-${finish}";
       };

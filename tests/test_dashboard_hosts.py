@@ -133,5 +133,68 @@ class SwitchLogTests(unittest.TestCase):
         self.assertEqual(self.request("Remote").call_args.args[0], 502)
 
 
+class SwitchTrackingTests(unittest.TestCase):
+    def setUp(self):
+        self.ns = definitions("svcctl.py")
+        self.clock = [100.0]
+        self.ns.update(
+            pending_switch={}, SWITCH_START_GRACE=60,
+            time=types.SimpleNamespace(monotonic=lambda: self.clock[0]),
+        )
+
+    def status(self, active, invocation="", last=None, result="success"):
+        return json.dumps({"ActiveState": active, "Result": result,
+                           "InvocationID": invocation, "last": last})
+
+    def track(self, output):
+        return self.ns["track_switch"]("Host", *self.ns["parse_switch"](output))
+
+    def test_parse_json_and_legacy(self):
+        parse = self.ns["parse_switch"]
+        self.assertEqual(parse("active\nsuccess\n"), ("switching", None, None))
+        self.assertEqual(parse("failed\nexit-code\n"), ("failed", None, None))
+        self.assertEqual(parse("inactive\nsuccess\n")[0], "idle")
+        # Unloaded after a failed run: Result is back to success, InvocationID
+        # empty; only the unit's own status knows.
+        failed = {"invocation": "a", "stage": "build", "result": "exit-code", "message": "error: x"}
+        self.assertEqual(parse(self.status("inactive", last=failed)), ("failed", failed, "a"))
+        running = {"invocation": "b", "stage": "build"}
+        self.assertEqual(parse(self.status("activating", "b", running)), ("switching", running, "b"))
+        # A new run that hasn't written its status yet shows the old one's as none.
+        self.assertEqual(parse(self.status("activating", "c", failed)), ("switching", None, "c"))
+        self.assertEqual(parse("garbage")[0], "unknown")
+
+    def test_previous_run_not_taken_for_the_new_one(self):
+        old = {"invocation": "a", "stage": "pull", "result": "exit-code"}
+        self.ns["begin_switch"]("Host", self.status("inactive", last=old))
+        self.assertEqual(self.track(self.status("inactive", last=old)), ("switching", None))
+        new = {"invocation": "b", "stage": "home", "result": "success"}
+        self.assertEqual(self.track(self.status("inactive", last=new))[0], "idle")
+        self.assertNotIn("Host", self.ns["pending_switch"])
+
+    def test_new_run_failing_is_reported(self):
+        self.ns["begin_switch"]("Host", self.status("inactive"))
+        self.assertEqual(self.track(self.status("activating", "b", {"invocation": "b", "stage": "build"}))[0],
+                         "switching")
+        failed = {"invocation": "b", "stage": "build", "result": "exit-code", "message": "error: x"}
+        self.assertEqual(self.track(self.status("failed", "b", failed, "exit-code")), ("failed", failed))
+
+    def test_switch_that_never_starts(self):
+        self.ns["begin_switch"]("Host", self.status("inactive"))
+        self.clock[0] += 61
+        state, detail = self.track(self.status("inactive"))
+        self.assertEqual(state, "failed")
+        self.assertIn("didn't start", detail["message"])
+
+    def test_legacy_host_is_trusted_after_the_grace(self):
+        self.ns["begin_switch"]("Host", "")
+        self.assertEqual(self.track("failed\nexit-code\n")[0], "switching")
+        self.clock[0] += 61
+        self.assertEqual(self.track("inactive\nsuccess\n")[0], "idle")
+        self.ns["begin_switch"]("Host", "")
+        self.track("active\nsuccess\n")
+        self.assertEqual(self.track("failed\nexit-code\n")[0], "failed")
+
+
 if __name__ == "__main__":
     unittest.main()
