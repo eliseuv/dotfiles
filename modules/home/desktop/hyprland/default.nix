@@ -169,6 +169,9 @@ in
             };
 
             allow_tearing = true;
+
+            # Drag floating windows (e.g. Sweet Home 3D's detached 3D view) by their border
+            resize_on_border = true;
           };
 
           decoration = {
@@ -436,6 +439,22 @@ in
             _args = [
               (inline ''mainMod .. " + SHIFT + R"'')
               (inline ''hl.dsp.exec_cmd("hyprctl reload; systemctl --user restart hyprpaper.service; systemctl --user restart hypridle.service; systemctl --user restart hyprpolkitagent")'')
+            ];
+          }
+
+          # Mouse: Super + left drag moves, Super + right drag resizes floating windows
+          {
+            _args = [
+              (inline ''mainMod .. " + mouse:272"'')
+              (inline "hl.dsp.window.drag()")
+              { mouse = true; }
+            ];
+          }
+          {
+            _args = [
+              (inline ''mainMod .. " + mouse:273"'')
+              (inline "hl.dsp.window.resize()")
+              { mouse = true; }
             ];
           }
 
