@@ -40,7 +40,8 @@
 
   # Unlock the SSH keys first: a passphrase prompt from pinentry-curses during
   # a push would otherwise fight lazygit for the tty and corrupt its input.
-  # ';' not '&&' so lazygit still starts when there are no keys to unlock.
-  home.shellAliases.gg = "ssh-unlock >/dev/null; lazygit";
+  # '&&' because a failed unlock leaves every fetch and push inside lazygit
+  # spawning pinentry over its screen; ssh-unlock succeeds with no keys.
+  home.shellAliases.gg = "ssh-unlock >/dev/null && lazygit";
 
 }
