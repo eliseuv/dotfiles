@@ -11,7 +11,7 @@ let
     version = "26.1027.30824";
     src = pkgs.fetchurl {
       url = "https://persistent.oaistatic.com/codex-app-prod/linux/deb/latest/chatgpt_amd64.deb";
-      sha256 = "4e139a44f7c917a643f2dd014ad32298dd30aec6d324d323524b190f7667684c";
+      sha256 = "sha256-S0Q7xVc1ChsZO8LxuuIHyeo8n7XZT3yUpdPbqotVI1I=";
     };
     nativeBuildInputs = [ pkgs.dpkg ];
     # Just an unpack of an unfree .deb, which no binary cache has. Also
