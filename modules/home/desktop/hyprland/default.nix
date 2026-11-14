@@ -1069,6 +1069,16 @@ in
             workspace = 10;
           }
           {
+            name = "sweethome3d-tooltips";
+            match = {
+              class = "^com-eteks-sweethome3d-SweetHome3DBootstrap$";
+              title = "^win[0-9]+$";
+            };
+            # Java tooltips (e.g. wall dimensions while drawing) are floating windows
+            # of the same class and otherwise steal focus from the editor
+            no_focus = true;
+          }
+          {
             name = "browser-opaque";
             match = {
               tag = "browser";
