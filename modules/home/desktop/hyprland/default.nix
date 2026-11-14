@@ -1058,6 +1058,17 @@ in
             workspace = 5;
           }
           {
+            name = "sweethome3d-floating";
+            match = {
+              class = "^com-eteks-sweethome3d-SweetHome3DBootstrap$";
+              float = true;
+            };
+            # Java under XWayland picks its own coordinates; dialogs and the detached
+            # 3D view have opened off-screen and blocked the main window
+            center = true;
+            workspace = 10;
+          }
+          {
             name = "browser-opaque";
             match = {
               tag = "browser";
