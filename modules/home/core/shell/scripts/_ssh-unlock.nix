@@ -26,9 +26,10 @@ pkgs.writeShellApplication {
     # Point pinentry at this terminal (and display, if any)
     gpg-connect-agent updatestartuptty /bye >/dev/null
 
+    # Nothing to unlock is not a failure: callers like `gg` chain on success
     if ! keys=$(ssh-add -L); then
       echo "ssh-unlock: the agent holds no SSH keys" >&2
-      exit 1
+      exit 0
     fi
 
     # Fingerprints of the keys whose passphrase is cached; KEYINFO fields are
@@ -48,7 +49,14 @@ pkgs.writeShellApplication {
       fi
       echo "unlocking: $description"
       # With a public key, ssh-keygen signs through the agent
-      echo | ssh-keygen -Y sign -f "$pubkey" -n ssh-unlock >/dev/null
+      if ! echo | ssh-keygen -Y sign -f "$pubkey" -n ssh-unlock >/dev/null; then
+        # For ssh requests gpg-agent prompts on the tty last registered with
+        # updatestartuptty, not the requester's, so a prompt can be lost to a
+        # closed or hidden terminal.
+        echo "ssh-unlock: could not unlock $description" >&2
+        echo "ssh-unlock: if no prompt appeared, run 'gpg-connect-agent updatestartuptty /bye' here and retry" >&2
+        exit 1
+      fi
       unlocked=$((unlocked + 1))
     done <<<"$keys"
 
