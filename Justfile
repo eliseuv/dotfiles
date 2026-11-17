@@ -17,6 +17,10 @@ update *inputs: pull
     git restore --staged .
     git add flake.lock
     [ "$flake_before" = "$(sha256sum flake.nix)" ] || git add flake.nix
+    if git diff --cached --quiet; then
+        echo "update: nothing to update"
+        exit 0
+    fi
     git commit --message "[flake] update {{inputs}}"
 
 # Point the aven input at the newest release. The URL is versioned because a
