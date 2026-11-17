@@ -37,7 +37,7 @@ let
     ];
     modules-right = [
       "privacy"
-      # "custom/flake"
+      "custom/flake"
       "custom/claude-usage"
       "hyprland/language"
       "network"
