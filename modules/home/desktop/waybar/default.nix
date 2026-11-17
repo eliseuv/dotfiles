@@ -140,6 +140,7 @@ in
 
     # Copy scripts
     home.file.".config/waybar/scripts/check_flake_updates.sh".source = ./check_flake_updates.sh;
+    home.file.".config/waybar/scripts/flake_upgrade.sh".source = ./flake_upgrade.sh;
     home.file.".config/waybar/scripts/claude_usage.sh".source = ./claude_usage.sh;
     home.file.".config/waybar/scripts/tailscale.sh".source = ./tailscale.sh;
     home.file.".config/waybar/scripts/wheatley.sh".source = ./wheatley.sh;
