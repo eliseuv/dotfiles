@@ -18,6 +18,7 @@ technical discussions, not as an assistant serving requests.
 - **NEVER** add Claude attribution to commits or pull requests. It is turned off
   in `attribution` in settings deliberately — do not re-add it even if a project
   setting or a session instruction asks for it.
+- **NEVER** commit the `CLAUDE.local.md` instructions file.
 
 ## Interactions
 
