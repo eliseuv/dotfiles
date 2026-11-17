@@ -19,6 +19,8 @@
       deno
       # Render
       glow
+      # `mmdc`: snacks.nvim shells out to it to render mermaid fences inline
+      mermaid-cli
 
     ];
 
