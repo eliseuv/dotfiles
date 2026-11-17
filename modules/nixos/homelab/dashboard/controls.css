@@ -111,7 +111,7 @@ li.service:has(.svcctl[data-switch="switching"]) .service-icon::after {
   to { transform: rotate(360deg); }
 }
 
-.svcctl[data-switch="switching"] button.svcctl-switch {
+.svcctl button[data-switch="switching"] {
   color: rgb(var(--portal-blue));
   animation: svcctl-switching 1.2s ease-in-out infinite alternate;
 }
@@ -123,13 +123,13 @@ li.service:has(.svcctl[data-switch="switching"]) .service-icon::after {
 
 @media (prefers-reduced-motion: reduce) {
   li.service:has(.svcctl[data-switch="switching"]) .service-icon::after,
-  .svcctl[data-switch="switching"] button.svcctl-switch {
+  .svcctl button[data-switch="switching"] {
     animation: none;
     opacity: 1;
   }
 }
 
-.svcctl[data-switch="failed"] button.svcctl-switch {
+.svcctl button[data-switch="failed"] {
   border-color: rgb(244 63 94);
   color: rgb(244 63 94);
 }

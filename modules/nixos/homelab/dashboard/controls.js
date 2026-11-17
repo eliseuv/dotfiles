@@ -2,8 +2,9 @@
 // tiles backed by a systemd unit; host tiles get, in this order and as
 // configured: ports (a menu of its open dev servers, and start buttons for
 // those with a unit),
-// switch (pull the dotfiles and switch to them; a config page button instead
-// where the host has a page, which switches from there), tailscale
+// home switch and switch (pull the dotfiles and switch only every user's
+// Home Manager, or the system too; a config page button instead where the
+// host has a page, which switches from there), tailscale
 // (on/off), restart, and on/off, one button that wakes the host while it's
 // down and powers it off while it's up (controls.nix).
 // `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
@@ -173,6 +174,11 @@
       action = turnOff ? "tailscale-off" : "tailscale-on";
     }
     if (action === "switch" && !confirm(`Pull origin/master on ${name} and switch to it?`)) return;
+    if (
+      action === "home-switch" &&
+      !confirm(`Pull origin/master on ${name} and switch every user's Home Manager to it, leaving the system?`)
+    )
+      return;
     call("POST", `/${action}/${encodeURIComponent(name)}`)
       .then(() => {
         if (action === "wake") {
@@ -194,8 +200,9 @@
           tailscaleStates[name] = action === "tailscale-on" ? "on" : "off";
           return render();
         }
-        if (action === "switch") {
+        if (action === "switch" || action === "home-switch") {
           switchStates[name] = "switching";
+          switchDetails[name] = { kind: action === "switch" ? "system" : "home" };
           render();
         }
         settle();
@@ -216,6 +223,7 @@
     stop: '<rect fill="currentColor" stroke="none" x="6" y="6" width="12" height="12"/>',
     restart: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
     download: '<path d="M12 3v12M7 10l5 5 5-5M5 20h14"/>',
+    home: '<path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
     link:
       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
       '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
@@ -237,6 +245,7 @@
       reboot: "Restart",
       power: "Wake",
       switch: "Switch",
+      "home-switch": "Home",
       tailscale: "Tailnet",
       restart: "Restart",
     }[action] || action;
@@ -384,7 +393,7 @@
     }
     if (kinds.ports) bar.append(portsButton(name, menu));
     if (kinds.config) bar.append(configLink(name));
-    if (kinds.switch) bar.append(button(name, "switch", "download"));
+    if (kinds.switch) bar.append(button(name, "home-switch", "home"), button(name, "switch", "download"));
     if (kinds.tailscale) bar.append(button(name, "tailscale", "link"));
     if (kinds.reboot) bar.append(button(name, "reboot", "restart"));
     if (kinds.wake) bar.append(button(name, "power", "power"));
@@ -456,6 +465,9 @@
       const switchState = kinds.switch || kinds.config ? switchStates[name] || "unknown" : "";
       const switchDetail = (switchState && switchDetails[name]) || {};
       const switchReason = [switchDetail.stage, switchDetail.message].filter(Boolean).join(": ");
+      // Both switches share one state; a status from before the units
+      // recorded their kind is the full switch's.
+      const homeRun = switchDetail.kind === "home";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
       let ping = "";
       if (state === "up" && uptimes[name]) {
@@ -475,12 +487,14 @@
         bar.dataset.state === state &&
         (bar.dataset.switch || "") === switchState &&
         (bar.dataset.switchReason || "") === switchReason &&
+        (bar.dataset.switchKind || "") === (switchDetail.kind || "") &&
         (bar.dataset.tailscale || "") === tailscaleState
       )
         continue;
       bar.dataset.state = state;
       bar.dataset.switch = switchState;
       bar.dataset.switchReason = switchReason;
+      bar.dataset.switchKind = switchDetail.kind || "";
       bar.dataset.ping = ping;
       // Hosts read off, or the ping and uptime alone when up (the readings
       // already say so); units their systemd state; anything in between shows
@@ -493,7 +507,11 @@
       const switching = bar.querySelector(".svcctl-switch-status");
       switching.hidden = switchState !== "switching" && switchState !== "failed";
       switching.textContent =
-        switchState === "switching" ? "Switching\u2026" : switchState === "failed" ? "Switch failed" : "";
+        switchState === "switching"
+          ? `${homeRun ? "Home switching" : "Switching"}\u2026`
+          : switchState === "failed"
+            ? `${homeRun ? "Home switch" : "Switch"} failed`
+            : "";
       if (kinds.unit) {
         const run = bar.querySelector(".svcctl-run");
         const active = unitActive(state);
@@ -554,14 +572,22 @@
       }
       if (kinds.reboot) bar.querySelector(".svcctl-reboot").disabled = state !== "up";
       if (kinds.switch) {
-        const element = bar.querySelector(".svcctl-switch");
-        element.disabled = state !== "up" || switchState === "switching";
-        element.title =
-          switchState === "switching"
-            ? `Switching ${name}${switchDetail.stage ? ` (${switchDetail.stage})` : ""}\u2026`
-            : switchState === "failed"
-              ? `Last switch of ${name} failed${switchReason ? ` (${switchReason})` : ""}; see \`journalctl -u dotfiles-switch\` there`
-              : `Pull origin/master on ${name} and switch to it`;
+        for (const [action, home] of [["switch", false], ["home-switch", true]]) {
+          const element = bar.querySelector(`.svcctl-${action}`);
+          const noun = home ? "home switch" : "switch";
+          // Only the button of the run the state is about shows it.
+          const own = homeRun === home ? switchState : "idle";
+          element.dataset.switch = own;
+          element.disabled = state !== "up" || switchState === "switching";
+          element.title =
+            switchState === "switching"
+              ? `${homeRun ? "Home switching" : "Switching"} ${name}${switchDetail.stage ? ` (${switchDetail.stage})` : ""}\u2026`
+              : own === "failed"
+                ? `Last ${noun} of ${name} failed${switchReason ? ` (${switchReason})` : ""}; see \`journalctl -u dotfiles-${home ? "home-" : ""}switch\` there`
+                : home
+                  ? `Pull origin/master on ${name} and switch every user's Home Manager to it`
+                  : `Pull origin/master on ${name} and switch to it`;
+        }
       }
     }
   };
