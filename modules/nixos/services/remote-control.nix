@@ -1,5 +1,5 @@
 # Lets the homelab dashboard (svcctl on wheatley, dashboard/controls.nix)
-# power this host off, reboot it, switch it to the latest dotfiles, turn
+# power this host off, reboot it, switch it (or only its homes) to the latest dotfiles, turn
 # Tailscale on and off, and start and stop the units in `remoteUnits`; and
 # lets its host pages (hostctl, dashboard/hosts.nix) read this host's
 # generations, along with the switch. Both log in over SSH, with the same key,
@@ -22,6 +22,7 @@ let
   svcctlKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBkYyj2vQNoL702tMIZPdaLAXt6qNA9loALCYKBij9Sx svcctl@wheatley";
   systemctl = "${config.systemd.package}/bin/systemctl";
   switchUnit = "dotfiles-switch.service";
+  homeSwitchUnit = "dotfiles-home-switch.service";
   enabled =
     services.remotePowerOff.enable
     || services.dotfilesSwitch.enable
@@ -61,8 +62,12 @@ let
         ${switchStatus}
         exec ${systemctl} start --no-block ${switchUnit}
         ;;
+      home-switch)
+        ${switchStatus}
+        exec ${systemctl} start --no-block ${homeSwitchUnit}
+        ;;
       switch-status) exec ${switchStatus} ;;
-      switch-log) exec ${config.systemd.package}/bin/journalctl --quiet --no-pager --boot --unit=${switchUnit} --lines=300 --output=short-iso ;;
+      switch-log) exec ${config.systemd.package}/bin/journalctl --quiet --no-pager --boot --unit=${switchUnit} --unit=${homeSwitchUnit} --lines=300 --output=short-iso ;;
       compare\ *)
         if [[ $SSH_ORIGINAL_COMMAND =~ ^compare\ ([0-9]+)\ ([0-9]+)$ ]]; then
           exec ${hostReport} compare "''${BASH_REMATCH[1]}" "''${BASH_REMATCH[2]}"
@@ -163,7 +168,7 @@ in
           if (
             action.id == "org.freedesktop.systemd1.manage-units" &&
             subject.user == "${user}" &&
-            action.lookup("unit") == "${switchUnit}" &&
+            ["${switchUnit}", "${homeSwitchUnit}"].indexOf(action.lookup("unit")) >= 0 &&
             action.lookup("verb") == "start"
           ) {
             return polkit.Result.YES;
