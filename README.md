@@ -111,26 +111,21 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
 
 ### Updates & Maintenance
 
-- **Update All System Packages**:
+- **Update Everything** (the regular run):
 
   ```bash
-  just update-system
+  just upgrade   # or the `up` alias
   ```
 
-  *Updates `nixpkgs`, applies system changes, and handles housekeeping.*
+  *Pulls, updates every flake input (bumping aven to its newest release) and
+  commits the lock, checks the patches, then switches the system and every
+  home on this host, tags the generation and garbage-collects. Needs a clean
+  tree; skips the switch when nothing changed.*
 
-- **Update Home Packages**:
-
-  ```bash
-  just update-home
-  ```
-
-  *Updates `home-manager` and other user inputs, then applies home changes.*
-
-- **Update Specific Flake Inputs**:
+- **Update Flake Inputs Only** (lock and commit, no switch):
 
   ```bash
-  just update <input_name>
+  just update [input_name...]
   ```
 
 - **Garbage Collection**:

@@ -36,7 +36,7 @@
         ''code "$DOTFILES"'';
 
     # Update flake
-    up = "dj update";
+    up = "dj upgrade";
 
   };
 

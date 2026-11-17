@@ -38,9 +38,6 @@ bump-aven:
     sed -i "s#releases/download/$current/aven-nix#releases/download/$latest/aven-nix#" flake.nix
     echo "bump-aven: $current -> $latest"
 
-update-nix:
-    {{just_executable()}} update nixpkgs nixpkgs-master nixpkgs-stable
-
 # Tag HEAD as the current generation, `<host>-<generation>`, and print the
 # tag's name and whether it was `created` or already `exists`. Shared with
 # dotfiles-switch.service, which only pushes the tag.
@@ -205,13 +202,24 @@ system-boot: no-service-switch pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os boot .
 
-update-system:
-    -{{just_executable()}} update nixpkgs && {{just_executable()}} system-switch
-    {{just_executable()}} update-home
-
-update-home:
-    -{{just_executable()}} update
-    {{just_executable()}} home-switch
+# The baseline HEAD is taken before update's own pull, so commits pulled
+# from another host count as a change too; only when neither the pull nor
+# the lock brought anything is the switch skipped.
+# Regular full update: lock all inputs, check patches, switch system + homes
+upgrade: no-service-switch sudo-keepalive
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # commit-gen refuses a dirty tree, but only after the switch; fail first.
+    git diff --quiet && git diff --cached --quiet || \
+        { echo "upgrade: uncommitted changes present, commit first" >&2; exit 1; }
+    before=$(git rev-parse HEAD)
+    {{just_executable()}} update
+    if [ "$before" = "$(git rev-parse HEAD)" ]; then
+        echo "upgrade: nothing changed, skipping switch"
+        exit 0
+    fi
+    {{just_executable()}} patches-check
+    {{just_executable()}} system-switch
 
 # Pin a locally-packaged service (pkgs/<pkg>/pin.json) to the current HEAD
 # of the repo it points at, and commit that. No-op when already pinned

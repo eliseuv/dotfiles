@@ -22,10 +22,10 @@
   programs.nix-index-database.comma.enable = true;
   programs.nix-search-tv.enable = true;
 
-  # Disabled: `just update-home`/`update-system` already update, switch and
-  # gc on a regular manual cadence, so the automatic switch/expire/gc timers
+  # Disabled: `just upgrade` already updates, switches and gcs on a
+  # regular manual cadence, so the automatic switch/expire/gc timers
   # only add uncoordinated races against that flow (see the Justfile's
-  # `gc`, `home-switch`, `update-home`, `update-system` recipes).
+  # `gc`, `home-switch` and `upgrade` recipes).
   nix.gc = {
     automatic = false;
     options = "--delete-older-than 7d";
