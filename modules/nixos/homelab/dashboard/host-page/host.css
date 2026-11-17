@@ -185,7 +185,9 @@ pre.error {
   color: rgb(var(--portal-orange));
 }
 
-#switch {
+.switch-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.switch-button {
   padding: 0.3rem 0.9rem;
   border: 1px solid var(--card-border);
   border-radius: 2px;
@@ -198,17 +200,17 @@ pre.error {
   cursor: pointer;
 }
 
-#switch:hover:not(:disabled) {
+.switch-button:hover:not(:disabled) {
   box-shadow: 0 0 0 1px rgb(var(--portal-orange));
 }
 
-#switch[data-state="switching"] {
+.switch-button[data-state="switching"] {
   color: rgb(var(--portal-blue));
   cursor: default;
   animation: switching 1.2s ease-in-out infinite alternate;
 }
 
-#switch[data-state="failed"] {
+.switch-button[data-state="failed"] {
   border-color: rgb(var(--red));
   color: rgb(var(--red));
 }
@@ -396,7 +398,7 @@ body[data-repo] h1::before { display: none; }
 body[data-repo] .status-line { flex-wrap: wrap; }
 body[data-repo] dd { min-width: 0; overflow-wrap: anywhere; }
 .changes .detail { overflow-wrap: anywhere; }
-#switch[data-state="switching"]::before {
+.switch-button[data-state="switching"]::before {
   content: "";
   display: inline-block;
   width: 0.8rem;
@@ -420,7 +422,7 @@ body[data-repo] dd { min-width: 0; overflow-wrap: anywhere; }
   dl { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #switch[data-state="switching"], #switch[data-state="switching"]::before { animation: none; }
+  .switch-button[data-state="switching"], .switch-button[data-state="switching"]::before { animation: none; }
 }
 
 /* Deployment workspace controls share the facility palette. */

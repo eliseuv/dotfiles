@@ -1,7 +1,7 @@
 // A host page: the host's generations, what changed between them and whether
-// it runs what master builds, from hostctl (hosts.nix). The switch button and
-// its state are svcctl's, the same as on the host's dashboard tile
-// (controls.js).
+// it runs what master builds, from hostctl (hosts.nix). The switch buttons
+// and their state are svcctl's, the same as on the host's dashboard tile
+// (controls.js). The full and home-only switches share one state there.
 (() => {
   const host = new URLSearchParams(location.search).get("host") || "";
   const repo = document.body.dataset.repo;
@@ -10,6 +10,8 @@
   let loadTimer = null;
   let loading = false;
   let requestingSwitch = false;
+  // The kind last started from this page, until the host's status says.
+  let requestedKind = null;
   let switchError = "";
   let comparison = null;
   let comparisonRequest = 0;
@@ -138,14 +140,42 @@
       });
   };
 
-  const doSwitch = async () => {
+  // Kinds as the units record them in their status (services/dotfiles-switch.nix).
+  const switchKinds = {
+    system: {
+      id: "switch",
+      action: "switch",
+      unit: "dotfiles-switch",
+      label: "Switch",
+      noun: "switch",
+      confirm: (tile) => `Commit any uncommitted changes on ${tile}, rebase onto origin/master, build and switch?`,
+      title: "Commit any uncommitted changes, rebase onto origin/master and switch",
+    },
+    home: {
+      id: "home-switch",
+      action: "home-switch",
+      unit: "dotfiles-home-switch",
+      label: "Home switch",
+      noun: "home switch",
+      confirm: (tile) =>
+        `Commit any uncommitted changes on ${tile}, rebase onto origin/master and switch every user's Home Manager, leaving the system as it is?`,
+      title: "Commit any uncommitted changes, rebase onto origin/master and switch every user's Home Manager only",
+    },
+  };
+
+  // The kind of the run the state is about; a status from before the units
+  // recorded one is the full switch's.
+  const runKind = () => switchKinds[switchDetail?.kind] ? switchDetail.kind : requestedKind || "system";
+
+  const doSwitch = async (kind) => {
     if (requestingSwitch || switchState === "switching") return;
-    if (!confirm(`Commit any uncommitted changes on ${data.tile}, rebase onto origin/master, build and switch?`)) return;
+    if (!confirm(switchKinds[kind].confirm(data.tile))) return;
     requestingSwitch = true;
+    requestedKind = kind;
     switchError = "";
     renderSwitch();
     try {
-      const response = await fetch(`/api/svc/switch/${encodeURIComponent(data.tile)}`, {
+      const response = await fetch(`/api/svc/${switchKinds[kind].action}/${encodeURIComponent(data.tile)}`, {
         method: "POST", headers: svcHeaders,
       });
       if (response.status === 401) {
@@ -192,10 +222,10 @@
   };
 
   const switchLabels = {
-    idle: "Switch",
-    switching: "Switching",
-    failed: "Switch failed",
-    unknown: "Switch",
+    idle: (label) => label,
+    switching: () => "Switching",
+    failed: (label) => `${label} failed`,
+    unknown: (label) => label,
   };
 
   // The unit's stages (services/dotfiles-switch.nix).
@@ -211,31 +241,39 @@
   const switchStatusText = (state) => {
     const detail = switchDetail || {};
     const stage = stageLabels[detail.stage] || detail.stage;
+    const noun = switchKinds[runKind()].noun;
+    const Noun = noun[0].toUpperCase() + noun.slice(1);
     if (state === "switching")
-      return `Switch in progress${stage ? `: ${stage}` : ""}. Open recent output for build and activation messages.`;
+      return `${Noun} in progress${stage ? `: ${stage}` : ""}. Open recent output for build and activation messages.`;
     if (state === "failed")
-      return `Last switch failed${stage ? ` while ${stage}` : ""}${detail.message ? `: ${detail.message}` : ""}. Inspect recent output before retrying.`;
+      return `Last ${noun} failed${stage ? ` while ${stage}` : ""}${detail.message ? `: ${detail.message}` : ""}. Inspect recent output before retrying.`;
     if (state === "idle" && detail.result === "success")
-      return `Last switch succeeded ${ago(detail.finished_at)}${detail.tag ? `, tagged ${detail.tag}` : ""}. Deployment status is shown above.`;
+      return `Last ${noun} succeeded ${ago(detail.finished_at)}${detail.tag ? `, tagged ${detail.tag}` : ""}. Deployment status is shown above.`;
     if (state === "idle") return "Switch service is idle. Deployment status is shown above.";
     return "Switch status unavailable. Refresh before starting another switch.";
   };
 
   const renderSwitch = () => {
-    const button = document.getElementById("switch");
-    if (!button) return;
+    if (!document.getElementById("switch")) return;
     const state = switchState ?? "unknown";
-    button.dataset.state = state;
-    button.disabled = requestingSwitch || state === "switching";
-    button.textContent = requestingSwitch ? "Requesting…" : switchLabels[state];
+    const current = runKind();
+    for (const [kind, spec] of Object.entries(switchKinds)) {
+      const button = document.getElementById(spec.id);
+      // Only the button of the run the state is about shows it; both wait
+      // while either runs, as they share the checkout.
+      const own = kind === current ? state : "idle";
+      button.dataset.state = own;
+      button.disabled = requestingSwitch || state === "switching";
+      button.textContent = requestingSwitch && requestedKind === kind ? "Requesting…" : switchLabels[own](spec.label);
+      button.title =
+        own === "failed"
+          ? `The last ${spec.noun} failed; see journalctl -u ${spec.unit} on the host. Click to retry.`
+          : spec.title;
+    }
     document.getElementById("switch-panel").hidden = !data.switch;
     document.getElementById("switch-status").textContent = switchError || (requestingSwitch
       ? "Submitting switch request…" : switchStatusText(state));
     scheduleLog();
-    button.title =
-      state === "failed"
-        ? "The last switch failed; see journalctl -u dotfiles-switch on the host. Click to retry."
-        : "Commit any uncommitted changes, rebase onto origin/master and switch";
   };
 
   const generationSummary = (generation) =>
@@ -290,7 +328,13 @@
         "div",
         { class: "status-line" },
         el("span", { class: "status", "data-state": status.state }, statusLabels[status.state]),
-        data.switch && el("button", { type: "button", id: "switch", onclick: doSwitch }),
+        data.switch &&
+          el(
+            "span",
+            { class: "switch-buttons" },
+            el("button", { type: "button", id: "home-switch", class: "switch-button", onclick: () => doSwitch("home") }),
+            el("button", { type: "button", id: "switch", class: "switch-button", onclick: () => doSwitch("system") }),
+          ),
       ),
       el(
         "dl",
