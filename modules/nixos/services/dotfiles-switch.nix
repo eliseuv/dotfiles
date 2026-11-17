@@ -17,6 +17,12 @@
 # (_switch-status.nix reads it): the stage it got to, its result, the reason
 # it failed and the generation's tag.
 #
+# dotfiles-home-switch.service is the same run without the system: pull, then
+# every user's home. It shares the StateDirectory, so the status is always
+# the latest run of either, its `kind` telling them apart, and the dashboard
+# tracks both as one switch. Each refuses to start while the other runs, as
+# they share the checkout.
+#
 # Each switch records the commit it built in `revisionsDir`, keyed by the
 # system's store hash, for the dashboard's host pages (_host-report.nix); the
 # Justfile's record-gen does the same for switches by hand. Kept out of the
@@ -52,7 +58,8 @@ let
     if [ -z "$status" ]; then
       rm -f "$dir/reason"
       status=$(jq --null-input --compact-output --arg run "$INVOCATION_ID" \
-        --argjson now "$(date +%s)" '{invocation: $run, started_at: $now}')
+        --arg kind "$SWITCH_KIND" --argjson now "$(date +%s)" \
+        '{invocation: $run, kind: $kind, started_at: $now}')
     fi
     jq --null-input --argjson status "$status" --arg stage "$name" \
       '$status + {stage: $stage}' > "$dir/status.json.new"
@@ -124,7 +131,8 @@ let
   '';
 
   # After every run, successful or not: tags the generation when the system
-  # built in this run is the profile, which a failed activation can leave it
+  # built in this run is the profile (never for a home switch, which builds
+  # none: its RuntimeDirectory has no system link), which a failed activation can leave it
   # as too, and tries to push only the tag. Without an agent or a key the push
   # usually fails; the tag stays local until the next `git push --follow-tags`
   # from here. Then completes the run's status.
@@ -171,6 +179,70 @@ let
   # Home Manager safe.directory. A store script rather than `just`, so root
   # runs nothing from the checkout.
   otherUsers = lib.remove user config.my.host.users;
+
+  units = {
+    system = "dotfiles-switch";
+    home = "dotfiles-home-switch";
+  };
+  # ExecCondition: a non-zero exit skips the unit rather than failing it.
+  # Two starts in the same instant could both pass; the dashboard disables
+  # both buttons while either runs, which leaves only hand-started races.
+  notRunning =
+    unit:
+    pkgs.writeShellScript "dotfiles-switch-not-running" ''
+      if ${config.systemd.package}/bin/systemctl is-active --quiet ${unit}.service; then
+        echo "dotfiles-switch: ${unit}.service is running, skipped" >&2
+        exit 1
+      fi
+    '';
+
+  switchService =
+    {
+      kind,
+      description,
+      other,
+      steps,
+    }:
+    {
+      inherit description;
+      # Switching would otherwise restart the very unit doing the switch.
+      restartIfChanged = false;
+      environment.SWITCH_KIND = kind;
+      path = [
+        config.nix.package
+        # `sh` for just's recipes.
+        pkgs.bash
+        pkgs.coreutils
+        pkgs.git
+        pkgs.jq
+        pkgs.nh
+        # For the Justfile's tag-gen, and the tag push.
+        config.system.build.nixos-rebuild
+        pkgs.hostname
+        pkgs.nvd
+        pkgs.openssh
+        pkgs.ripgrep
+        pkgs.sd
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = user;
+        WorkingDirectory = repo;
+        RuntimeDirectory = units.${kind};
+        # The run's status, for _switch-status.nix; read by remote-control
+        # and svcctl. Shared by both units.
+        StateDirectory = "dotfiles-switch";
+        StateDirectoryMode = "0755";
+        ExecCondition = notRunning other;
+        # Run in order, stopping at the first failure.
+        ExecStart =
+          steps
+          ++ [ "${stage} home ${lib.getExe pkgs.just} home-switch-self" ]
+          ++ lib.optional (otherUsers != [ ]) "+${stage} home-others ${homeSwitchOthers}";
+        # `-`: tagging never turns a switch into a failure.
+        ExecStopPost = "-${finish}";
+      };
+    };
   homeSwitchOthers = pkgs.writeShellScript "dotfiles-switch-home-others" ''
     set -euo pipefail
     for other in ${lib.escapeShellArgs otherUsers}; do
@@ -193,49 +265,25 @@ in
     # host-report runs as remote-control, or as hostctl on the dashboard host.
     systemd.tmpfiles.rules = [ "d ${revisionsDir} 0755 ${user} - -" ];
 
-    systemd.services.dotfiles-switch = {
+    systemd.services.${units.system} = switchService {
+      kind = "system";
       description = "Pull the dotfiles and switch to them";
-      # Switching would otherwise restart the very unit doing the switch.
-      restartIfChanged = false;
-      path = [
-        config.nix.package
-        # `sh` for just's recipes.
-        pkgs.bash
-        pkgs.coreutils
-        pkgs.git
-        pkgs.jq
-        pkgs.nh
-        # For the Justfile's tag-gen, and the tag push.
-        config.system.build.nixos-rebuild
-        pkgs.hostname
-        pkgs.nvd
-        pkgs.openssh
-        pkgs.ripgrep
-        pkgs.sd
+      other = units.home;
+      # record before activating: a failed activation has already made the
+      # new system the profile, and often the running one.
+      steps = [
+        "${stage} pull ${pull}"
+        "${stage} build ${build}"
+        "${stage} record ${record}"
+        "+${stage} activate ${activate}"
       ];
-      serviceConfig = {
-        Type = "oneshot";
-        User = user;
-        WorkingDirectory = repo;
-        RuntimeDirectory = "dotfiles-switch";
-        # The run's status, for _switch-status.nix; read by remote-control
-        # and svcctl.
-        StateDirectory = "dotfiles-switch";
-        StateDirectoryMode = "0755";
-        # Run in order, stopping at the first failure.
-        # record before activating: a failed activation has already made
-        # the new system the profile, and often the running one.
-        ExecStart = [
-          "${stage} pull ${pull}"
-          "${stage} build ${build}"
-          "${stage} record ${record}"
-          "+${stage} activate ${activate}"
-          "${stage} home ${lib.getExe pkgs.just} home-switch-self"
-        ]
-        ++ lib.optional (otherUsers != [ ]) "+${stage} home-others ${homeSwitchOthers}";
-        # `-`: tagging never turns a switch into a failure.
-        ExecStopPost = "-${finish}";
-      };
+    };
+
+    systemd.services.${units.home} = switchService {
+      kind = "home";
+      description = "Pull the dotfiles and switch every user's home to them";
+      other = units.system;
+      steps = [ "${stage} pull ${pull}" ];
     };
 
   };

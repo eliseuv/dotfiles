@@ -11,6 +11,11 @@
 # A run is told apart by its InvocationID while systemd has the unit loaded,
 # and by `last.invocation` once it unloads the inactive unit, which also
 # resets Result to success: a failed run is only known from `last`.
+#
+# dotfiles-home-switch.service shares that status (`last.kind` says which
+# ran), so the unit shown is whichever is running, else the one whose run
+# `last` is. Else that unit is unloaded, so it's shown as such, never the
+# other's older run; with no `last` at all, dotfiles-switch.service.
 {
   pkgs,
   systemd,
@@ -23,9 +28,18 @@ pkgs.writeShellApplication {
   ];
   text = ''
     status=/var/lib/dotfiles-switch/status.json
-    systemctl show --property=ActiveState,Result,InvocationID dotfiles-switch.service \
-      | jq --raw-input --null-input \
-        --slurpfile last <(cat "$status" 2>/dev/null || true) \
-        '[inputs | capture("^(?<key>[^=]+)=(?<value>.*)$")] | from_entries + {last: $last[0]}'
+    show() {
+      systemctl show --property=ActiveState,Result,InvocationID "$1" \
+        | jq --raw-input --null-input '[inputs | capture("^(?<key>[^=]+)=(?<value>.*)$")] | from_entries'
+    }
+    jq --null-input \
+      --argjson system "$(show dotfiles-switch.service)" \
+      --argjson home "$(show dotfiles-home-switch.service)" \
+      --slurpfile last <(cat "$status" 2>/dev/null || true) \
+      '[$system, $home] as $units
+        | ($units | map(select(.ActiveState | IN("activating", "active", "deactivating"))) | first)
+          // ($units | map(select(.InvocationID != "" and .InvocationID == $last[0].invocation?)) | first)
+          // (if $last[0] then {ActiveState: "inactive", Result: "success", InvocationID: ""} else $system end)
+        | . + {last: $last[0]}'
   '';
 }

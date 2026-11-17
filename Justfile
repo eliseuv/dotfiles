@@ -188,8 +188,8 @@ after-switch: record-gen commit-gen home-switch gc
 # Both would rebase and build the same checkout at once.
 [private]
 no-service-switch:
-    @! systemctl is-active --quiet dotfiles-switch.service || \
-        (echo "a dashboard switch (dotfiles-switch.service) is running, wait for it" >&2 && exit 1)
+    @! systemctl is-active --quiet dotfiles-switch.service dotfiles-home-switch.service || \
+        (echo "a dashboard switch (dotfiles-switch or dotfiles-home-switch) is running, wait for it" >&2 && exit 1)
 
 system-test: no-service-switch pull sudo-keepalive && home-switch
     nh os test .
