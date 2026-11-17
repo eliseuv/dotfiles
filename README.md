@@ -312,7 +312,9 @@ service only tries to push the tag, so it usually stays local until the next
 `git push --follow-tags` from that host. The page shows the stage a switch is
 at and, when one fails, the stage and reason. `just system-switch`,
 `system-boot` and `system-test` refuse to run while a dashboard switch is in
-progress. Recent switch
+progress. **Home switch** does the same pull, then switches every user's
+Home Manager on that host, leaving the system as it is; it tags nothing, and
+neither switch starts while the other runs. Recent switch
 output shows the latest 300 journal lines from the current boot, capped at
 256 KiB; it refreshes while expanded during a switch. Like host status, this
 output is readable within the dashboard's LAN/tailnet reach. Remote output
