@@ -9,7 +9,8 @@ tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
 SSH_KEY, which the host pins to its remote-control forced command.
 REBOOT_JSON and SWITCH_JSON map tile names to {hosts} for hosts that can be
-rebooted, or whose dotfiles-switch.service can be started: here when `hosts`
+rebooted, or whose dotfiles-switch.service (or dotfiles-home-switch.service,
+the homes only) can be started: here when `hosts`
 is empty, otherwise through the same SSH login, trying each name in turn until
 one connects. TAILSCALE_JSON likewise maps tiles to {hosts} whose Tailscale can
 be turned on and off, always through that login. PORTS_JSON maps tiles to
@@ -49,6 +50,11 @@ ssh_key = sys.argv[9] if len(sys.argv) > 9 else None
 
 ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
+HOME_SWITCH_UNIT = "dotfiles-home-switch.service"
+# POST action -> the unit it starts here, also the remote verb's. Both units
+# share one status (services/dotfiles-switch.nix), so they're tracked as one
+# switch.
+SWITCH_ACTIONS = {"switch": SWITCH_UNIT, "home-switch": HOME_SWITCH_UNIT}
 # switch-status (services/_switch-status.nix), for this host's own switch.
 SWITCH_STATUS = os.environ.get("SVCCTL_SWITCH_STATUS")
 # A switch started from here that hasn't begun to run this long after is
@@ -546,7 +552,8 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     result = subprocess.run(
                         ["journalctl", "--quiet", "--no-pager", "--boot",
-                         f"--unit={SWITCH_UNIT}", "--lines=300", "--output=short-iso"],
+                         f"--unit={SWITCH_UNIT}", f"--unit={HOME_SWITCH_UNIT}",
+                         "--lines=300", "--output=short-iso"],
                         capture_output=True, timeout=15,
                     )
                 if result.returncode:
@@ -639,14 +646,14 @@ class Handler(BaseHTTPRequestHandler):
                 ["systemctl", "--no-block", "--check-inhibitors=no", "reboot"],
             )
             return
-        if action == "switch" and name in switchable:
+        if action in SWITCH_ACTIONS and name in switchable:
             target = switchable[name]
             # The remote verb prints the status before the start itself.
             before = ""
             if not target["hosts"] and SWITCH_STATUS:
                 before = subprocess.run([SWITCH_STATUS], capture_output=True, text=True).stdout
             started = self.host_action(
-                target, "switch", ["systemctl", "--no-block", "start", SWITCH_UNIT]
+                target, action, ["systemctl", "--no-block", "start", SWITCH_ACTIONS[action]]
             )
             if started:
                 begin_switch(name, started.stdout if target["hosts"] else before)

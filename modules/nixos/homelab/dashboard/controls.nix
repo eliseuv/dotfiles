@@ -305,7 +305,7 @@ in
         if (
           action.id == "org.freedesktop.systemd1.manage-units" &&
           subject.user == "svcctl" &&
-          action.lookup("unit") == "dotfiles-switch.service" &&
+          ["dotfiles-switch.service", "dotfiles-home-switch.service"].indexOf(action.lookup("unit")) >= 0 &&
           action.lookup("verb") == "start"
         ) {
           return polkit.Result.YES;

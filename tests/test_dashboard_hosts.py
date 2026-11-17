@@ -96,7 +96,8 @@ class SwitchLogTests(unittest.TestCase):
         self.remote = Mock(return_value=subprocess.CompletedProcess([], 0, "remote output", ""))
         self.ns.update(
             switchable={"Local": {"hosts": []}, "Remote": {"hosts": ["remote"], "user": "remote-control"}},
-            ssh_key="test-key", SWITCH_UNIT="dotfiles-switch.service", remote_any=self.remote,
+            ssh_key="test-key", SWITCH_UNIT="dotfiles-switch.service",
+            HOME_SWITCH_UNIT="dotfiles-home-switch.service", remote_any=self.remote,
             subprocess=types.SimpleNamespace(run=self.run, TimeoutExpired=subprocess.TimeoutExpired),
         )
 
@@ -111,6 +112,7 @@ class SwitchLogTests(unittest.TestCase):
         self.assertEqual(reply.call_args.args[1]["output"], "build output")
         command = self.run.call_args.args[0]
         self.assertIn("--unit=dotfiles-switch.service", command)
+        self.assertIn("--unit=dotfiles-home-switch.service", command)
         self.assertIn("--lines=300", command)
         self.assertIn("--boot", command)
         self.request("Remote")
@@ -131,6 +133,42 @@ class SwitchLogTests(unittest.TestCase):
         self.assertEqual(self.request("Local").call_args.args[0], 504)
         self.remote.return_value = subprocess.CompletedProcess([], 1, "", "remote-control: refused")
         self.assertEqual(self.request("Remote").call_args.args[0], 502)
+
+
+class SwitchStartTests(unittest.TestCase):
+    def setUp(self):
+        self.ns = definitions("svcctl.py")
+        self.watched = []
+        self.ns.update(
+            switchable={"Local": {"hosts": []}, "Remote": {"hosts": ["remote"], "user": "remote-control"}},
+            SWITCH_ACTIONS={"switch": "dotfiles-switch.service",
+                            "home-switch": "dotfiles-home-switch.service"},
+            SWITCH_STATUS=None, pending_switch={}, remote_switch={}, remote_switch_detail={},
+            start_switch_watch=self.watched.append,
+            time=types.SimpleNamespace(monotonic=lambda: 0.0),
+        )
+
+    def post(self, action, name):
+        started = subprocess.CompletedProcess([], 0, "", "")
+        handler = types.SimpleNamespace(path=f"/api/svc/{action}/{name}", guarded=lambda: True,
+                                        reply=Mock(), host_action=Mock(return_value=started))
+        self.ns["Handler"].do_POST(handler)
+        return handler
+
+    def test_home_switch_remote_verb_and_tracking(self):
+        handler = self.post("home-switch", "Remote")
+        target, verb, local = handler.host_action.call_args.args
+        self.assertEqual(verb, "home-switch")
+        self.assertEqual(local, ["systemctl", "--no-block", "start", "dotfiles-home-switch.service"])
+        self.assertEqual(self.ns["remote_switch"]["Remote"], "switching")
+        self.assertIn("Remote", self.ns["pending_switch"])
+        self.assertEqual(self.watched, ["Remote"])
+
+    def test_full_switch_unchanged(self):
+        handler = self.post("switch", "Local")
+        self.assertEqual(handler.host_action.call_args.args[1:],
+                         ("switch", ["systemctl", "--no-block", "start", "dotfiles-switch.service"]))
+        self.assertEqual(self.watched, [])
 
 
 class SwitchTrackingTests(unittest.TestCase):
