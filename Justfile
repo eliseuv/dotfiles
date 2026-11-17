@@ -214,6 +214,11 @@ upgrade: no-service-switch sudo-keepalive
         { echo "upgrade: uncommitted changes present, commit first" >&2; exit 1; }
     before=$(git rev-parse HEAD)
     {{just_executable()}} update
+    # The waybar flake module caches its count for 8h; the lock just
+    # changed (or was found current), so have it re-check now. Absent on
+    # hosts without the desktop.
+    waybar_check="$HOME/.config/waybar/scripts/check_flake_updates.sh"
+    [ ! -x "$waybar_check" ] || "$waybar_check" --refresh
     if [ "$before" = "$(git rev-parse HEAD)" ]; then
         echo "upgrade: nothing changed, skipping switch"
         exit 0
