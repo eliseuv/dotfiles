@@ -21,15 +21,21 @@ Read the user's goals list if they have one for context, never as something to
 edit. On a resume, **fold the project's inbox in first** — the user's own input
 outranks your agenda — then gap-fill rather than re-interview.
 
-Choose an existing aven project as the grouping container, or create one when
-needed. A project may hold several independent epics and needs no repo. The
-epic owns its repo through `repo=<absolute-path>` metadata; record the intended
-path while scoping, before scaffolding. Epics may share a repo. Aven project
-path mappings only provide cwd inference and are added after the repo exists:
+A repo maps to an **epic**, never to a project. Place the new epic in the
+closest related existing aven project (`aven project list`, then skim each
+candidate's epics); when no project clearly fits, or two fit equally, ask the
+user. Never create a project just to hold one repo's epic — create one only
+when the user asks for it:
 
 ```sh
 aven project create <name> --prefix <PREFIX>
 ```
+
+A project may hold several independent epics and needs no repo. The epic owns
+its repo through `repo=<absolute-path>` metadata; record the intended path
+while scoping, before scaffolding. Epics may share a repo. Aven project path
+mappings only provide cwd inference, routing the repo to the containing
+project, and are added after the repo exists.
 
 ## 1. Critique before capturing
 

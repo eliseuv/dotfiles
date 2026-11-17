@@ -60,6 +60,8 @@ with `--available-at`; frozen means it has no open tasks.
   `repo=<absolute-path>` metadata (an intended path before scaffolding). Repos
   belong to epics; projects are grouping containers. Epics may share a repo.
   Aven project path mappings only route cwd to the containing project.
+- A new epic goes into the closest related existing project; if none clearly
+  fits, ask the user. Never create a project per repo.
 - aven cannot nest epics, so POCs are tasks, not epics; a checkpoint names its
   POC through `poc=` metadata within the same epic. POC and checkpoint IDs are
   local to their epic; unit IDs are local to their epic and topic strand.
