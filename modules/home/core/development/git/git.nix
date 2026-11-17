@@ -42,6 +42,13 @@ in
 
     signing.format = "openpgp";
 
+    # Global excludes for every repository
+    ignores = [
+      "**/.claude/settings.local.json"
+      "CLAUDE.local.md"
+      ".local/"
+    ];
+
   };
 
   programs.delta = {
