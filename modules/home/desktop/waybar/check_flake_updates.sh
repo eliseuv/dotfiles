@@ -58,7 +58,8 @@ if [ -z "$UPDATED_NAMES" ]; then
 else
     UPDATE_COUNT=$(echo "$UPDATED_NAMES" | wc -w)
 fi
-TOOLTIP=$(echo "$UPDATED_NAMES" | tr '\n' '\r')
+# One input per line; JSON-escaped by jq when the result is built.
+TOOLTIP="$UPDATED_NAMES"
 
 # Notify once per distinct set of pending updates.
 CURRENT_SIG="$UPDATE_COUNT-$UPDATED_NAMES"
@@ -83,7 +84,8 @@ if [ "$UPDATE_COUNT" -gt 0 ]; then
     else
         CLASS=updates
     fi
-    RESULT="{\"text\": \"$UPDATE_COUNT\", \"tooltip\": \"$TOOLTIP\", \"class\": \"$CLASS\"}"
+    RESULT=$(jq -cn --arg text "$UPDATE_COUNT" --arg tooltip "$TOOLTIP" --arg class "$CLASS" \
+        '{text: $text, tooltip: $tooltip, class: $class}')
 else
     RESULT='{"text": "", "tooltip": "System up to date", "class": "clean"}'
 fi
