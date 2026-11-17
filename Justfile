@@ -206,7 +206,23 @@ system-boot: no-service-switch pull sudo-keepalive && after-switch
 # from another host count as a change too; only when neither the pull nor
 # the lock brought anything is the switch skipped.
 # Regular full update: lock all inputs, check patches, switch system + homes
-upgrade: no-service-switch sudo-keepalive
+upgrade:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # One upgrade at a time per user (a second click on the waybar module, a
+    # second terminal); both would rebase and build the same checkout. Taken
+    # before upgrade-run's dependencies, so a refused run never asks for sudo.
+    # --close: only flock holds the lock, not upgrade-run's children, or
+    # sudo-keepalive's background loop would hold it for up to 60s after.
+    status=0
+    flock --nonblock --close --conflict-exit-code 75 \
+        "${XDG_RUNTIME_DIR:-/tmp}/dotfiles-upgrade.lock" \
+        {{just_executable()}} upgrade-run || status=$?
+    [ "$status" -ne 75 ] || echo "upgrade: another upgrade is already running" >&2
+    exit "$status"
+
+[private]
+upgrade-run: no-service-switch sudo-keepalive
     #!/usr/bin/env bash
     set -euo pipefail
     # commit-gen refuses a dirty tree, but only after the switch; fail first.
