@@ -16,7 +16,9 @@ one connects. `tailscale` likewise maps tiles to {hosts} whose Tailscale can
 be turned on and off, always through that login. `ports` maps tiles to
 {hosts, ports}: TCP ports reported open or closed, on this host when `hosts`
 is empty. `tiles` and `tailnet`, what every client shows of the tiles, are
-served as is.
+served as is. `pages`, when present, configures the host pages' API under
+/api/hosts/ (host_pages.py), whose reports and diffs it keeps in
+$STATE_DIRECTORY and which logs in to hosts the same way.
 Also serves per-service resource usage, read from the cgroup tree."""
 
 import json
@@ -30,6 +32,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
+
+import host_pages
 
 port = int(sys.argv[1])
 with open(sys.argv[2]) as file:
@@ -278,7 +282,7 @@ def send_magic_packet(mac):
         sock.sendto(payload, ("255.255.255.255", 9))
 
 
-def remote(host, verb, user="remote-control"):
+def remote(host, verb, user="remote-control", timeout=20):
     # The host's authorized_keys forces its remote-control command, which
     # only takes the verb from here. known_hosts comes from the system file
     # only; svcctl has no home to keep one in. -F /dev/null skips the system
@@ -299,18 +303,18 @@ def remote(host, verb, user="remote-control"):
         ],
         capture_output=True,
         text=True,
-        timeout=20,
+        timeout=timeout,
     )
 
 
-def remote_any(hosts, verb, user="remote-control"):
+def remote_any(hosts, verb, user="remote-control", timeout=20):
     # ssh exits 255 when it can't connect (or log in), anything else is the
     # forced command's own exit; only the former moves on to the next name.
     # Raises the last TimeoutExpired if every name timed out.
     result = timeout = None
     for host in hosts:
         try:
-            result = remote(host, verb, user)
+            result = remote(host, verb, user, timeout)
         except subprocess.TimeoutExpired as error:
             timeout = error
             continue
@@ -531,6 +535,10 @@ class Handler(BaseHTTPRequestHandler):
         return result
 
     def do_GET(self):
+        # Read-only and open without the header, as the host pages' API
+        # always was: the pages and the bar fetch it plainly.
+        if self.path.startswith("/api/hosts/"):
+            return self.reply(*host_pages.get(self.path))
         if not self.guarded():
             return
         prefix = "/api/svc/switch-log/"
@@ -686,6 +694,16 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s\n" % (format % args))
 
 
+if "pages" in config:
+    state_directory = Path(os.environ["STATE_DIRECTORY"])
+    host_pages.configure(
+        config["pages"],
+        state_directory,
+        Path(os.environ.get("RUNTIME_DIRECTORY", state_directory)),
+        remote_any if ssh_key else None,
+        os.environ.get("SVCCTL_SNMP_CONF"),
+    )
+    host_pages.start()
 threading.Thread(target=sample_usage, daemon=True).start()
 for name, hosts in probed.items():
     threading.Thread(target=probe, args=(name, hosts), daemon=True).start()

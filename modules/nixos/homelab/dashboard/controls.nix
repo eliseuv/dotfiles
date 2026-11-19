@@ -38,6 +38,8 @@
 # (controls.js), the Homelab rofi menu (wheatleymenu) and the bar
 # (wheatley.sh). It holds what they show, not how svcctl reaches it: unit
 # names, SSH targets and MACs stay in the rest of svcctl's config.
+# svcctl also serves the host pages' read-only API (hosts.nix) under
+# /api/hosts/, open like its status, over the same SSH login.
 {
   config,
   lib,
@@ -221,22 +223,36 @@ let
   ) dashboardOrder;
 
   configFile = pkgs.writeText "svcctl.json" (
-    builtins.toJSON {
-      inherit units;
-      wake = wakeable;
-      reboot = hostActions "reboot";
-      switch = hostActions "switch";
-      tailscale = hostActions "tailscale";
-      ports = portTargets;
-      tiles = tileList;
-      # For links to other hosts' ports by the name the client reached this
-      # one with (controls.js).
-      tailnet = {
-        domain = config.homelab.network.tailnetDomain;
-        address = config.homelab.network.tailnetAddress;
-      };
-    }
+    builtins.toJSON (
+      {
+        inherit units;
+        wake = wakeable;
+        reboot = hostActions "reboot";
+        switch = hostActions "switch";
+        tailscale = hostActions "tailscale";
+        ports = portTargets;
+        tiles = tileList;
+        # For links to other hosts' ports by the name the client reached this
+        # one with (controls.js).
+        tailnet = {
+          domain = config.homelab.network.tailnetDomain;
+          address = config.homelab.network.tailnetAddress;
+        };
+      }
+      // lib.optionalAttrs (config.homelab.svcctl.hostPages != null) {
+        pages = config.homelab.svcctl.hostPages;
+      }
+    )
   );
+
+  # svcctl.py imports host_pages.py from its own directory.
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./svcctl.py
+      ./host_pages.py
+    ];
+  };
 
   # Dashboard paths of tile terminals and links (e.g. a proxied Pluto), which
   # get the actions' login.
@@ -258,7 +274,8 @@ let
   # One `user:hash` line (`openssl passwd -6`).
   htpasswd = "svcctl/htpasswd";
 
-  # Named for its first use; it also logs in for remote switches.
+  # Named for its first use; it also logs in for remote switches and to read
+  # other hosts' pages.
   sshKey = "svcctl/poweroff-ssh-key";
   needsKey =
     lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
@@ -267,6 +284,7 @@ let
       ++ targetHosts "switch"
       ++ targetHosts "tailscale"
       ++ targetHosts "unitHost"
+      ++ targetHosts "page"
       ++ lib.concatMap (
         service:
         lib.optional (
@@ -277,6 +295,13 @@ let
     );
 in
 {
+
+  options.homelab.svcctl.hostPages = lib.mkOption {
+    type = lib.types.nullOr (lib.types.attrsOf lib.types.anything);
+    default = null;
+    internal = true;
+    description = "The host pages' section of svcctl's config, set by hosts.nix; null for no host pages.";
+  };
 
   config = lib.mkIf config.my.homelab.enable {
 
@@ -374,7 +399,7 @@ in
         ExecStart = lib.concatStringsSep " " (
           [
             (lib.getExe pkgs.python3)
-            "${./svcctl.py}"
+            "${source}/svcctl.py"
             (toString port)
             "${configFile}"
           ]
@@ -411,6 +436,8 @@ in
           }
         '';
       };
+      # The host pages' API (host_pages.py); open, read-only.
+      "/api/hosts/".proxyPass = "http://127.0.0.1:${toString port}";
       # Not every browser asks for a login when a script's request gets a
       # 401 (Firefox for Android doesn't), but every one does for a page, so
       # controls.js sends the user here on a 401. Logged in at this path,

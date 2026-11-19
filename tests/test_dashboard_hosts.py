@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -13,6 +14,8 @@ from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "modules/nixos/homelab/dashboard"
+# svcctl.py imports host_pages.py, as it does from its store directory.
+sys.path.insert(0, str(DASHBOARD))
 
 
 def definitions(name):
@@ -29,7 +32,7 @@ class ComparisonTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.ns = definitions("hostctl.py")
+        self.ns = definitions("host_pages.py")
         self.ns.update(
             comparison_lock=threading.Lock(), comparison_locks={},
             diffs_dir=Path(self.temp.name),
@@ -83,10 +86,31 @@ class ComparisonTests(unittest.TestCase):
                              ("/api/hosts/host/compare/1/8%3Bwhoami", 404),
                              ("/api/hosts/host/compare/-1/8", 404),
                              ("/api/hosts/unknown/compare/1/8", 404)):
-            handler = types.SimpleNamespace(path=path, reply=Mock())
-            self.ns["Handler"].do_GET(handler)
-            self.assertEqual(handler.reply.call_args.args[0], status)
+            self.assertEqual(self.ns["get"](path)[0], status)
         compare.assert_called_once_with("host", 1, 8)
+
+    def test_remote_report_uses_svcctl_login(self):
+        ns = definitions("host_pages.py")
+        remote = Mock(return_value=subprocess.CompletedProcess([], 0, '{"generations": []}', ""))
+        ns.update(hosts={"host": {"hosts": ["host.tailnet", "host.local"], "user": "remote-control"}},
+                  run_remote=remote, REPORT_TIMEOUT=60)
+        self.assertEqual(ns["run_report"]("host", "generations"), {"generations": []})
+        remote.assert_called_once_with(["host.tailnet", "host.local"], "generations",
+                                       "remote-control", timeout=60)
+        ns["run_remote"] = None
+        with self.assertRaisesRegex(RuntimeError, "no SSH key"):
+            ns["run_report"]("host", "generations")
+
+
+class HostRoutingTests(unittest.TestCase):
+    def test_host_pages_need_no_header(self):
+        ns = definitions("svcctl.py")
+        pages = Mock(get=Mock(return_value=(200, {"host": "h"})))
+        ns["host_pages"] = pages
+        handler = types.SimpleNamespace(path="/api/hosts/h", guarded=lambda: False, reply=Mock())
+        ns["Handler"].do_GET(handler)
+        pages.get.assert_called_once_with("/api/hosts/h")
+        handler.reply.assert_called_once_with(200, {"host": "h"})
 
 
 class SwitchLogTests(unittest.TestCase):

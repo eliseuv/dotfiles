@@ -1,8 +1,8 @@
 # Lets the homelab dashboard (svcctl on wheatley, dashboard/controls.nix)
 # power this host off, reboot it, switch it (or only its homes) to the latest dotfiles, turn
 # Tailscale on and off, and start and stop the units in `remoteUnits`; and
-# lets its host pages (hostctl, dashboard/hosts.nix) read this host's
-# generations, along with the switch. Both log in over SSH, with the same key,
+# lets its host pages (served by svcctl too, dashboard/hosts.nix) read this
+# host's generations, along with the switch. svcctl logs in over SSH
 # as a dedicated user whose only key is pinned to one forced command, so the key can't open a shell, forward anything or run anything
 # else, whatever the client asks for. The forced command reads the requested
 # verb from SSH_ORIGINAL_COMMAND and accepts only the ones this host enables.

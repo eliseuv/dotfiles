@@ -217,7 +217,7 @@ let
     snmp = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "sops secret holding a net-snmp client config (SNMPv3 credentials) with which hostctl reads the `wake` host's uptime, for machines that can't run host-report; needs `address` (hosts.nix).";
+      description = "sops secret holding a net-snmp client config (SNMPv3 credentials) with which svcctl reads the `wake` host's uptime, for machines that can't run host-report; needs `address` (hosts.nix).";
     };
     address = lib.mkOption {
       type = lib.types.nullOr lib.types.str;

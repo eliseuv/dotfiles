@@ -1,5 +1,5 @@
 // A host page: the host's generations, what changed between them and whether
-// it runs what master builds, from hostctl (hosts.nix). The switch buttons
+// it runs what master builds, from svcctl's host_pages.py (hosts.nix). The switch buttons
 // and their state are svcctl's, the same as on the host's dashboard tile
 // (controls.js). The full and home-only switches share one state there.
 (() => {
@@ -104,7 +104,7 @@
         loading = false;
         document.getElementById("refresh").disabled = false;
         if (data === null && document.body.dataset.missing) return;
-        // Quickly while hostctl is fetching a report, so it shows as soon as
+        // Quickly while svcctl is fetching a report, so it shows as soon as
         // it lands.
         loadTimer = setTimeout(load, data?.refreshing ? 2000 : 60000);
       });
@@ -359,7 +359,7 @@
   // the closure and "ε" for a path without a version (config files and the
   // like). The size is coloured even through a pipe or with NO_COLOR, and
   // only signed when it shrinks, so the escapes are stripped here, which
-  // also covers diffs hostctl cached before this.
+  // also covers diffs cached before this.
   const change = (line) => {
     line = line.replace(/\x1b\[[0-9;]*m/g, "");
     const split = line.indexOf(": ");

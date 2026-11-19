@@ -262,7 +262,7 @@ in
   config = lib.mkIf config.my.services.dotfilesSwitch.enable {
 
     # Written by the primary user (here and by hand), read by anyone:
-    # host-report runs as remote-control, or as hostctl on the dashboard host.
+    # host-report runs as remote-control, or as svcctl on the dashboard host.
     systemd.tmpfiles.rules = [ "d ${revisionsDir} 0755 ${user} - -" ];
 
     systemd.services.${units.system} = switchService {

@@ -31,14 +31,14 @@
   // they all share the LAN, so only the viewer's distance to this one varies.
   let latency = null;
   // Tile name -> {seconds, at}: uptime of a page host as of performance.now()
-  // `at`, counted on from there. hostctl fetches it over SSH only every
+  // `at`, counted on from there. svcctl fetches it over SSH only every
   // few minutes; pings say when it has gone stale.
   const uptimes = {};
   // Tile name -> performance.now() when its host was last seen down. An
   // uptime fetched before then is from the previous boot.
   const downSeen = {};
   // Tile name -> {lan, tailnet} addresses of a page host, for the tile's
-  // tooltip; hostctl keeps the last LAN one while the host is off.
+  // tooltip; svcctl keeps the last LAN one while the host is off.
   const addresses = {};
   const uptimeResync = 60 * 1000;
   const lastUptimeFetch = {};
@@ -112,7 +112,7 @@
       .then(({ uptime, uptime_age: age, addresses: found }) => {
         addresses[name] = found;
         if (uptime == null) return;
-        // The age is on hostctl's clock and the wait on ours; both are durations.
+        // The age is on svcctl's clock and the wait on ours; both are durations.
         if (name in downSeen && age * 1000 > performance.now() - downSeen[name]) return;
         delete downSeen[name];
         uptimes[name] = { seconds: uptime, at: performance.now() };
@@ -142,7 +142,7 @@
         delete uptimes[name];
         downSeen[name] = performance.now();
       } else if (name in downSeen || !(name in uptimes)) {
-        // Back up: ask hostctl to refetch until it has a post-boot value.
+        // Back up: ask svcctl to refetch until it has a post-boot value.
         fetchUptime(name, true);
       } else if (performance.now() - lastUptimeFetch[name] >= uptimeResync) {
         fetchUptime(name, false);

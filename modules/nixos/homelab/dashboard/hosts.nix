@@ -11,13 +11,13 @@
 # host is up to date when its current system is the store path master
 # evaluates to, so a commit that changes nothing else changes nothing here.
 #
-# The rest comes from each host: hostctl.py runs host-report
-# (services/_host-report.nix) here for this host, and for others logs in to
-# their remote-control forced command (services/remote-control.nix) with
-# svcctl's key, in a copy of its own. It caches what it got,
-# so a host that's off still shows its last report. Its API is read-only and
-# open like svcctl's status, the dashboard's reach (LAN + tailnet); the pages'
-# switch button is svcctl's, behind its login.
+# The rest comes from each host, through svcctl (controls.nix), whose
+# host_pages.py runs host-report (services/_host-report.nix) here for this
+# host, and for others logs in to their remote-control forced command
+# (services/remote-control.nix) as it does for its buttons. It caches what it
+# got, so a host that's off still shows its last report. That API is
+# read-only and open like svcctl's status, the dashboard's reach (LAN +
+# tailnet); the pages' switch button is svcctl's, behind its login.
 {
   config,
   lib,
@@ -38,7 +38,6 @@ let
   ) config.homelab.services;
   pageHosts = lib.unique (lib.mapAttrsToList (_: service: service.dashboard.page) tiles);
 
-  port = 8098;
   isLocal = host: host == config.my.host.name;
   # As in controls.nix: none for this host, else its MagicDNS name, then its
   # mDNS one for when Tailscale is down on it.
@@ -68,7 +67,7 @@ let
     }
   ) tiles;
   # Tiles of machines that can't run host-report, keyed by their `wake` host:
-  # hostctl reads only their uptime, over SNMP.
+  # svcctl reads only their uptime, over SNMP.
   snmpTiles = lib.filterAttrs (
     _: service: service.dashboard != null && service.dashboard.snmp != null
   ) config.homelab.services;
@@ -85,9 +84,6 @@ let
       tailnet = tailnetAddress service.dashboard.wake;
     }
   ) snmpTiles;
-  pagesFile = pkgs.writeText "hostctl-hosts.json" (builtins.toJSON (pages // snmpHosts));
-  needsKey = !lib.all isLocal pageHosts;
-  sshKey = "hostctl/ssh-key";
 
   svg = import ./_svg.nix;
   # Static; host.js reads the host from the query string.
@@ -193,76 +189,30 @@ in
       };
     };
 
-    users.users.hostctl = {
-      isSystemUser = true;
-      group = "hostctl";
+    homelab.svcctl.hostPages = {
+      hosts = pages // snmpHosts;
+      eval_file = evalFile;
+      host_report = hostReport;
     };
-    users.groups.hostctl = { };
 
-    # svcctl's key (controls.nix), rendered again for this user: ssh refuses
-    # a key its owner shares, so the one copy can't serve both.
-    sops.secrets = lib.mkMerge [
-      (lib.mkIf needsKey {
-        ${sshKey} = {
-          key = "svcctl/poweroff-ssh-key";
-          owner = "hostctl";
-        };
-      })
-      (lib.genAttrs snmpSecrets (_: {
-        owner = "hostctl";
-      }))
-    ];
+    sops.secrets = lib.genAttrs snmpSecrets (_: {
+      owner = "svcctl";
+    });
 
-    systemd.services.hostctl = {
-      description = "Dashboard host pages";
-      wantedBy = [ "multi-user.target" ];
-      path = [
-        pkgs.openssh
-        pkgs.net-snmp
-      ];
+    # Merged into svcctl's unit (controls.nix): snmpget for the SNMP tiles,
+    # and somewhere to keep reports, diffs and net-snmp's engine state.
+    systemd.services.svcctl = {
+      path = [ pkgs.net-snmp ];
+      environment = lib.optionalAttrs (snmpSecrets != [ ]) {
+        SVCCTL_SNMP_CONF = config.sops.secrets.${lib.head snmpSecrets}.path;
+      };
       serviceConfig = {
-        ExecStart = lib.concatStringsSep " " (
-          [
-            (lib.getExe pkgs.python3)
-            "${./hostctl.py}"
-            (toString port)
-            "${pagesFile}"
-            evalFile
-            "/var/lib/hostctl"
-            hostReport
-          ]
-          ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
-        );
-        User = "hostctl";
-        Group = "hostctl";
-        StateDirectory = "hostctl";
-        RuntimeDirectory = "hostctl";
-        Environment = map (
-          secret: "HOSTCTL_SNMP_CONF=${config.sops.secrets.${secret}.path}"
-        ) snmpSecrets;
-        Restart = "on-failure";
-        # Serves on loopback, SSHes to hosts on the LAN and the tailnet, and
-        # talks to the Nix daemon (AF_UNIX) for this host's report.
-        RestrictAddressFamilies = [
-          "AF_UNIX"
-          "AF_INET"
-        ];
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectControlGroups = true;
-        LockPersonality = true;
+        StateDirectory = "svcctl";
+        RuntimeDirectory = "svcctl";
       };
     };
 
-    services.nginx.virtualHosts.dashboard.locations = {
-      "/api/hosts/".proxyPass = "http://127.0.0.1:${toString port}";
-      "/hosts/".alias = "${page}/";
-    };
+    services.nginx.virtualHosts.dashboard.locations."/hosts/".alias = "${page}/";
 
     systemd.timers.dotfiles-eval = {
       wantedBy = [ "timers.target" ];

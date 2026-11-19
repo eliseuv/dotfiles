@@ -1,57 +1,99 @@
-"""hostctl PORT HOSTS_JSON EVAL_JSON STATE_DIR HOST_REPORT [SSH_KEY]: the API
-behind the dashboard's host pages (hosts.nix). Read-only; the pages' switch
-button goes to svcctl.
-HOSTS_JSON maps host names to {tile, hosts, user, switch, mdns, tailnet}. With `hosts` empty
-the host is this one and HOST_REPORT runs here; otherwise it runs there,
-through the remote-control forced command (services/remote-control.nix),
-logged in with SSH_KEY, trying each name in `hosts` until one connects.
-Reports are cached in STATE_DIR, so a page shows the last one while its host
-is off. A host with `snmp` set can't run HOST_REPORT (a Synology): only its
-uptime is read, with snmpget, using the net-snmp client config at
-$HOSTCTL_SNMP_CONF. Each host's LAN address is looked up by its `mdns` name
+"""The API behind the dashboard's host pages (hosts.nix), part of svcctl,
+which serves it at /api/hosts/. Read-only; the pages' switch button is
+svcctl's own.
+configure() takes svcctl's `pages` section: `hosts` maps host names to
+{tile, hosts, user, switch, mdns, tailnet}. With `hosts` empty the host is
+this one and `host_report` runs here; otherwise it runs there, through the
+remote-control forced command (services/remote-control.nix), over svcctl's
+SSH login, which tries each name in `hosts` until one connects. Reports are
+cached in svcctl's state directory, so a page shows the last one while its
+host is off. A host with `snmp` set can't run host-report (a Synology): only
+its uptime is read, with snmpget, using the net-snmp client config at
+$SVCCTL_SNMP_CONF. Each host's LAN address is looked up by its `mdns` name
 (the router hands out no fixed ones) and, like reports, kept for when the host
 is off; its `tailnet` address is static. Closure diffs are cached for good: a generation never changes.
-EVAL_JSON is dotfiles-eval.service's evaluation of master (hosts.nix)."""
+`eval_file` is dotfiles-eval.service's evaluation of master (hosts.nix).
+Importing this starts nothing; svcctl calls configure() and start()."""
 
 import json
 import os
 import re
 import socket
 import subprocess
-import sys
 import threading
 import tempfile
 import time
 import weakref
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
-
-port = int(sys.argv[1])
-with open(sys.argv[2]) as file:
-    hosts = json.load(file)
-eval_file = Path(sys.argv[3])
-state_dir = Path(sys.argv[4])
-host_report = sys.argv[5]
-ssh_key = sys.argv[6] if len(sys.argv) > 6 else None
 
 # Each refresh of a remote host is an SSH login, so: every few minutes in the
 # background, sooner when a page asks, but no more often than this.
 REFRESH_INTERVAL = 300
 MIN_REFRESH_GAP = 30
+# diff-closures over a large change takes a while.
+REPORT_TIMEOUT = 60
 
-# net-snmp finds its credentials as snmp.conf in SNMPCONFPATH, a directory,
-# and wants a place to keep its engine state.
-snmp_dir = Path(os.environ.get("RUNTIME_DIRECTORY", state_dir)) / "snmp"
-if os.environ.get("HOSTCTL_SNMP_CONF"):
-    snmp_dir.mkdir(exist_ok=True)
-    (snmp_dir / "snmp.conf").unlink(missing_ok=True)
-    (snmp_dir / "snmp.conf").symlink_to(os.environ["HOSTCTL_SNMP_CONF"])
+# All set by configure(); empty, the API knows no hosts.
+hosts = {}
+eval_file = None
+state_dir = reports_dir = diffs_dir = snmp_dir = None
+host_report = None
+# svcctl's remote_any(), None without an SSH key.
+run_remote = None
+# Host -> its last resolved LAN address.
+lan_addresses = {}
+# Host -> {report, fetched_at, attempted_at, error, refreshing, boot_at}.
+state = {}
+pokes = {}
 
-reports_dir = state_dir / "reports"
-diffs_dir = state_dir / "diffs"
-reports_dir.mkdir(exist_ok=True)
-diffs_dir.mkdir(exist_ok=True)
+# The refreshers share one file (and its temp file), and an unhandled error
+# ends a refresher thread for good.
+lan_addresses_lock = threading.Lock()
+
+# Serialize requests for each host/pair so concurrent clients share the cache.
+comparison_lock = threading.Lock()
+comparison_locks = weakref.WeakValueDictionary()
+
+
+def configure(pages, state_directory, runtime_directory, remote, snmp_conf):
+    global hosts, eval_file, state_dir, reports_dir, diffs_dir, snmp_dir
+    global host_report, run_remote, lan_addresses, state, pokes
+    hosts = pages["hosts"]
+    eval_file = Path(pages["eval_file"])
+    host_report = pages["host_report"]
+    run_remote = remote
+    state_dir = state_directory
+    reports_dir = state_dir / "reports"
+    diffs_dir = state_dir / "diffs"
+    reports_dir.mkdir(exist_ok=True)
+    diffs_dir.mkdir(exist_ok=True)
+    # net-snmp finds its credentials as snmp.conf in SNMPCONFPATH, a
+    # directory, and wants a place to keep its engine state.
+    snmp_dir = runtime_directory / "snmp"
+    if snmp_conf:
+        snmp_dir.mkdir(exist_ok=True)
+        (snmp_dir / "snmp.conf").unlink(missing_ok=True)
+        (snmp_dir / "snmp.conf").symlink_to(snmp_conf)
+    lan_addresses = load_addresses()
+    state = {
+        host: {
+            **load_cached(host),
+            "attempted_at": None,
+            "error": None,
+            "refreshing": False,
+            # When the host booted, by this clock. Not cached on disk: the
+            # host may have rebooted since, and the tiles count uptime from it.
+            "boot_at": None,
+        }
+        for host in hosts
+    }
+    pokes = {host: threading.Event() for host in hosts}
+
+
+def start():
+    for host in hosts:
+        threading.Thread(target=refresher, args=(host,), daemon=True).start()
 
 
 def load_cached(host):
@@ -78,50 +120,6 @@ def write_atomically(path, data):
             tmp.replace(path)
         finally:
             tmp.unlink(missing_ok=True)
-
-
-# Host -> its last resolved LAN address.
-lan_addresses = load_addresses()
-# The refreshers share one file (and its temp file), and an unhandled error
-# ends a refresher thread for good.
-lan_addresses_lock = threading.Lock()
-
-
-# Host -> {report, fetched_at, attempted_at, error, refreshing}.
-state = {
-    host: {
-        **load_cached(host),
-        "attempted_at": None,
-        "error": None,
-        "refreshing": False,
-        # When the host booted, by this clock. Not cached on disk: the host
-        # may have rebooted since, and the tiles count uptime from it.
-        "boot_at": None,
-    }
-    for host in hosts
-}
-pokes = {host: threading.Event() for host in hosts}
-
-
-def remote(host, verb, user):
-    # Same login as svcctl's remote() (svcctl.py), which explains the options.
-    return subprocess.run(
-        [
-            "ssh",
-            "-F", "/dev/null",
-            "-i", ssh_key,
-            "-o", "BatchMode=yes",
-            "-o", "ConnectTimeout=5",
-            "-o", "StrictHostKeyChecking=yes",
-            "-o", "UserKnownHostsFile=/dev/null",
-            f"{user}@{host}",
-            verb,
-        ],
-        capture_output=True,
-        text=True,
-        # diff-closures over a large change takes a while.
-        timeout=60,
-    )
 
 
 def snmp_uptime(host):
@@ -152,17 +150,14 @@ def run_report(host, *args):
     try:
         if not target["hosts"]:
             result = subprocess.run(
-                [host_report, *args], capture_output=True, text=True, timeout=60
+                [host_report, *args], capture_output=True, text=True, timeout=REPORT_TIMEOUT
             )
+        elif run_remote is None:
+            raise RuntimeError("no SSH key")
         else:
-            if not ssh_key:
-                raise RuntimeError("no SSH key")
-            # ssh exits 255 when it can't connect (or log in); anything else is
-            # the forced command's own exit, so only that moves on.
-            for name in target["hosts"]:
-                result = remote(name, " ".join(args), target["user"])
-                if result.returncode != 255:
-                    break
+            result = run_remote(
+                target["hosts"], " ".join(args), target["user"], timeout=REPORT_TIMEOUT
+            )
     except subprocess.TimeoutExpired:
         raise RuntimeError("timed out")
     if result.returncode != 0:
@@ -269,11 +264,6 @@ def diff(host, number):
     return result
 
 
-# Serialize requests for each host/pair so concurrent clients share the cache.
-comparison_lock = threading.Lock()
-comparison_locks = weakref.WeakValueDictionary()
-
-
 def compare(host, base, number):
     with comparison_lock:
         lock = comparison_locks.setdefault((host, base, number), threading.Lock())
@@ -290,67 +280,51 @@ def compare(host, base, number):
         return result
 
 
-class Handler(BaseHTTPRequestHandler):
-    def reply(self, status, body=None):
-        data = json.dumps(body).encode() if body is not None else b""
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    def do_GET(self):
-        url = urlsplit(self.path)
-        parts = [unquote(part) for part in url.path.strip("/").split("/")]
-        if len(parts) < 3 or parts[:2] != ["api", "hosts"] or parts[2] not in hosts:
-            return self.reply(404)
-        host = parts[2]
-        if len(parts) == 3:
-            entry = state[host]
-            if "refresh=1" in url.query.split("&") and not entry["refreshing"]:
-                if time.time() - (entry["attempted_at"] or 0) >= MIN_REFRESH_GAP:
-                    # Set here too, so the page polls until the refresh lands.
-                    entry["refreshing"] = True
-                    pokes[host].set()
-            master = load_master(host)
-            now = time.time()
-            # Seconds since the host booted as of now, and how old the fetch
-            # behind it is; relative, so the tiles needn't share this clock.
-            booted = entry["boot_at"] is not None
-            return self.reply(
-                200,
-                {
-                    "host": host,
-                    "tile": hosts[host]["tile"],
-                    "switch": hosts[host]["switch"],
-                    **entry,
-                    "uptime": now - entry["boot_at"] if booted else None,
-                    "uptime_age": now - entry["fetched_at"] if booted else None,
-                    "addresses": {
-                        "lan": lan_addresses.get(host),
-                        "tailnet": hosts[host].get("tailnet"),
-                    },
-                    "master": master,
-                    "status": deploy_status(entry["report"], master),
+def get(path):
+    """(status, body) for a GET of `path` under /api/hosts/."""
+    url = urlsplit(path)
+    parts = [unquote(part) for part in url.path.strip("/").split("/")]
+    if len(parts) < 3 or parts[:2] != ["api", "hosts"] or parts[2] not in hosts:
+        return 404, None
+    host = parts[2]
+    if len(parts) == 3:
+        entry = state[host]
+        if "refresh=1" in url.query.split("&") and not entry["refreshing"]:
+            if time.time() - (entry["attempted_at"] or 0) >= MIN_REFRESH_GAP:
+                # Set here too, so the page polls until the refresh lands.
+                entry["refreshing"] = True
+                pokes[host].set()
+        master = load_master(host)
+        now = time.time()
+        # Seconds since the host booted as of now, and how old the fetch
+        # behind it is; relative, so the tiles needn't share this clock.
+        booted = entry["boot_at"] is not None
+        return (
+            200,
+            {
+                "host": host,
+                "tile": hosts[host]["tile"],
+                "switch": hosts[host]["switch"],
+                **entry,
+                "uptime": now - entry["boot_at"] if booted else None,
+                "uptime_age": now - entry["fetched_at"] if booted else None,
+                "addresses": {
+                    "lan": lan_addresses.get(host),
+                    "tailnet": hosts[host].get("tailnet"),
                 },
-            )
-        if (len(parts) == 6 and parts[3] == "compare"
-                and all(re.fullmatch(r"[0-9]+", part) for part in parts[4:])):
-            try:
-                return self.reply(200, compare(host, int(parts[4]), int(parts[5])))
-            except RuntimeError as error:
-                return self.reply(502, {"error": str(error)})
-        if len(parts) == 5 and parts[3] == "diff" and re.fullmatch(r"[0-9]+", parts[4]):
-            try:
-                return self.reply(200, diff(host, int(parts[4])))
-            except RuntimeError as error:
-                return self.reply(502, {"error": str(error)})
-        self.reply(404)
-
-    def log_message(self, format, *args):
-        sys.stderr.write("%s\n" % (format % args))
-
-
-for host in hosts:
-    threading.Thread(target=refresher, args=(host,), daemon=True).start()
-ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
+                "master": master,
+                "status": deploy_status(entry["report"], master),
+            },
+        )
+    if (len(parts) == 6 and parts[3] == "compare"
+            and all(re.fullmatch(r"[0-9]+", part) for part in parts[4:])):
+        try:
+            return 200, compare(host, int(parts[4]), int(parts[5]))
+        except RuntimeError as error:
+            return 502, {"error": str(error)}
+    if len(parts) == 5 and parts[3] == "diff" and re.fullmatch(r"[0-9]+", parts[4]):
+        try:
+            return 200, diff(host, int(parts[4]))
+        except RuntimeError as error:
+            return 502, {"error": str(error)}
+    return 404, None
