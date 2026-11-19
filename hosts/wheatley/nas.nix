@@ -61,14 +61,17 @@ in
     # Drawn over with the cube face; the dashboard theme CSS matches this name.
     icon = "synology.svg";
     href = "https://${nasAddress}:5001";
-    # Wake, restart, power off and Tailscale buttons, over SSH as evf to DSM
-    # (see the forced command in the comment below); no terminal or switch.
-    wake = "CompanionCube";
-    poweroff = true;
-    reboot = "CompanionCube";
-    tailscale = "CompanionCube";
+    host = "CompanionCube";
+  };
+  # What its tile's buttons may do, as hosts in hosts/ say in their
+  # my.services: wake, restart, power off and Tailscale, over SSH as evf to
+  # DSM, which must accept the verbs svcctl sends for those (how its key is
+  # set up there isn't recorded here); no terminal or switch.
+  homelab.externalHosts.CompanionCube = {
     address = nasAddress;
     sshUser = "evf";
+    remotePowerOff = true;
+    remoteTailscale = true;
     # Its uptime over SNMPv3 (authNoPriv, MD5); the secret is a net-snmp
     # client config in secrets/hosts/wheatley.yaml. DSM can't run host-report.
     snmp = "companioncube/snmp";

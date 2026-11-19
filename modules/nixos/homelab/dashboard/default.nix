@@ -13,6 +13,7 @@
   inputs,
   lib,
   pkgs,
+  hostSpecs,
   ...
 }:
 let
@@ -24,6 +25,12 @@ let
   homepagePort = config.services.homepage-dashboard.listenPort;
 
   groups = import ./_groups.nix;
+  machineOf = import ./_machines.nix { inherit config lib hostSpecs; };
+  remoteTerminals = lib.filter (machine: !machine.local && machine.terminal != null) (
+    map (service: machineOf service.dashboard.host) (
+      lib.attrValues (lib.filterAttrs (_: service: service.dashboard.host != null) tiled)
+    )
+  );
 
   tiled = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
   # Field -> sops secret for each tile's main widget; `widgetKey` is shorthand
@@ -40,6 +47,10 @@ let
     name: service:
     let
       tileCfg = service.dashboard;
+      machine = if tileCfg.host != null then machineOf tileCfg.host else null;
+      address = if machine != null then machine.address else null;
+      terminal = if machine != null then machine.terminal else null;
+      page = if machine != null && machine.page then machine.host else null;
       local = "http://127.0.0.1:${toString service.port}";
       linked = tileCfg.link && service.port != null;
       mainWidget =
@@ -58,32 +69,29 @@ let
     }
     # Homepage monitors server-side, where a path on this dashboard means
     # nothing. Up/down rather than a response time, except for LAN machines
-    # (those with an `address`): over loopback or to the internet the time
+    # (external ones, with an `address`): over loopback or to the internet the time
     # says nothing about the network here. It stays in the tooltip.
     // lib.optionalAttrs (tileCfg.href != null && !lib.hasPrefix "/" tileCfg.href) (
       {
         siteMonitor = tileCfg.href;
       }
-      // lib.optionalAttrs (tileCfg.address == null) { statusStyle = "basic"; }
+      // lib.optionalAttrs (address == null) { statusStyle = "basic"; }
     )
     # A host's tile opens its terminal; controls.js keeps the click from
     # reaching a host that's down.
-    // lib.optionalAttrs (tileCfg.href == null && tileCfg.terminal != null) {
-      href = tileCfg.terminal;
+    // lib.optionalAttrs (tileCfg.href == null && terminal != null) {
+      href = terminal;
     }
     # In place rather than a new tab: the page leads back here.
-    // lib.optionalAttrs (tileCfg.href == null && tileCfg.terminal == null && tileCfg.page != null) {
-      href = "/hosts/?host=${tileCfg.page}";
+    // lib.optionalAttrs (tileCfg.href == null && terminal == null && page != null) {
+      href = "/hosts/?host=${page}";
       target = "_self";
     }
-    //
-      lib.optionalAttrs
-        (tileCfg.href == null && tileCfg.terminal == null && tileCfg.page == null && linked)
-        {
-          href = "http://${linkHost}:${toString service.port}";
-          siteMonitor = local;
-          statusStyle = "basic";
-        }
+    // lib.optionalAttrs (tileCfg.href == null && terminal == null && page == null && linked) {
+      href = "http://${linkHost}:${toString service.port}";
+      siteMonitor = local;
+      statusStyle = "basic";
+    }
     // lib.optionalAttrs (tileCfg.widget != null && tileCfg.extraWidgets == [ ]) {
       widget = mainWidget;
     }
@@ -120,7 +128,7 @@ let
       unit = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "systemd unit, on the tile's `portsHost`, the entry's start/stop button controls; as `unit`/`unitHost` for tiles (controls.nix).";
+        description = "systemd unit, on the tile's `host` (this one without), the entry's start/stop button controls; it must be in that host's `my.services.remoteUnits` (controls.nix).";
       };
     };
   };
@@ -179,70 +187,20 @@ let
       default = null;
       description = "systemd unit the tile's start/stop/restart buttons control (controls.nix).";
     };
+    host = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Machine the tile stands for: a host in hosts/, or one in homelab.externalHosts. Its buttons, terminal, host page, uptime and where `ports` are follow from what that machine enables (_machines.nix): wake and power off, restart, switch, Tailscale on/off.";
+    };
     unitHost = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Host (as in hosts/) `unit` lives on, controlled over SSH; it must list the unit in `my.services.remoteUnits` (controls.nix). Null for this host.";
     };
-    wake = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Host in `my.wakeOnLan.hosts` the tile's wake button wakes and shows up/down (controls.nix).";
-    };
-    poweroff = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Let a `wake` tile's on/off button also power the host off; the host needs `my.services.remotePowerOff` (controls.nix).";
-    };
-    terminal = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Web terminal URL the tile itself opens, live while the host is up (controls.js); a path is served by this dashboard's nginx, behind its login.";
-    };
-    reboot = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Host (as in hosts/) the tile's restart button reboots: this one directly, any other over SSH, which needs `my.services.remotePowerOff` there (controls.nix).";
-    };
-    switch = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Host (as in hosts/) whose dotfiles-switch.service the tile's switch button starts (controls.nix).";
-    };
-    page = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Host (as in hosts/) whose page - generations, diffs, deploy status against master - the tile's config page button opens, in place of its switch button (hosts.nix); it needs my.services.dotfilesSwitch.";
-    };
-    snmp = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "sops secret holding a net-snmp client config (SNMPv3 credentials) with which svcctl reads the `wake` host's uptime, for machines that can't run host-report; needs `address` (hosts.nix).";
-    };
-    address = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Address svcctl pings and SSHes to for this host's buttons, instead of the `<host>.local` and tailnet names derived from the host name; for machines outside hosts/ (controls.nix).";
-    };
-    sshUser = lib.mkOption {
-      type = lib.types.str;
-      default = "remote-control";
-      description = "User svcctl logs in as for this host's buttons; the default is the forced-command user of services/remote-control.nix (controls.nix).";
-    };
     ports = lib.mkOption {
       type = lib.types.attrsOf (lib.types.coercedTo lib.types.port (port: { inherit port; }) portEntry);
       default = { };
-      description = "Label -> TCP port (or entry) the tile's ports menu links to while open (controls.nix); for servers with no tile of their own.";
-    };
-    portsHost = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Host (as in hosts/) `ports` are on, reached over the tailnet or mDNS as the dashboard was; null for this host.";
-    };
-    tailscale = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Host (as in hosts/) whose Tailscale the tile's tailscale button turns on and off, over SSH; the host needs `my.services.remoteTailscale` (controls.nix).";
+      description = "Label -> TCP port (or entry) on the tile's `host` (this one without) that the tile's ports menu links to while open (controls.nix); for servers with no tile of their own.";
     };
   };
 
@@ -285,9 +243,9 @@ in
         lib.concatLists (
           lib.mapAttrsToList (
             name: service:
-            lib.mapAttrsToList (
-              field: secret: "${secretVar name field}=${config.sops.placeholder.${secret}}"
-            ) (widgetSecrets service)
+            lib.mapAttrsToList (field: secret: "${secretVar name field}=${config.sops.placeholder.${secret}}") (
+              widgetSecrets service
+            )
           ) withSecrets
         )
       );
@@ -421,13 +379,43 @@ in
       recommendedProxySettings = true;
       virtualHosts.dashboard = {
         default = true;
-        locations."/".proxyPass = "http://127.0.0.1:${toString homepagePort}";
-        # Tile icons kept here (`icon = "/icons/<file>"`), for ones neither
-        # Homepage's icon sets nor its CDNs carry; Homepage loads a path as is
-        # from the page's origin.
-        locations."/icons/".alias = "${./icons}/";
+        locations = {
+          "/".proxyPass = "http://127.0.0.1:${toString homepagePort}";
+          # Tile icons kept here (`icon = "/icons/<file>"`), for ones neither
+          # Homepage's icon sets nor its CDNs carry; Homepage loads a path as
+          # is from the page's origin.
+          "/icons/".alias = "${./icons}/";
+        }
+        # Other hosts' terminals, at the paths their tiles open, proxied so
+        # they're reachable wherever the dashboard is, tailnet included; their
+        # firewalls only admit this host, over the tailnet. By tailnet address
+        # rather than a name: nginx resolves upstream names once at startup, and
+        # fails to start if the host is asleep (.local) or tailscaled isn't up yet
+        # (MagicDNS). Long read timeout so an idle terminal's websocket isn't cut
+        # after nginx's default 60s. This host's own is services/ttyd.nix's.
+        // lib.listToAttrs (
+          map (
+            machine:
+            let
+              address = network.tailnet.${machine.host} or null;
+              port = network.ports.${machine.host}.ttyd or null;
+            in
+            lib.nameValuePair machine.terminal {
+              proxyPass =
+                if address == null || port == null then
+                  throw "dashboard: ${machine.host}'s terminal (my.services.ttyd) needs homelab.network.tailnet.${machine.host} and homelab.network.ports.${machine.host}.ttyd to be proxied"
+                else
+                  "http://${address}:${toString port}";
+              proxyWebsockets = true;
+              extraConfig = ''
+                proxy_read_timeout 1d;
+              '';
+            }
+          ) remoteTerminals
+        );
       };
     };
+
     homelab.services.homepage = {
       port = 80;
       expose = "tailnet";

@@ -8,25 +8,28 @@
 # plain HTTP on the LAN the password crosses the wire in the clear; the
 # tailnet encrypts it. svcctl runs unprivileged; polkit lets it manage exactly
 # the listed units, nothing else.
-# Tiles with `dashboard.wake` instead get a wake button, which sends a
-# Wake-on-LAN packet to that host (one of `my.wakeOnLan.hosts`), and an
-# up/down state from pinging it over mDNS. With `dashboard.poweroff` they also
-# get a power-off button, which logs in to the host over SSH with a key the
-# host pins to a forced command that only takes a few fixed verbs, `poweroff`
-# among them (services/remote-control.nix).
-# Tiles with `dashboard.reboot` get a restart button, which reboots that host
-# at once: this one directly (polkit lets svcctl do that and no more), any
-# other through the same SSH login as power-off.
-# Tiles with `dashboard.switch` get a button that starts that host's
-# dotfiles-switch.service (services/dotfiles-switch.nix): directly when it's
-# this host, otherwise through the same SSH login as power-off, over the
-# tailnet so laptops can be switched away from home, falling back to mDNS.
-# Tiles with `dashboard.tailscale` get a button that turns that host's
-# Tailscale on or off, over the same SSH login (the other host must be on the
-# LAN to be reached again once it's off). It shows on/off, read over SSH.
-# Tiles with `dashboard.ports` get a menu linking to those ports on
-# `portsHost` (this host when null) that a TCP connect from here finds open;
-# for ad-hoc dev servers, which are rarely all running.
+# A tile with a `host` stands for that machine and gets the buttons it
+# allows (_machines.nix), from its my.services for a host in hosts/, or from
+# homelab.externalHosts:
+# - wake, for a machine in `my.wakeOnLan.hosts` other than this one: a
+#   Wake-on-LAN packet, and an up/down state from pinging it over mDNS. With
+#   remotePowerOff it doubles as a power-off button, which logs in to the
+#   host over SSH with a key the host pins to a forced command that only
+#   takes a few fixed verbs, `poweroff` among them
+#   (services/remote-control.nix).
+# - restart, with remotePowerOff (or for this host): reboots it at once, this
+#   one directly (polkit lets svcctl do that and no more), any other through
+#   the same SSH login as power-off.
+# - switch, with dotfilesSwitch: starts that host's dotfiles-switch.service
+#   (services/dotfiles-switch.nix), directly when it's this host, otherwise
+#   through the same SSH login, over the tailnet so laptops can be switched
+#   away from home, falling back to mDNS.
+# - Tailscale on/off, with remoteTailscale, for other hosts: over the same
+#   SSH login (the host must be on the LAN to be reached again once it's
+#   off). It shows on/off, read over SSH.
+# Tiles with `dashboard.ports` get a menu linking to those ports on the
+# tile's `host` (this host without one) that a TCP connect from here finds
+# open; for ad-hoc dev servers, which are rarely all running.
 # An entry with an `href` links to that dashboard path instead, behind the
 # login; one with a `unit` gets a stop button, and a start button below the
 # list while its port is closed, the unit registered like a tile's under
@@ -44,123 +47,121 @@
   config,
   lib,
   pkgs,
+  hostSpecs,
   ...
 }:
 let
   port = 8099;
 
-  controlled = lib.filterAttrs (
-    _: service: service.dashboard != null && service.dashboard.unit != null
-  ) config.homelab.services;
-  # Tile name -> {unit, hosts}; the API addresses units by the name on the
-  # tile, or "<label> · <tile>" for ports menu entries. `hosts` is empty for
-  # units on this host.
+  tiles = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
+  machineOf = import ./_machines.nix { inherit config lib hostSpecs; };
+  # The machine a tile stands for (_machines.nix); null for a service tile.
+  machine =
+    service: if service.dashboard.host != null then machineOf service.dashboard.host else null;
+  hostTiles = lib.filterAttrs (_: service: service.dashboard.host != null) tiles;
+  # Tiles whose machine allows `capability`: wake, reboot, switch, ...
+  tilesWith = capability: lib.filterAttrs (_: service: (machine service).${capability}) hostTiles;
+  # Where a tile's ports, and its ports entries' units, are: its machine,
+  # null for this host, which `portsHost` null links by whatever name the
+  # client reached it with.
+  portsMachine =
+    service:
+    let
+      found = machine service;
+    in
+    if found != null && !found.local then found else null;
+  # {hosts, user} for SSHing to `found`; `hosts` empty for this host.
+  login =
+    found:
+    if found != null then
+      {
+        hosts = found.sshTargets;
+        user = found.sshUser;
+      }
+    else
+      {
+        hosts = [ ];
+        user = "remote-control";
+      };
+
+  controlled = lib.filterAttrs (_: service: service.dashboard.unit != null) tiles;
+  unitMachine =
+    service: if service.dashboard.unitHost != null then machineOf service.dashboard.unitHost else null;
+  # Tile name -> {unit, hosts, user}; the API addresses units by the name on
+  # the tile, or "<label> · <tile>" for ports menu entries. `hosts` is empty
+  # for units on this host.
   units =
     lib.mapAttrs' (
       _: service:
-      lib.nameValuePair service.dashboard.name {
-        inherit (service.dashboard) unit;
-        hosts = lib.optionals (service.dashboard.unitHost != null) (
-          sshTargets service service.dashboard.unitHost
-        );
-        user = service.dashboard.sshUser;
-      }
+      lib.nameValuePair service.dashboard.name (
+        { inherit (service.dashboard) unit; } // login (unitMachine service)
+      )
     ) controlled
     // lib.listToAttrs (
       lib.concatMap (
         service:
         lib.mapAttrsToList (
           label: entry:
-          lib.nameValuePair "${label} · ${service.dashboard.name}" {
-            inherit (entry) unit;
-            hosts = portsHosts service;
-            user = service.dashboard.sshUser;
-          }
+          lib.nameValuePair "${label} · ${service.dashboard.name}" (
+            { inherit (entry) unit; } // login (portsMachine service)
+          )
         ) (lib.filterAttrs (_: entry: entry.unit != null) service.dashboard.ports)
       ) (lib.attrValues tiles)
     );
   localUnits = lib.mapAttrsToList (_: target: target.unit) (
     lib.filterAttrs (_: target: target.hosts == [ ]) units
   );
+  # (where, unit) for each unit on another machine, which must allow it.
+  remoteUnitChecks =
+    lib.mapAttrsToList (name: service: {
+      where = "homelab.services.${name}.dashboard.unitHost";
+      found = unitMachine service;
+      inherit (service.dashboard) unit;
+    }) (lib.filterAttrs (_: service: unitMachine service != null) controlled)
+    ++ lib.concatLists (
+      lib.mapAttrsToList (
+        name: service:
+        lib.mapAttrsToList (label: entry: {
+          where = "homelab.services.${name}.dashboard.ports.${label}.unit";
+          found = portsMachine service;
+          inherit (entry) unit;
+        }) (lib.filterAttrs (_: entry: entry.unit != null) service.dashboard.ports)
+      ) (lib.filterAttrs (_: service: portsMachine service != null) tiles)
+    );
 
-  wakeTiles = lib.filterAttrs (
-    _: service: service.dashboard != null && service.dashboard.wake != null
-  ) config.homelab.services;
-  # Tile name -> {mac, host, poweroff}.
+  # Tile name -> {mac, host, user, poweroff}.
   wakeable = lib.mapAttrs' (
     _: service:
     let
-      host = service.dashboard.wake;
+      found = machine service;
     in
     lib.nameValuePair service.dashboard.name {
-      mac = config.my.wakeOnLan.hosts.${host};
-      host = if service.dashboard.address != null then service.dashboard.address else "${host}.local";
-      user = service.dashboard.sshUser;
-      inherit (service.dashboard) poweroff;
+      inherit (found) mac poweroff;
+      host = found.pingHost;
+      user = found.sshUser;
     }
-  ) wakeTiles;
+  ) (tilesWith "wake");
 
-  isLocal = host: host == config.my.host.name;
-  # Names svcctl tries in turn to SSH to a host: none for this one, else its
-  # MagicDNS name, then its mDNS one for when Tailscale is down on it but it's
-  # on the LAN.
-  sshTargets =
-    service: host:
-    if service.dashboard.address != null then
-      [ service.dashboard.address ]
-    else
-      lib.optionals (!isLocal host) [
-        "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
-        "${lib.toLower host}.local"
-      ];
-  portsHosts =
-    service:
-    lib.optionals (service.dashboard.portsHost != null) (
-      sshTargets service service.dashboard.portsHost
-    );
-  # Tile name -> {hosts} for tiles whose `option` names a host.
+  # Tile name -> {hosts, user} for tiles whose machine allows `capability`.
   hostActions =
-    option:
-    lib.mapAttrs' (
-      _: service:
-      lib.nameValuePair service.dashboard.name {
-        hosts = sshTargets service service.dashboard.${option};
-        user = service.dashboard.sshUser;
-      }
-    ) (lib.filterAttrs (_: service: service.dashboard.${option} != null) tiles);
-  tiles = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
-  targetHosts =
-    option:
-    lib.mapAttrsToList (_: service: service.dashboard.${option}) (
-      lib.filterAttrs (_: service: service.dashboard.${option} != null) tiles
+    capability:
+    lib.mapAttrs' (_: service: lib.nameValuePair service.dashboard.name (login (machine service))) (
+      tilesWith capability
     );
-
-  canRebootHere = lib.any isLocal (targetHosts "reboot");
-  canSwitchHere = lib.any isLocal (targetHosts "switch");
+  actsHere =
+    capability: lib.any (service: (machine service).local) (lib.attrValues (tilesWith capability));
+  canRebootHere = actsHere "reboot";
+  canSwitchHere = actsHere "switch";
 
   # Tile name -> {hosts, ports}; `hosts` empty for this host.
   portTargets = lib.mapAttrs' (
     _: service:
     lib.nameValuePair service.dashboard.name {
-      hosts = portsHosts service;
+      inherit (login (portsMachine service)) hosts;
       ports = map (entry: entry.port) (lib.attrValues service.dashboard.ports);
     }
   ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles);
 
-  # Those options all name the tile's one host, which the rofi menu leaves
-  # out when it's the machine it runs on, and SSHes to (at `address` when
-  # set). `portsHost` null is this host, linked by whatever name the client
-  # reached it with.
-  hostOptions = [
-    "page"
-    "reboot"
-    "switch"
-    "tailscale"
-    "wake"
-  ];
-  hostOf =
-    service:
-    lib.findFirst (host: host != null) null (map (option: service.dashboard.${option}) hostOptions);
   groupIndex =
     group: lib.lists.findFirstIndex (entry: entry.name == group) null (import ./_groups.nix);
   dashboardOrder = lib.sort (
@@ -178,39 +179,35 @@ let
   ) (lib.attrNames tiles);
   # Served at /api/svc/tiles. `controls` are the buttons; the switch button
   # moves to the host page when the tile has one. `uptime` names the host
-  # whose uptime the tile shows (hosts.nix): a page's host, or the `wake`
-  # host of an `snmp` tile. A ports entry's `unit` is the name svcctl knows
-  # it by in `units`, null without one.
+  # whose uptime the tile shows (hosts.nix): a page's host, or an SNMP
+  # machine. A ports entry's `unit` is the name svcctl knows it by in
+  # `units`, null without one. The rofi menu leaves out the tile of the
+  # machine it runs on, and SSHes to `address` when set.
   tileList = map (
     name:
     let
       tile = tiles.${name}.dashboard;
-      host = hostOf tiles.${name};
+      found = machine tiles.${name};
+      can = capability: found != null && found.${capability};
+      ports = portsMachine tiles.${name};
     in
     {
-      inherit (tile)
-        name
-        address
-        page
-        portsHost
-        terminal
-        ;
-      inherit host;
-      here = host != null && isLocal host;
-      uptime =
-        if tile.page != null then
-          tile.page
-        else if tile.snmp != null then
-          tile.wake
-        else
-          null;
+      inherit (tile) name host;
+      here = found != null && found.local;
+      address = if found != null then found.address else null;
+      page = if can "page" then tile.host else null;
+      portsHost = if tile.ports != { } && ports != null then ports.host else null;
+      terminal = if found != null then found.terminal else null;
+      uptime = if can "page" || (found != null && found.snmp != null) then tile.host else null;
       controls =
         lib.optional (tile.unit != null) "unit"
-        ++ lib.optional (tile.wake != null) "wake"
-        ++ lib.optional tile.poweroff "poweroff"
-        ++ lib.optional (tile.reboot != null) "reboot"
-        ++ lib.optional (tile.switch != null) "switch"
-        ++ lib.optional (tile.tailscale != null) "tailscale"
+        ++ lib.filter can [
+          "wake"
+          "poweroff"
+          "reboot"
+          "switch"
+          "tailscale"
+        ]
         ++ lib.optional (tile.ports != { }) "ports";
       ports = lib.sort (a: b: a.port < b.port) (
         lib.mapAttrsToList (label: entry: {
@@ -260,7 +257,7 @@ let
     lib.concatMap (
       service:
       [
-        service.dashboard.terminal
+        (if machine service != null then (machine service).terminal else null)
         service.dashboard.href
       ]
       ++ map (entry: entry.href) (lib.attrValues service.dashboard.ports)
@@ -278,21 +275,14 @@ let
   # other hosts' pages.
   sshKey = "svcctl/poweroff-ssh-key";
   needsKey =
-    lib.any (service: service.dashboard.poweroff) (lib.attrValues wakeTiles)
-    || !lib.all isLocal (
-      targetHosts "reboot"
-      ++ targetHosts "switch"
-      ++ targetHosts "tailscale"
-      ++ targetHosts "unitHost"
-      ++ targetHosts "page"
-      ++ lib.concatMap (
-        service:
-        lib.optional (
-          service.dashboard.portsHost != null
-          && lib.any (entry: entry.unit != null) (lib.attrValues service.dashboard.ports)
-        ) service.dashboard.portsHost
-      ) (lib.attrValues tiles)
-    );
+    lib.any (
+      service:
+      let
+        found = machine service;
+      in
+      !found.local && (found.poweroff || found.reboot || found.switch || found.tailscale || found.page)
+    ) (lib.attrValues hostTiles)
+    || lib.any (target: target.hosts != [ ]) (lib.attrValues units);
 in
 {
 
@@ -307,25 +297,13 @@ in
 
     assertions =
       lib.mapAttrsToList (name: service: {
-        assertion = config.my.wakeOnLan.hosts ? ${service.dashboard.wake};
-        message = "homelab.services.${name}.dashboard.wake: ${service.dashboard.wake} is not in my.wakeOnLan.hosts";
-      }) wakeTiles
-      ++ lib.mapAttrsToList (name: service: {
-        assertion = !service.dashboard.poweroff || service.dashboard.wake != null;
-        message = "homelab.services.${name}.dashboard.poweroff needs dashboard.wake";
-      }) (lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services)
-      ++ lib.mapAttrsToList (name: service: {
         assertion = service.dashboard.unit != null;
         message = "homelab.services.${name}.dashboard.unitHost needs dashboard.unit";
       }) (lib.filterAttrs (_: service: service.dashboard.unitHost != null) tiles)
-      ++ lib.mapAttrsToList (name: service: {
-        assertion = !isLocal service.dashboard.tailscale;
-        message = "homelab.services.${name}.dashboard.tailscale: ${service.dashboard.tailscale} is this host; the button only toggles other hosts";
-      }) (lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiles)
-      ++ lib.optional canSwitchHere {
-        assertion = config.my.services.dotfilesSwitch.enable;
-        message = "a dashboard.switch tile targets this host, which needs my.services.dotfilesSwitch.enable";
-      };
+      ++ map (check: {
+        assertion = lib.elem check.unit check.found.remoteUnits;
+        message = "${check.where}: ${check.unit} is not in ${check.found.host}'s my.services.remoteUnits, so its forced command would refuse it";
+      }) remoteUnitChecks;
 
     users.users.svcctl = {
       isSystemUser = true;

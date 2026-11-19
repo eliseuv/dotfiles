@@ -38,6 +38,28 @@ in
     };
   };
 
+  # The flake's own hosts say what the dashboard may do to them in their
+  # my.services; these are the machines that can't, declared here instead.
+  options.homelab.externalHosts = lib.mkOption {
+    default = { };
+    description = "Machines outside hosts/ that dashboard tiles stand for, keyed by the name `my.wakeOnLan.hosts` knows them by.";
+    type = lib.types.attrsOf (
+      lib.types.submodule {
+        options = {
+          address = str "Name svcctl pings, SSHes and SNMP-queries it at.";
+          sshUser = str "User svcctl logs in as; that login must accept the verbs services/remote-control.nix does for what this machine enables.";
+          remotePowerOff = lib.mkEnableOption "power-off and reboot over SSH";
+          remoteTailscale = lib.mkEnableOption "turning Tailscale on and off over SSH";
+          snmp = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "sops secret holding a net-snmp client config (SNMPv3 credentials) with which svcctl reads its uptime, for machines that can't run host-report.";
+          };
+        };
+      }
+    );
+  };
+
   options.homelab.services = lib.mkOption {
     default = { };
     description = "Services on this host, keyed by a short name.";

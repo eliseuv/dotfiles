@@ -1,6 +1,6 @@
-# Host pages: a page per host for tiles with `dashboard.page`, showing its
-# generations, what changed between them, and whether it runs what master
-# builds.
+# Host pages: a page per host tile whose machine runs dotfiles-switch,
+# showing its generations, what changed between them, and whether it runs
+# what master builds.
 #
 # What master builds comes from dotfiles-eval.service: on a timer, it fetches
 # master from GitHub, as dotfiles-switch does, and evaluates each page host's
@@ -22,6 +22,7 @@
   config,
   lib,
   pkgs,
+  hostSpecs,
   ...
 }:
 let
@@ -33,57 +34,47 @@ let
   # StateDirectory of dotfiles-eval.service, world-readable.
   evalFile = "/var/lib/dotfiles-eval/master.json";
 
-  tiles = lib.filterAttrs (
-    _: service: service.dashboard != null && service.dashboard.page != null
-  ) config.homelab.services;
-  pageHosts = lib.unique (lib.mapAttrsToList (_: service: service.dashboard.page) tiles);
+  machineOf = import ./_machines.nix { inherit config lib hostSpecs; };
+  # Tile name -> the machine it stands for (_machines.nix).
+  machines = lib.mapAttrs (_: service: machineOf service.dashboard.host) (
+    lib.filterAttrs (
+      _: service: service.dashboard != null && service.dashboard.host != null
+    ) config.homelab.services
+  );
+  tileName = name: config.homelab.services.${name}.dashboard.name;
+  # Hosts that keep generation reports, i.e. run dotfiles-switch.
+  paged = lib.filterAttrs (_: machine: machine.page) machines;
+  pageHosts = lib.unique (lib.mapAttrsToList (_: machine: machine.host) paged);
 
-  isLocal = host: host == config.my.host.name;
-  # As in controls.nix: none for this host, else its MagicDNS name, then its
-  # mDNS one for when Tailscale is down on it.
-  sshTargets =
-    service: host:
-    if service.dashboard.address != null then
-      [ service.dashboard.address ]
-    else
-      lib.optionals (!isLocal host) [
-        "${lib.toLower host}.${config.homelab.network.tailnetDomain}"
-        "${lib.toLower host}.local"
-      ];
   tailnetAddress = host: config.homelab.network.tailnet.${host} or null;
   # Host -> {tile, hosts, user, switch, mdns, tailnet}.
   pages = lib.mapAttrs' (
-    _: service:
-    let
-      host = service.dashboard.page;
-    in
-    lib.nameValuePair host {
-      tile = service.dashboard.name;
-      hosts = sshTargets service host;
-      user = service.dashboard.sshUser;
-      switch = service.dashboard.switch == host;
-      mdns = "${lib.toLower host}.local";
-      tailnet = tailnetAddress host;
+    name: machine:
+    lib.nameValuePair machine.host {
+      tile = tileName name;
+      hosts = machine.sshTargets;
+      user = machine.sshUser;
+      inherit (machine) switch;
+      mdns = "${lib.toLower machine.host}.local";
+      tailnet = tailnetAddress machine.host;
     }
-  ) tiles;
-  # Tiles of machines that can't run host-report, keyed by their `wake` host:
-  # svcctl reads only their uptime, over SNMP.
-  snmpTiles = lib.filterAttrs (
-    _: service: service.dashboard != null && service.dashboard.snmp != null
-  ) config.homelab.services;
-  snmpSecrets = lib.unique (lib.mapAttrsToList (_: service: service.dashboard.snmp) snmpTiles);
+  ) paged;
+  # Machines that can't run host-report: svcctl reads only their uptime, over
+  # SNMP.
+  snmpMachines = lib.filterAttrs (_: machine: machine.snmp != null) machines;
+  snmpSecrets = lib.unique (lib.mapAttrsToList (_: machine: machine.snmp) snmpMachines);
   snmpHosts = lib.mapAttrs' (
-    _: service:
-    lib.nameValuePair service.dashboard.wake {
-      tile = service.dashboard.name;
-      hosts = [ service.dashboard.address ];
-      user = service.dashboard.sshUser;
+    name: machine:
+    lib.nameValuePair machine.host {
+      tile = tileName name;
+      hosts = [ machine.address ];
+      user = machine.sshUser;
       switch = false;
       snmp = true;
-      mdns = service.dashboard.address;
-      tailnet = tailnetAddress service.dashboard.wake;
+      mdns = machine.address;
+      tailnet = tailnetAddress machine.host;
     }
-  ) snmpTiles;
+  ) snmpMachines;
 
   svg = import ./_svg.nix;
   # Static; host.js reads the host from the query string.
@@ -148,20 +139,12 @@ in
 
     assertions = [
       {
-        assertion = lib.length pageHosts == lib.length (lib.attrNames tiles);
-        message = "homelab.services.*.dashboard.page: one tile per host page";
+        assertion = lib.length pageHosts == lib.length (lib.attrNames paged);
+        message = "homelab.services.*.dashboard.host: one tile per host with a page";
       }
       {
-        assertion = !lib.any isLocal pageHosts || config.my.services.dotfilesSwitch.enable;
-        message = "a dashboard.page tile targets this host, which needs my.services.dotfilesSwitch.enable";
-      }
-      {
-        assertion =
-          lib.all (service: service.dashboard.wake != null && service.dashboard.address != null) (
-            lib.attrValues snmpTiles
-          )
-          && lib.length snmpSecrets <= 1;
-        message = "homelab.services.*.dashboard.snmp: needs wake and address, and one shared secret";
+        assertion = lib.length snmpSecrets <= 1;
+        message = "homelab.externalHosts.*.snmp: svcctl takes one SNMP client config, shared by every SNMP machine";
       }
     ];
 

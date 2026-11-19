@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  inherit (config.homelab.network) tailnet ports;
+  inherit (config.homelab.network) ports;
 in
 {
 
@@ -28,9 +28,9 @@ in
 
   homelab.network.nasAddress = config.my.services.nas.address;
 
-  # Terminal, switch, restart and on/off buttons for GLaDOS, which has no
-  # services of its own here; wheatley is the always-on LAN host that can send
-  # her the wake packet.
+  # GLaDOS, which has no services of its own here; wheatley is the always-on
+  # LAN host that can send her the wake packet. Her buttons and terminal
+  # follow from her own my.services (hosts/GLaDOS).
   # The icon is a placeholder the dashboard theme draws over with her head.
   homelab.services.glados.dashboard = {
     name = "GLaDOS";
@@ -38,14 +38,7 @@ in
     order = 0;
     icon = "mdi-robot-industrial";
     link = false;
-    wake = "GLaDOS";
-    poweroff = true;
-    terminal = "/glados/terminal/";
-    switch = "GLaDOS";
-    reboot = "GLaDOS";
-    tailscale = "GLaDOS";
-    page = "GLaDOS";
-    portsHost = "GLaDOS";
+    host = "GLaDOS";
     ports = ports.GLaDOS.dev;
   };
   # For the dashboard's power-off (over mDNS) and switch (over the tailnet),
@@ -55,23 +48,8 @@ in
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/zYzxZZv+cAVbffNG59reLWlJeKjA7g92eAi0VVdS9";
   };
 
-  # Her ttyd (my.services.ttyd in hosts/GLaDOS), proxied so it's reachable
-  # wherever the dashboard is, tailnet included; her firewall only admits
-  # wheatley, over the tailnet. By her tailnet address rather than a name:
-  # nginx resolves upstream names once at startup, and fails to start if she's
-  # asleep (.local) or tailscaled isn't up yet (MagicDNS). Long read
-  # timeout so an idle terminal's websocket isn't cut after nginx's default 60s.
-  services.nginx.virtualHosts.dashboard.locations."/glados/terminal/" = {
-    proxyPass = "http://${tailnet.GLaDOS}:${toString ports.GLaDOS.ttyd}";
-    proxyWebsockets = true;
-    extraConfig = ''
-      proxy_read_timeout 1d;
-    '';
-  };
-
-  # Terminal, switch and restart buttons for wheatley himself; no on/off, as
-  # nothing here could turn him back on. First in Servers, followed
-  # by Companion Cube.
+  # Wheatley himself: terminal, switch and restart, no on/off, as nothing
+  # here could turn him back on. First in Servers, followed by Companion Cube.
   # The icon is a placeholder the dashboard theme draws over with his core.
   homelab.services.wheatley.dashboard = {
     name = "Wheatley";
@@ -79,38 +57,19 @@ in
     order = 0;
     icon = "mdi-server";
     link = false;
-    reboot = "wheatley";
-    switch = "wheatley";
-    terminal = "/wheatley/terminal/";
-    page = "wheatley";
+    host = "wheatley";
     ports = ports.wheatley.dev;
   };
 
-  # The same buttons as GLaDOS's for chell, the shared family workstation
-  # (hosts/chell).
+  # chell, the shared family workstation (hosts/chell), as GLaDOS.
   homelab.services.chell.dashboard = {
     name = "Chell";
     group = "Desktops";
     order = 1;
     icon = "/icons/chell.svg";
     link = false;
-    wake = "chell";
-    poweroff = true;
-    terminal = "/chell/terminal/";
-    switch = "chell";
-    reboot = "chell";
-    tailscale = "chell";
-    page = "chell";
-    portsHost = "chell";
+    host = "chell";
     ports = ports.chell.dev;
-  };
-  # Her ttyd, proxied by tailnet address and firewalled as GLaDOS's
-  services.nginx.virtualHosts.dashboard.locations."/chell/terminal/" = {
-    proxyPass = "http://${tailnet.chell}:${toString ports.chell.ttyd}";
-    proxyWebsockets = true;
-    extraConfig = ''
-      proxy_read_timeout 1d;
-    '';
   };
   programs.ssh.knownHosts."chell.local" = {
     extraHostNames = [ "chell.${config.homelab.network.tailnetDomain}" ];
