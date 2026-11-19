@@ -11,7 +11,7 @@
     home.packages = with pkgs; [
 
       # Interior design
-      (sweethome3d.application.overrideAttrs (old: {
+      (sweethome3d.overrideAttrs (old: {
         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ makeWrapper ];
         # The nixpkgs launcher passes no -Xmx; set the heap explicitly so large
         # models with many textures/furniture don't hit the JVM's default ceiling.
