@@ -89,7 +89,7 @@
 <main>
 <h1>Wheatley dashboard: reading from and commanding remote hosts</h1>
 <p>Architecture of the homelab dashboard's control and reporting paths, as implemented in the dotfiles flake.
-Snapshot of <code>master</code> at <code>540fbccf</code>, 2026-11-19, after the tile list, the hostctl merge, shared SSH connections and tiles derived from their hosts (<a href="#changes">changes</a>).</p>
+Snapshot of <code>master</code> at <code>50ef1120</code>, 2026-11-19, after the tile list, the hostctl merge, shared SSH connections, tiles derived from their hosts and the tailnet-only login (<a href="#changes">changes</a>).</p>
 
 <nav>
   <ol>
@@ -149,7 +149,7 @@ deploy state.
 
   <rect class="acc" x="260" y="55" width="440" height="60" rx="6"/>
   <text class="c b" x="480" y="78">nginx · dashboard vhost</text>
-  <text class="c s" x="480" y="98">GET open · non-GET /api/svc/ → auth_basic · /api/svc/login</text>
+  <text class="c s" x="480" y="98">reads open · login (actions, logs, terminals) on the tailnet only</text>
 
   <rect class="box" x="260" y="150" width="110" height="50" rx="6"/>
   <text class="c b" x="315" y="171">Homepage</text>
@@ -542,7 +542,7 @@ by every switch (service or Justfile), keyed by store hash, so host-report can n
 each enforced twice: once on wheatley and once on the target.</p>
 
 <figure>
-<svg viewBox="0 0 1000 515" role="img" aria-label="Enforcement layers">
+<svg viewBox="0 0 1000 575" role="img" aria-label="Enforcement layers">
   <text class="h" x="40" y="20">layer</text>
   <text class="h" x="330" y="20">enforced by</text>
   <text class="h" x="630" y="20">what it rules out</text>
@@ -558,36 +558,41 @@ each enforced twice: once on wheatley and once on the target.</p>
   <text x="630" y="121">other websites driving the API (CORS preflight)</text>
 
   <rect class="acc" x="44" y="150" width="912" height="52" rx="6"/>
-  <text class="b" x="64" y="181">HTTP basic auth</text>
-  <text class="m" x="330" y="181">nginx limit_except GET</text>
-  <text x="630" y="181">unauthenticated actions (reads stay open)</text>
+  <text class="b" x="64" y="181">Tailnet-only login</text>
+  <text class="m" x="330" y="181">geo $dashboard_tailnet → return 403</text>
+  <text x="630" y="181">the password crossing the LAN in the clear</text>
 
   <rect class="acc" x="56" y="210" width="888" height="52" rx="6"/>
-  <text class="b" x="76" y="241">Eval-time allowlist</text>
-  <text x="330" y="241">store JSON passed as argv</text>
-  <text x="630" y="241">naming an arbitrary unit, host or verb</text>
+  <text class="b" x="76" y="241">HTTP basic auth</text>
+  <text class="m" x="330" y="241">auth_basic $dashboard_action_realm</text>
+  <text x="630" y="241">unauthenticated actions, logs, terminals</text>
 
-  <rect class="loc" x="68" y="270" width="864" height="52" rx="6"/>
-  <text class="b" x="88" y="301">Local polkit</text>
-  <text x="330" y="301">rules for user svcctl</text>
-  <text x="630" y="301">anything beyond listed units, switch, reboot</text>
+  <rect class="acc" x="68" y="270" width="864" height="52" rx="6"/>
+  <text class="b" x="88" y="301">Eval-time allowlist</text>
+  <text x="330" y="301">store JSON passed as argv</text>
+  <text x="630" y="301">naming an arbitrary unit, host or verb</text>
 
-  <rect class="rem" x="80" y="330" width="840" height="52" rx="6"/>
-  <text class="b" x="100" y="361">Key pinning</text>
-  <text class="m" x="330" y="361">restrict,command="dispatch"</text>
-  <text x="630" y="361">shells, forwarding, other commands</text>
+  <rect class="loc" x="80" y="330" width="840" height="52" rx="6"/>
+  <text class="b" x="100" y="361">Local polkit</text>
+  <text x="330" y="361">rules for user svcctl</text>
+  <text x="630" y="361">anything beyond listed units, switch, reboot</text>
 
   <rect class="rem" x="92" y="390" width="816" height="52" rx="6"/>
-  <text class="b" x="112" y="421">Verb dispatcher</text>
-  <text class="m" x="330" y="421">case $SSH_ORIGINAL_COMMAND</text>
-  <text x="630" y="421">verbs this host didn't enable</text>
+  <text class="b" x="112" y="421">Key pinning</text>
+  <text class="m" x="330" y="421">restrict,command="dispatch"</text>
+  <text x="630" y="421">shells, forwarding, other commands</text>
 
   <rect class="rem" x="104" y="450" width="792" height="52" rx="6"/>
-  <text class="b" x="124" y="481">Remote polkit</text>
-  <text x="330" y="481">rules for user remote-control</text>
-  <text x="630" y="481">any other systemd / logind action</text>
+  <text class="b" x="124" y="481">Verb dispatcher</text>
+  <text class="m" x="330" y="481">case $SSH_ORIGINAL_COMMAND</text>
+  <text x="630" y="481">verbs this host didn't enable</text>
+
+  <rect class="rem" x="116" y="510" width="768" height="52" rx="6"/>
+  <text class="b" x="136" y="541">Remote polkit</text>
+  <text x="330" y="541">rules for user remote-control</text>
+  <text x="630" y="541">any other systemd / logind action</text>
 </svg>
-<figcaption>Figure 5. The four outer layers protect the HTTP API; the inner four bound what a stolen SSH key could do. Host keys
+<figcaption>Figure 5. The five outer layers protect the HTTP API; the inner four bound what a stolen SSH key could do. Host keys
 are verified with <code>StrictHostKeyChecking</code> against Nix-declared known hosts, which prevents impersonating a target.</figcaption>
 </figure>
 
@@ -614,9 +619,9 @@ are verified with <code>StrictHostKeyChecking</code> against Nix-declared known 
   <tr><td><code>/api/svc/status</code></td><td>GET</td><td>header only</td><td>tile states, switch, Tailscale, ping, ports (in-memory)</td></tr>
   <tr><td><code>/api/svc/usage</code></td><td>GET</td><td>header only</td><td>per-service CPU/memory/IO from the cgroup tree</td></tr>
   <tr><td><code>/api/svc/tiles</code></td><td>GET</td><td>header only</td><td>every tile's buttons, page, uptime host, terminal and ports, in dashboard order, plus the tailnet; read by every client</td></tr>
-  <tr><td><code>/api/svc/switch-log/&lt;tile&gt;</code></td><td>GET</td><td>header only</td><td>switch journal, via SSH for remote hosts</td></tr>
-  <tr><td><code>/api/svc/&lt;action&gt;/&lt;tile&gt;</code></td><td>POST</td><td>header + basic</td><td>wake, poweroff, reboot, switch, home-switch, tailscale-on|off, start, stop, restart</td></tr>
-  <tr><td><code>/api/svc/login</code></td><td>GET</td><td>basic</td><td>forces a browser login prompt, then 302 to <code>/</code></td></tr>
+  <tr><td><code>/api/svc/switch-log/&lt;tile&gt;</code></td><td>GET</td><td>header + basic, tailnet only</td><td>switch journal, via SSH for remote hosts</td></tr>
+  <tr><td><code>/api/svc/&lt;action&gt;/&lt;tile&gt;</code></td><td>POST</td><td>header + basic, tailnet only</td><td>wake, poweroff, reboot, switch, home-switch, tailscale-on|off, start, stop, restart</td></tr>
+  <tr><td><code>/api/svc/login</code></td><td>GET</td><td>basic, tailnet only</td><td>forces a browser login prompt, then 302 to <code>/</code></td></tr>
   <tr><td><code>/api/hosts/&lt;host&gt;[?refresh=1]</code></td><td>GET</td><td>none</td><td>cached report, uptime, addresses, deploy status</td></tr>
   <tr><td><code>/api/hosts/&lt;host&gt;/diff/&lt;n&gt;</code>, <code>/compare/&lt;a&gt;/&lt;b&gt;</code></td><td>GET</td><td>none</td><td>closure diffs (cached forever)</td></tr>
 </table>
@@ -654,16 +659,18 @@ would still be possible: a second, read-only key pinned to a dispatcher that acc
 <code>*-status</code> verbs, used by the host pages.
 </div>
 
-<div class="finding">
-<b>Switch logs are readable without the login.</b> <code>/api/svc/switch-log/</code> is a GET, so nginx doesn't require auth.
-It returns up to 300 journal lines of build and activation output from each host to anyone on the LAN or tailnet. Consider
-putting that location behind the same <code>auth_basic</code> as the actions.
+<div class="finding minor">
+<b>Resolved: switch logs readable without the login.</b> <code>/api/svc/switch-log/</code> returned up to 300 journal lines of
+build and activation output to anyone on the LAN or tailnet. It now needs the login, like the actions; the host page offers it
+on a 401.
 </div>
 
-<div class="finding">
-<b>The action password crosses the LAN in cleartext.</b> This is documented in <code>controls.nix</code>: on plain HTTP, any device on
-the LAN can sniff the password that unlocks power-off and switch on every host. The tailnet encrypts it. Options are TLS on the
-LAN listener, or accepting non-GET requests only from tailnet source addresses.
+<div class="finding minor">
+<b>Resolved: the action password crossing the LAN in cleartext.</b> Everything behind the login now answers only from the
+tailnet's addresses (and this host). From the LAN, nginx refuses with 403 in its rewrite phase, before auth_basic could send a
+401 that prompts a browser for the password; the rofi menu won't send it when it reached Wheatley over the LAN. Reads stay
+open on the LAN. Left as is: a browser that logged in over the LAN before this change may resend those cached credentials
+until it restarts.
 </div>
 
 <div class="finding minor">
@@ -712,6 +719,15 @@ simultaneous starts. This is acknowledged and mitigated by the UI disabling both
     <td>None: every host's system derivation is identical before and after. New checks fail the build for an unknown
       <code>host</code>, a ports unit missing from the host's <code>remoteUnits</code>, a setting outside
       <code>default.nix</code>, or a terminal without tailnet facts to proxy it.</td>
+  </tr>
+  <tr>
+    <td><b>Tailnet-only login; switch logs behind it.</b> A <code>geo</code> on the client address refuses everything behind the
+      login from outside the tailnet, before nginx asks for it. The actions' login uses a per-method realm instead of
+      <code>limit_except</code>.</td>
+    <td>The password crossing the LAN; switch logs open to the LAN and tailnet.</td>
+    <td>From the LAN: actions, logs, terminals, Pluto and the login answer 403 and never ask for credentials; reads are
+      unchanged. On the tailnet: as before. Verified against nginx with the evaluated locations; the first attempt, inside
+      <code>limit_except</code>, was bypassed for POSTs and was replaced.</td>
   </tr>
 </table>
 
