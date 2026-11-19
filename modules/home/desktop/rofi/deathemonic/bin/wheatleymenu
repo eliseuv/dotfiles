@@ -61,6 +61,14 @@ mapfile -t HOSTS < <(jq -c --arg self "${self,,}" \
 # from Bitwarden, then notifies `$3` or shows why it failed.
 post() {
     local action=$1 name=$2 done_msg=$3 creds user pass login code body
+    # The login goes only over the tailnet: on the LAN, plain HTTP, it would
+    # cross in the clear, and Wheatley refuses actions there anyway
+    # (dashboard/controls.nix). curl sends it with the first request, before
+    # any refusal, so don't make one.
+    if [ -n "$domain" ]; then
+        show_msg "Controls need Tailscale: turn it on to use them"
+        return 1
+    fi
     if ! creds=$(rbw get --raw "$RBW_ENTRY" 2>&1); then
         [[ "$creds" != *"pinentry cancelled"* ]] && show_msg "Bitwarden: $creds"
         return 1

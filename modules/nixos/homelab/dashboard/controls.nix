@@ -3,11 +3,12 @@
 # unit is on that host, driven through the same SSH login as power-off below,
 # which the host limits to its `my.services.remoteUnits`. svcctl.py serves
 # the API on loopback behind the dashboard's nginx, so it shares the
-# dashboard's reach (LAN + tailnet). nginx puts every action (any non-GET)
-# behind basic auth; reading the status stays open, like the dashboard. Over
-# plain HTTP on the LAN the password crosses the wire in the clear; the
-# tailnet encrypts it. svcctl runs unprivileged; polkit lets it manage exactly
-# the listed units, nothing else.
+# dashboard's reach (LAN + tailnet). nginx puts every action (any non-GET),
+# the switch logs, terminals and proxied links behind basic auth, and only
+# over the tailnet, which encrypts it: the dashboard is plain HTTP, so from
+# the LAN the password would cross the wire in the clear. Reading the status
+# stays open everywhere, like the dashboard. svcctl runs unprivileged;
+# polkit lets it manage exactly the listed units, nothing else.
 # A tile with a `host` stands for that machine and gets the buttons it
 # allows (_machines.nix), from its my.services for a host in hosts/, or from
 # homelab.externalHosts:
@@ -263,9 +264,29 @@ let
       ++ map (entry: entry.href) (lib.attrValues service.dashboard.ports)
     ) (lib.attrValues tiles)
   );
+  # One realm everywhere, so the browser reuses one login.
+  realm = "Aperture Science";
+  passwords = "auth_basic_user_file ${config.sops.secrets.${htpasswd}.path};";
   basicAuth = ''
-    auth_basic "Aperture Science";
-    auth_basic_user_file ${config.sops.secrets.${htpasswd}.path};
+    auth_basic "${realm}";
+    ${passwords}
+  '';
+  # From the LAN, what needs the login is refused before nginx asks for it:
+  # a 401 there would have the browser send the password in the clear.
+  # `return` runs in the rewrite phase, ahead of auth_basic's access phase.
+  # $dashboard_tailnet is the http block's geo below.
+  lanRefusal = "only over Tailscale: open the dashboard by its tailnet name";
+  tailnetOnly = ''
+    if ($dashboard_tailnet = 0) {
+      return 403 "This needs the dashboard login, served ${lanRefusal}.";
+    }
+  '';
+  # The same for the API, as the {error} its clients show.
+  tailnetOnlyApi = ''
+    default_type application/json;
+    if ($dashboard_tailnet = 0) {
+      return 403 '{"error": "controls answer ${lanRefusal}"}';
+    }
   '';
 
   # One `user:hash` line (`openssl passwd -6`).
@@ -408,14 +429,50 @@ in
       };
     };
 
+    # The tailnet's addresses (Tailscale's CGNAT and ULA ranges) and this
+    # host. $dashboard_lan_action is a write from anywhere else: reads stay
+    # open on the LAN. $dashboard_action_realm asks for the login on writes
+    # only; as a variable rather than limit_except, which hands non-GET
+    # requests to a nested location before the rewrite phase, so the LAN
+    # refusal in /api/svc/ would never run for them.
+    services.nginx.appendHttpConfig = ''
+      geo $dashboard_tailnet {
+        default 0;
+        127.0.0.0/8 1;
+        ::1 1;
+        100.64.0.0/10 1;
+        fd7a:115c:a1e0::/48 1;
+      }
+      map "$dashboard_tailnet:$request_method" $dashboard_lan_action {
+        default 1;
+        ~^1: 0;
+        0:GET 0;
+        0:HEAD 0;
+      }
+      map $request_method $dashboard_action_realm {
+        default "${realm}";
+        GET off;
+        HEAD off;
+      }
+    '';
+
     services.nginx.virtualHosts.dashboard.locations = {
       "/api/svc/" = {
         proxyPass = "http://127.0.0.1:${toString port}";
         extraConfig = ''
-          limit_except GET {
-            ${basicAuth}
+          default_type application/json;
+          if ($dashboard_lan_action) {
+            return 403 '{"error": "controls answer ${lanRefusal}"}';
           }
+          auth_basic $dashboard_action_realm;
+          ${passwords}
         '';
+      };
+      # Build and activation output, which says more about a host than the
+      # status does: behind the login, like the actions.
+      "/api/svc/switch-log/" = {
+        proxyPass = "http://127.0.0.1:${toString port}";
+        extraConfig = tailnetOnlyApi + basicAuth;
       };
       # The host pages' API (host_pages.py); open, read-only.
       "/api/hosts/".proxyPass = "http://127.0.0.1:${toString port}";
@@ -428,6 +485,7 @@ in
       # runs after it, finds nothing and hands over to the redirect.
       "= /api/svc/login" = {
         extraConfig = ''
+          ${tailnetOnly}
           ${basicAuth}
           try_files /nonexistent @svcctl-logged-in;
         '';
@@ -438,7 +496,11 @@ in
     # proxied links, which bring their own proxyPass. Same realm, so the
     # browser reuses one login.
     // lib.genAttrs loginPaths (_: {
-      extraConfig = basicAuth;
+      extraConfig = ''
+        default_type text/plain;
+        ${tailnetOnly}
+        ${basicAuth}
+      '';
     });
 
   };

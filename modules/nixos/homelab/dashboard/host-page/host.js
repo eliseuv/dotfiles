@@ -613,6 +613,14 @@
     document.getElementById("refresh-log").disabled = true;
     try {
       const response = await fetch(`/api/svc/switch-log/${encodeURIComponent(data.tile)}`, { headers: svcHeaders });
+      // Behind the dashboard login, like the switch itself (controls.nix).
+      if (response.status === 401) {
+        const login = document.createElement("a");
+        login.href = "/api/svc/login";
+        login.textContent = "Log in";
+        status.replaceChildren(login, " to see the switch output.");
+        return;
+      }
       if (!response.ok) throw new Error(response.status === 404 ? "Switch output unavailable on this host" : (await response.json()).error || "Switch output unavailable");
       const result = await response.json();
       const output = document.getElementById("log-output");
