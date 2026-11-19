@@ -89,7 +89,7 @@
 <main>
 <h1>Wheatley dashboard: reading from and commanding remote hosts</h1>
 <p>Architecture of the homelab dashboard's control and reporting paths, as implemented in the dotfiles flake.
-Snapshot of <code>master</code> at <code>c564fd8a</code>, 2026-11-19, after the tile list, the hostctl merge and shared SSH connections (<a href="#changes">changes</a>).</p>
+Snapshot of <code>master</code> at <code>540fbccf</code>, 2026-11-19, after the tile list, the hostctl merge, shared SSH connections and tiles derived from their hosts (<a href="#changes">changes</a>).</p>
 
 <nav>
   <ol>
@@ -265,9 +265,12 @@ tailnet address, behind the same login as the actions; they do not go through sv
 
 <h2 id="build">2. Capabilities fixed at eval time</h2>
 <p>
-Nothing in either daemon is configurable at runtime. A tile acquires a capability by setting an option under
-<code>homelab.services.&lt;name&gt;.dashboard</code>; remote machines' tiles are declared in wheatley's config
-(<code>hosts/wheatley/system.nix</code>). At evaluation the modules under <code>modules/nixos/homelab/dashboard/</code>
+Nothing in svcctl is configurable at runtime. A host tile names one machine, <code>dashboard.host</code>, and its buttons,
+terminal, host page and uptime follow from what that machine enables (<code>dashboard/_machines.nix</code>): a host in
+<code>hosts/</code> is read from its own <code>my.services</code> through <code>hostSpecs</code>, the shared layer of its config
+that <code>lib/default.nix</code> evaluates once per host for about two seconds in all; the NAS, outside the flake, is read
+from <code>homelab.externalHosts</code>. Service tiles still set <code>unit</code> (and <code>unitHost</code>). The tiles themselves
+are declared in wheatley's config (<code>hosts/wheatley/system.nix</code>). At evaluation the modules under <code>modules/nixos/homelab/dashboard/</code>
 turn those declarations into one JSON config for svcctl in the Nix store, plus polkit rules, nginx locations and the Homepage
 config. svcctl receives the config's path as <code>argv</code>, so a request can only name a tile; it can never name a unit, host or
 command. The config's <code>tiles</code> list is the public part: what each tile shows and which buttons it has, in dashboard order,
@@ -276,8 +279,9 @@ the private sections. <code>hosts.nix</code> contributes the <code>pages</code> 
 </p>
 <p>
 Each target entry carries a <code>hosts</code> list: <code>[]</code> for wheatley itself, otherwise the MagicDNS name followed by
-the mDNS name (or a fixed <code>address</code>). The target hosts generate their side of the contract independently from their
-own <code>my.services.*</code> flags.
+the mDNS name (or an external machine's <code>address</code>). The target hosts generate their side of the contract from the same
+<code>my.services.*</code> flags the dashboard reads, so the two can no longer disagree; each host also asserts those flags are
+set in its <code>default.nix</code>, the only file the dashboard reads them from (<code>homelab/dashboard-reads.nix</code>).
 </p>
 
 <figure>
@@ -288,11 +292,11 @@ own <code>my.services.*</code> flags.
 
   <rect class="box" x="20" y="45" width="230" height="130" rx="6"/>
   <text class="c m b" x="135" y="66">homelab.services.&lt;n&gt;.dashboard</text>
-  <text class="c s" x="135" y="88">wake · poweroff · reboot</text>
-  <text class="c s" x="135" y="104">switch · tailscale · page</text>
-  <text class="c s" x="135" y="120">unit · unitHost · ports</text>
-  <text class="c s" x="135" y="136">portsHost · snmp · address</text>
-  <text class="c s" x="135" y="152">sshUser</text>
+  <text class="c s" x="135" y="88">host · ports · unit · unitHost</text>
+  <text class="c m b" x="135" y="116">hostSpecs.&lt;host&gt;.services</text>
+  <text class="c s" x="135" y="134">remotePowerOff · dotfilesSwitch</text>
+  <text class="c s" x="135" y="150">remoteTailscale · remoteUnits · ttyd</text>
+  <text class="c s" x="135" y="166">or homelab.externalHosts.&lt;host&gt;</text>
 
   <rect class="box" x="20" y="190" width="230" height="55" rx="6"/>
   <text class="c m b" x="135" y="212">homelab.network</text>
@@ -313,8 +317,8 @@ own <code>my.services.*</code> flags.
   <text class="c s" x="400" y="272">→ Homepage + customJS</text>
   <rect class="note" x="285" y="385" width="230" height="62" rx="6"/>
   <text class="c b" x="400" y="404">assertions</text>
-  <text class="c s" x="400" y="421">wake ∈ wakeOnLan · poweroff ⇒ wake</text>
-  <text class="c s" x="400" y="437">unitHost ⇒ unit · local switch ⇒ enabled</text>
+  <text class="c s" x="400" y="421">host known · units ∈ its remoteUnits</text>
+  <text class="c s" x="400" y="437">unitHost ⇒ unit · one SNMP secret</text>
 
   <path class="ln" d="M250,80 H300"/>
   <path class="ln" d="M250,110 L300,165"/>
@@ -364,8 +368,10 @@ own <code>my.services.*</code> flags.
   <path class="ln" d="M250,522 H300"/>
   <path class="ln" d="M500,522 H560"/>
 </svg>
-<figcaption>Figure 2. What the build derives from the declarations. The two halves are generated independently; they meet
-only at the SSH key (public half hardcoded in <code>remote-control.nix</code>) and the verb names.</figcaption>
+<figcaption>Figure 2. What the build derives from the declarations. Both halves are generated from the same
+<code>my.services</code> flags of each target host, wheatley's through <code>hostSpecs</code>, so a button exists exactly when the
+host's forced command accepts its verb; beyond that they meet only at the SSH key (public half hardcoded in
+<code>remote-control.nix</code>).</figcaption>
 </figure>
 
 <h2 id="command">3. Command path: a remote switch</h2>
@@ -587,19 +593,19 @@ are verified with <code>StrictHostKeyChecking</code> against Nix-declared known 
 
 <h2 id="reference">7. Reference tables</h2>
 
-<h3>Tile options</h3>
+<h3>What a tile's machine allows</h3>
+<p>A tile sets <code>host</code>; each button follows from that machine (<code>_machines.nix</code>).</p>
 <table>
-  <tr><th>Option</th><th>Effect</th><th>Path</th></tr>
-  <tr><td><code>wake</code></td><td>Wake button, up/down from ping</td><td>WoL broadcast · ICMP</td></tr>
-  <tr><td><code>poweroff</code></td><td>Power-off button (requires <code>wake</code>)</td><td>SSH <code>poweroff</code> to mDNS/<code>address</code></td></tr>
-  <tr><td><code>reboot</code></td><td>Restart button</td><td>local logind, or SSH <code>reboot</code></td></tr>
-  <tr><td><code>switch</code></td><td>Switch / home-switch, status, log</td><td>local unit start, or SSH <code>switch</code>, <code>home-switch</code></td></tr>
-  <tr><td><code>tailscale</code></td><td>On/off toggle (remote only)</td><td>SSH <code>tailscale-on|off|status</code></td></tr>
-  <tr><td><code>unit</code> + <code>unitHost</code></td><td>Start/stop/restart one unit</td><td>local polkit, or SSH <code>start|stop|restart|status &lt;unit&gt;</code></td></tr>
-  <tr><td><code>ports</code> + <code>portsHost</code></td><td>Menu of open dev-server ports, optional per-port unit</td><td>TCP connect via tailnet name</td></tr>
-  <tr><td><code>page</code></td><td>Host page: generations, diffs, deploy status</td><td>svcctl (<code>host_pages.py</code>), SSH <code>generations</code>, <code>diff</code>, <code>compare</code></td></tr>
-  <tr><td><code>snmp</code></td><td>Uptime for machines that can't run host-report</td><td>snmpget with sops SNMPv3 config</td></tr>
-  <tr><td><code>terminal</code></td><td>Tile opens a web terminal</td><td>nginx proxy → ttyd over tailnet, behind the login</td></tr>
+  <tr><th>Button or feature</th><th>When</th><th>Path</th></tr>
+  <tr><td>Wake</td><td>it has a MAC in <code>my.wakeOnLan.hosts</code> and isn't wheatley</td><td>WoL broadcast · up/down from ICMP</td></tr>
+  <tr><td>Power off (on the wake button)</td><td>wake, and <code>remotePowerOff</code></td><td>SSH <code>poweroff</code> to mDNS/<code>address</code></td></tr>
+  <tr><td>Restart</td><td><code>remotePowerOff</code>, or it is wheatley</td><td>local logind, or SSH <code>reboot</code></td></tr>
+  <tr><td>Switch, home switch, host page</td><td><code>dotfilesSwitch</code></td><td>local unit start, or SSH <code>switch</code>, <code>home-switch</code>; page via <code>host_pages.py</code></td></tr>
+  <tr><td>Tailscale on/off</td><td><code>remoteTailscale</code>, other hosts only</td><td>SSH <code>tailscale-on|off|status</code></td></tr>
+  <tr><td>Terminal</td><td><code>ttyd.enable</code>, at its <code>basePath</code></td><td>nginx proxy → ttyd over tailnet (needs the host's tailnet address and ttyd port), behind the login</td></tr>
+  <tr><td>Uptime</td><td>a host page, or an external machine's <code>snmp</code></td><td>host-report, or snmpget with the sops SNMPv3 config</td></tr>
+  <tr><td>Ports menu</td><td>the tile's <code>ports</code>, on its host</td><td>TCP connect via tailnet name; an entry's <code>unit</code> must be in the host's <code>remoteUnits</code></td></tr>
+  <tr><td>Unit buttons</td><td>a service tile's <code>unit</code> (on <code>unitHost</code>)</td><td>local polkit, or SSH <code>start|stop|restart|status &lt;unit&gt;</code></td></tr>
 </table>
 
 <h3>HTTP endpoints</h3>
@@ -696,6 +702,16 @@ simultaneous starts. This is acknowledged and mitigated by the UI disabling both
     <td>A login per poll: about ten a minute across the hosts, down to one per host while it stays up.</td>
     <td>Calls over a kept connection take ~25 ms instead of ~150 ms. A host that vanishes silently is dropped within ~9 s;
       a call caught on its dead connection falls back to a fresh login inside the timeout. Hosts unchanged.</td>
+  </tr>
+  <tr>
+    <td><b>Tiles derived from their hosts.</b> A tile names its machine once (<code>host</code>); buttons, terminal, page,
+      uptime and the remote terminal proxies come from the host's own <code>my.services</code> (<code>hostSpecs</code>) or
+      <code>homelab.externalHosts</code>. Each host asserts those settings live in its <code>default.nix</code>.</td>
+    <td>Eight per-tile options that had to agree with the host by hand; the hand-written terminal proxies; the drift
+      between them (rattmann allowed remote control but had no tile, unnoticed).</td>
+    <td>None: every host's system derivation is identical before and after. New checks fail the build for an unknown
+      <code>host</code>, a ports unit missing from the host's <code>remoteUnits</code>, a setting outside
+      <code>default.nix</code>, or a terminal without tailnet facts to proxy it.</td>
   </tr>
 </table>
 
