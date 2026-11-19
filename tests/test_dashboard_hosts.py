@@ -102,6 +102,34 @@ class ComparisonTests(unittest.TestCase):
             ns["run_report"]("host", "generations")
 
 
+class RemoteLoginTests(unittest.TestCase):
+    def setUp(self):
+        self.ns = definitions("svcctl.py")
+        self.run = Mock()
+        self.ns.update(
+            ssh_key="test-key",
+            subprocess=types.SimpleNamespace(run=self.run, TimeoutExpired=subprocess.TimeoutExpired),
+        )
+
+    def test_timeout_reaches_every_attempt(self):
+        self.run.side_effect = [subprocess.CompletedProcess([], 255, "", "no route"),
+                                subprocess.CompletedProcess([], 0, "ok", "")]
+        result = self.ns["remote_any"](["host.tailnet", "host.local"], "generations", timeout=60)
+        self.assertEqual(result.stdout, "ok")
+        self.assertEqual([call.kwargs["timeout"] for call in self.run.call_args_list], [60, 60])
+        self.assertEqual(self.run.call_args.args[0][-2:], ["remote-control@host.local", "generations"])
+        self.run.reset_mock(side_effect=True)
+        self.run.return_value = subprocess.CompletedProcess([], 0, "", "")
+        self.ns["remote_any"](["host"], "switch-status")
+        self.assertEqual(self.run.call_args.kwargs["timeout"], 20)
+
+    def test_every_name_timing_out_raises(self):
+        self.run.side_effect = subprocess.TimeoutExpired("ssh", 20)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            self.ns["remote_any"](["a", "b"], "switch-status")
+        self.assertEqual(self.run.call_count, 2)
+
+
 class HostRoutingTests(unittest.TestCase):
     def test_host_pages_need_no_header(self):
         ns = definitions("svcctl.py")

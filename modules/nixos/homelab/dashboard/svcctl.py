@@ -311,17 +311,17 @@ def remote_any(hosts, verb, user="remote-control", timeout=20):
     # ssh exits 255 when it can't connect (or log in), anything else is the
     # forced command's own exit; only the former moves on to the next name.
     # Raises the last TimeoutExpired if every name timed out.
-    result = timeout = None
+    result = timed_out = None
     for host in hosts:
         try:
             result = remote(host, verb, user, timeout)
         except subprocess.TimeoutExpired as error:
-            timeout = error
+            timed_out = error
             continue
         if result.returncode != 255:
             return result
     if result is None:
-        raise timeout
+        raise timed_out
     return result
 
 
