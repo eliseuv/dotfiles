@@ -35,14 +35,18 @@ let
   # Host-specific raw configuration, for whatever has no option
   ifExists = path: lib.optional (builtins.pathExists path) path;
 
-  # Only the shared layer, for what the flake needs to know before it can
-  # pick a nixpkgs or enumerate users
-  hostFacts =
+  # Only the shared layer, evaluated once per host: for what the flake needs
+  # to know before it can pick a nixpkgs or enumerate users, and, as
+  # `hostSpecs`, for one host's system to read what the others enable (the
+  # homelab dashboard's tiles) without evaluating their whole systems.
+  hostSpecs = lib.genAttrs hostNames (
     hostName:
     (lib.evalModules {
       modules = sharedModules hostName;
       specialArgs = { inherit pkgs; };
-    }).config.my.host;
+    }).config.my
+  );
+  hostFacts = hostName: hostSpecs.${hostName}.host;
 
   mkSystem =
     hostName:
@@ -56,7 +60,7 @@ let
     in
     nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit inputs; };
+      specialArgs = { inherit inputs hostSpecs; };
       modules =
         sharedModules hostName
         ++ importTree ../modules/nixos
