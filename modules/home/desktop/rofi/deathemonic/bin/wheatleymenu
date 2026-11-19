@@ -9,7 +9,7 @@ ddir="$HOME/.config/rofi/config"
 # password (svcctl/htpasswd on wheatley).
 RBW_ENTRY="Wheatley dashboard"
 
-# The hosts, their controls and ports come from svcctl's menu
+# The hosts, their controls and ports come from svcctl's tile list
 # (dashboard/controls.nix); only the glyphs are the menu's own.
 declare -A ICONS=(
     ["Wheatley"]="󰈈"
@@ -45,15 +45,17 @@ if ! status=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/status"); then
     show_msg "Wheatley unreachable"
     exit 1
 fi
-if ! host_menu=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/menu"); then
-    show_msg "Wheatley serves no host menu; switch him to the current dotfiles"
+if ! tile_list=$(curl -fs -m 3 -H 'X-Svcctl: 1' "$base/api/svc/tiles"); then
+    show_msg "Wheatley serves no tile list; switch him to the current dotfiles"
     exit 1
 fi
 
 self=$(hostname)
-# One host tile per line, as JSON. This machine is not part of what the menu
-# lists; filtered up front so row indices still map straight onto HOSTS.
-mapfile -t HOSTS < <(jq -c --arg self "${self,,}" '.[] | select((.host | ascii_downcase) != $self)' <<< "$host_menu")
+# One host tile per line, as JSON, in dashboard order. This machine is not
+# part of what the menu lists; filtered up front so row indices still map
+# straight onto HOSTS.
+mapfile -t HOSTS < <(jq -c --arg self "${self,,}" \
+    '.tiles[] | select(.host != null and (.host | ascii_downcase) != $self)' <<< "$tile_list")
 
 # POSTs an svcctl action on a tile (or a ports entry's unit) with the login
 # from Bitwarden, then notifies `$3` or shows why it failed.
@@ -105,8 +107,8 @@ ports_menu() {
                 targets+=("http://${ports_host,,}$domain:$port")
             fi
         fi
-        if [ "$unit" = "true" ]; then
-            state=$(jq -r --arg name "$label · $tile" '.tiles[$name] // "unknown"' <<< "$status")
+        if [ -n "$unit" ]; then
+            state=$(jq -r --arg name "$unit" '.tiles[$name] // "unknown"' <<< "$status")
             if [ "$open" = "true" ] || [[ "$state" =~ ^(active|activating|reloading)$ ]]; then
                 labels+=("󰓛  Stop $label")
                 kinds+=("stop")
@@ -114,9 +116,9 @@ ports_menu() {
                 labels+=("󰐊  Start $label")
                 kinds+=("start")
             fi
-            targets+=("$label · $tile")
+            targets+=("$unit")
         fi
-    done < <(jq -r '.ports[] | [.label, .port, .href // "", .unit] | map(tostring) | join("|")' <<< "$entry")
+    done < <(jq -r '.ports[] | [.label, .port, .href // "", .unit // ""] | map(tostring) | join("|")' <<< "$entry")
     if [ ${#labels[@]} -eq 0 ]; then
         show_msg "No open ports on $tile"
         return
@@ -135,7 +137,7 @@ ports_menu() {
 # First, so Enter alone opens it
 labels=("󰕮  Dashboard")
 for entry in "${HOSTS[@]}"; do
-    tile=$(jq -r '.tile' <<< "$entry")
+    tile=$(jq -r '.name' <<< "$entry")
     icon=${ICONS[$tile]:-$DEFAULT_ICON}
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
     ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
@@ -156,7 +158,7 @@ fi
 
 entry=${HOSTS[$((row - 1))]}
 IFS='|' read -r tile ssh_host page ports_host < <(
-    jq -r '[.tile, .address // "\(.host | ascii_downcase).local", .page // "", .portsHost // ""] | join("|")' <<< "$entry"
+    jq -r '[.name, .address // "\(.host | ascii_downcase).local", .page // "", .portsHost // ""] | join("|")' <<< "$entry"
 )
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
 has() { jq -e --arg control "$1" '.controls | index($control)' <<< "$entry" > /dev/null; }

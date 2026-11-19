@@ -33,8 +33,11 @@
 # "<label> · <tile>".
 # Buttons combine: one tile can wake, power off, reboot, switch and toggle
 # Tailscale.
-# svcctl also serves the host tiles' buttons, pages and ports as one list,
-# for the Homelab rofi menu (wheatleymenu), which offers the same controls.
+# svcctl also serves every tile's controls as one list (/api/svc/tiles), the
+# only description of them its clients get: the dashboard's buttons
+# (controls.js), the Homelab rofi menu (wheatleymenu) and the bar
+# (wheatley.sh). It holds what they show, not how svcctl reaches it: unit
+# names, SSH targets and MACs stay in the rest of svcctl's config.
 {
   config,
   lib,
@@ -77,7 +80,6 @@ let
   localUnits = lib.mapAttrsToList (_: target: target.unit) (
     lib.filterAttrs (_: target: target.hosts == [ ]) units
   );
-  unitsFile = pkgs.writeText "svcctl-units.json" (builtins.toJSON units);
 
   wakeTiles = lib.filterAttrs (
     _: service: service.dashboard != null && service.dashboard.wake != null
@@ -95,7 +97,6 @@ let
       inherit (service.dashboard) poweroff;
     }
   ) wakeTiles;
-  wakeFile = pkgs.writeText "svcctl-wake.json" (builtins.toJSON wakeable);
 
   isLocal = host: host == config.my.host.name;
   # Names svcctl tries in turn to SSH to a host: none for this one, else its
@@ -132,31 +133,22 @@ let
       lib.filterAttrs (_: service: service.dashboard.${option} != null) tiles
     );
 
-  rebootFile = pkgs.writeText "svcctl-reboot.json" (builtins.toJSON (hostActions "reboot"));
   canRebootHere = lib.any isLocal (targetHosts "reboot");
-
-  switchFile = pkgs.writeText "svcctl-switch.json" (builtins.toJSON (hostActions "switch"));
   canSwitchHere = lib.any isLocal (targetHosts "switch");
 
-  tailscaleFile = pkgs.writeText "svcctl-tailscale.json" (builtins.toJSON (hostActions "tailscale"));
-
   # Tile name -> {hosts, ports}; `hosts` empty for this host.
-  portsFile = pkgs.writeText "svcctl-ports.json" (
-    builtins.toJSON (
-      lib.mapAttrs' (
-        _: service:
-        lib.nameValuePair service.dashboard.name {
-          hosts = portsHosts service;
-          ports = map (entry: entry.port) (lib.attrValues service.dashboard.ports);
-        }
-      ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles)
-    )
-  );
+  portTargets = lib.mapAttrs' (
+    _: service:
+    lib.nameValuePair service.dashboard.name {
+      hosts = portsHosts service;
+      ports = map (entry: entry.port) (lib.attrValues service.dashboard.ports);
+    }
+  ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles);
 
-  # Tiles with a host button or page, in dashboard order. Those options all
-  # name the tile's one host, which the menu leaves out when it's the machine
-  # it runs on, and SSHes to (at `address` when set). `portsHost` null is
-  # this host, linked by whatever name the menu reached it with.
+  # Those options all name the tile's one host, which the rofi menu leaves
+  # out when it's the machine it runs on, and SSHes to (at `address` when
+  # set). `portsHost` null is this host, linked by whatever name the client
+  # reached it with.
   hostOptions = [
     "page"
     "reboot"
@@ -169,7 +161,7 @@ let
     lib.findFirst (host: host != null) null (map (option: service.dashboard.${option}) hostOptions);
   groupIndex =
     group: lib.lists.findFirstIndex (entry: entry.name == group) null (import ./_groups.nix);
-  hostTiles = lib.sort (
+  dashboardOrder = lib.sort (
     a: b:
     let
       keyA = tiles.${a}.dashboard;
@@ -181,33 +173,69 @@ let
       keyA.order < keyB.order
     else
       a < b
-  ) (lib.attrNames (lib.filterAttrs (_: service: hostOf service != null) tiles));
-  menuFile = pkgs.writeText "svcctl-menu.json" (
-    builtins.toJSON (
-      map (
-        name:
-        let
-          tile = tiles.${name}.dashboard;
-        in
-        {
-          tile = tile.name;
-          host = hostOf tiles.${name};
-          inherit (tile) address page portsHost;
-          controls =
-            lib.optional (tile.wake != null) "wake"
-            ++ lib.optional tile.poweroff "poweroff"
-            ++ lib.optional (tile.reboot != null) "reboot"
-            ++ lib.optional (tile.switch != null) "switch"
-            ++ lib.optional (tile.tailscale != null) "tailscale"
-            ++ lib.optional (tile.ports != { }) "ports";
-          ports = lib.mapAttrsToList (label: entry: {
-            inherit label;
-            inherit (entry) port href;
-            unit = entry.unit != null;
-          }) tile.ports;
-        }
-      ) hostTiles
-    )
+  ) (lib.attrNames tiles);
+  # Served at /api/svc/tiles. `controls` are the buttons; the switch button
+  # moves to the host page when the tile has one. `uptime` names the host
+  # whose uptime the tile shows (hosts.nix): a page's host, or the `wake`
+  # host of an `snmp` tile. A ports entry's `unit` is the name svcctl knows
+  # it by in `units`, null without one.
+  tileList = map (
+    name:
+    let
+      tile = tiles.${name}.dashboard;
+      host = hostOf tiles.${name};
+    in
+    {
+      inherit (tile)
+        name
+        address
+        page
+        portsHost
+        terminal
+        ;
+      inherit host;
+      here = host != null && isLocal host;
+      uptime =
+        if tile.page != null then
+          tile.page
+        else if tile.snmp != null then
+          tile.wake
+        else
+          null;
+      controls =
+        lib.optional (tile.unit != null) "unit"
+        ++ lib.optional (tile.wake != null) "wake"
+        ++ lib.optional tile.poweroff "poweroff"
+        ++ lib.optional (tile.reboot != null) "reboot"
+        ++ lib.optional (tile.switch != null) "switch"
+        ++ lib.optional (tile.tailscale != null) "tailscale"
+        ++ lib.optional (tile.ports != { }) "ports";
+      ports = lib.sort (a: b: a.port < b.port) (
+        lib.mapAttrsToList (label: entry: {
+          inherit label;
+          inherit (entry) port href;
+          unit = if entry.unit != null then "${label} · ${tile.name}" else null;
+        }) tile.ports
+      );
+    }
+  ) dashboardOrder;
+
+  configFile = pkgs.writeText "svcctl.json" (
+    builtins.toJSON {
+      inherit units;
+      wake = wakeable;
+      reboot = hostActions "reboot";
+      switch = hostActions "switch";
+      tailscale = hostActions "tailscale";
+      ports = portTargets;
+      tiles = tileList;
+      # For links to other hosts' ports by the name the client reached this
+      # one with (controls.js).
+      tailnet = {
+        domain = config.homelab.network.tailnetDomain;
+        address = config.homelab.network.tailnetAddress;
+      };
+    }
   );
 
   # Dashboard paths of tile terminals and links (e.g. a proxied Pluto), which
@@ -348,13 +376,7 @@ in
             (lib.getExe pkgs.python3)
             "${./svcctl.py}"
             (toString port)
-            "${unitsFile}"
-            "${wakeFile}"
-            "${rebootFile}"
-            "${switchFile}"
-            "${tailscaleFile}"
-            "${portsFile}"
-            "${menuFile}"
+            "${configFile}"
           ]
           ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
         );

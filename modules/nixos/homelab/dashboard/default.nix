@@ -33,61 +33,6 @@ let
     service.dashboard.widgetSecrets
     // lib.optionalAttrs (service.dashboard.widgetKey != null) { key = service.dashboard.widgetKey; };
   withSecrets = lib.filterAttrs (_: service: widgetSecrets service != { }) tiled;
-  controlledTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.unit != null) tiled
-  );
-  wakeTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.wake != null) tiled
-  );
-  poweroffTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.poweroff) tiled
-  );
-  # Tile name -> terminal URL.
-  terminalTiles = lib.mapAttrs' (
-    _: service: lib.nameValuePair service.dashboard.name service.dashboard.terminal
-  ) (lib.filterAttrs (_: service: service.dashboard.terminal != null) tiled);
-  # Tile name -> whether it reboots this host, the one serving the page.
-  rebootTiles = lib.mapAttrs' (
-    _: service:
-    lib.nameValuePair service.dashboard.name (service.dashboard.reboot == config.my.host.name)
-  ) (lib.filterAttrs (_: service: service.dashboard.reboot != null) tiled);
-  # Tiles with a host page switch from there (its config page button) rather
-  # than from a button of their own.
-  switchTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (
-      _: service: service.dashboard.switch != null && service.dashboard.page == null
-    ) tiled
-  );
-  # Tile name -> host whose page the tile's config page button opens.
-  pageTiles = lib.mapAttrs' (
-    _: service: lib.nameValuePair service.dashboard.name service.dashboard.page
-  ) (lib.filterAttrs (_: service: service.dashboard.page != null) tiled);
-  # Tile name -> hostctl's name for the host, whose uptime the tile shows
-  # (hosts.nix): a page's host, or the `wake` host of an `snmp` tile.
-  uptimeTiles =
-    pageTiles
-    // lib.mapAttrs' (_: service: lib.nameValuePair service.dashboard.name service.dashboard.wake) (
-      lib.filterAttrs (_: service: service.dashboard.snmp != null) tiled
-    );
-  tailscaleTiles = lib.mapAttrsToList (_: service: service.dashboard.name) (
-    lib.filterAttrs (_: service: service.dashboard.tailscale != null) tiled
-  );
-  # Tile name -> {host, ports: [{name, port, href, unit}]}, by port; `host`
-  # null for this one, `unit` the name svcctl knows the entry's unit by
-  # (controls.nix).
-  portTiles = lib.mapAttrs' (
-    _: service:
-    lib.nameValuePair service.dashboard.name {
-      host = service.dashboard.portsHost;
-      ports = lib.sort (a: b: a.port < b.port) (
-        lib.mapAttrsToList (name: entry: {
-          inherit name;
-          inherit (entry) port href;
-          unit = if entry.unit != null then "${name} · ${service.dashboard.name}" else null;
-        }) service.dashboard.ports
-      );
-    }
-  ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiled);
   secretVar =
     name: field: "HOMEPAGE_VAR_${lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] "${name}_${field}")}";
 
@@ -447,24 +392,6 @@ in
         retarget();
       ''
       + builtins.readFile ./theme.js
-      + ''
-        const svcctlTiles = ${builtins.toJSON controlledTiles};
-        const svcctlWakeTiles = ${builtins.toJSON wakeTiles};
-        const svcctlPoweroffTiles = ${builtins.toJSON poweroffTiles};
-        const svcctlTerminals = ${builtins.toJSON terminalTiles};
-        const svcctlRebootTiles = ${builtins.toJSON rebootTiles};
-        const svcctlSwitchTiles = ${builtins.toJSON switchTiles};
-        const svcctlPages = ${builtins.toJSON pageTiles};
-        const svcctlUptimes = ${builtins.toJSON uptimeTiles};
-        const svcctlTailscaleTiles = ${builtins.toJSON tailscaleTiles};
-        const svcctlPorts = ${builtins.toJSON portTiles};
-        const svcctlTailnet = ${
-          builtins.toJSON {
-            domain = network.tailnetDomain;
-            address = network.tailnetAddress;
-          }
-        };
-      ''
       + builtins.readFile ./controls.js
       + builtins.readFile ./tasks.js;
 

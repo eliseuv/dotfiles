@@ -1,21 +1,21 @@
-"""svcctl PORT UNITS_JSON WAKE_JSON REBOOT_JSON SWITCH_JSON TAILSCALE_JSON PORTS_JSON MENU_JSON [SSH_KEY]:
-start/stop/restart a fixed set of systemd units for the dashboard's tile
-buttons (controls.nix).
-UNITS_JSON maps tile names to {unit, hosts, user}; nothing else can be
+"""svcctl PORT CONFIG_JSON [SSH_KEY]: start/stop/restart a fixed set of
+systemd units for the dashboard's tile buttons (controls.nix). CONFIG_JSON
+holds these sections:
+`units` maps tile names to {unit, hosts, user}; nothing else can be
 touched. With `hosts` empty the unit is here, and polkit enforces the same
 list; otherwise it's on another host, driven through the SSH login below,
-whose forced command enforces its own list. WAKE_JSON maps tile names to {mac, host, poweroff} for
+whose forced command enforces its own list. `wake` maps tile names to {mac, host, poweroff} for
 tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
 from pinging `host`. Those with `poweroff` are powered off by an SSH login with
 SSH_KEY, which the host pins to its remote-control forced command.
-REBOOT_JSON and SWITCH_JSON map tile names to {hosts} for hosts that can be
+`reboot` and `switch` map tile names to {hosts} for hosts that can be
 rebooted, or whose dotfiles-switch.service (or dotfiles-home-switch.service,
 the homes only) can be started: here when `hosts`
 is empty, otherwise through the same SSH login, trying each name in turn until
-one connects. TAILSCALE_JSON likewise maps tiles to {hosts} whose Tailscale can
-be turned on and off, always through that login. PORTS_JSON maps tiles to
+one connects. `tailscale` likewise maps tiles to {hosts} whose Tailscale can
+be turned on and off, always through that login. `ports` maps tiles to
 {hosts, ports}: TCP ports reported open or closed, on this host when `hosts`
-is empty. MENU_JSON, the host tiles' controls for the Homelab rofi menu, is
+is empty. `tiles` and `tailnet`, what every client shows of the tiles, are
 served as is.
 Also serves per-service resource usage, read from the cgroup tree."""
 
@@ -33,20 +33,15 @@ from urllib.parse import unquote
 
 port = int(sys.argv[1])
 with open(sys.argv[2]) as file:
-    units = json.load(file)
-with open(sys.argv[3]) as file:
-    wakeable = json.load(file)
-with open(sys.argv[4]) as file:
-    rebootable = json.load(file)
-with open(sys.argv[5]) as file:
-    switchable = json.load(file)
-with open(sys.argv[6]) as file:
-    tailscalable = json.load(file)
-with open(sys.argv[7]) as file:
-    port_targets = json.load(file)
-with open(sys.argv[8]) as file:
-    host_menu = json.load(file)
-ssh_key = sys.argv[9] if len(sys.argv) > 9 else None
+    config = json.load(file)
+units = config["units"]
+wakeable = config["wake"]
+rebootable = config["reboot"]
+switchable = config["switch"]
+tailscalable = config["tailscale"]
+port_targets = config["ports"]
+tile_list = {"tiles": config["tiles"], "tailnet": config["tailnet"]}
+ssh_key = sys.argv[3] if len(sys.argv) > 3 else None
 
 ACTIONS = {"start", "stop", "restart"}
 SWITCH_UNIT = "dotfiles-switch.service"
@@ -575,8 +570,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(
                 200, {"cores": os.cpu_count(), "memory_total": memory_total(), "services": usage}
             )
-        if self.path == "/api/svc/menu":
-            return self.reply(200, host_menu)
+        if self.path == "/api/svc/tiles":
+            return self.reply(200, tile_list)
         if self.path != "/api/svc/status":
             return self.reply(404)
         states = dict(reachable)

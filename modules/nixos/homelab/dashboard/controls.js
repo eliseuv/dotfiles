@@ -7,16 +7,18 @@
 // host has a page, which switches from there), tailscale
 // (on/off), restart, and on/off, one button that wakes the host while it's
 // down and powers it off while it's up (controls.nix).
-// `svcctlTiles`, `svcctlWakeTiles`, `svcctlPoweroffTiles`, `svcctlSwitchTiles`,
-// `svcctlTailscaleTiles` (tile names), `svcctlRebootTiles` (tile name -> whether it's this host),
-// `svcctlTerminals` (tile name -> URL, what the tile itself opens),
-// `svcctlPages` (tile name -> host whose page the config button opens),
-// `svcctlUptimes` (tile name -> hostctl's name for the host whose uptime it shows), `svcctlPorts` (tile name ->
-// {host, ports: [{name, port, href, unit}]}) and `svcctlTailnet` ({domain,
-// address}) are defined ahead of this file by default.nix.
+// Which tile gets which, and where its terminal, page, uptime and ports are,
+// comes from svcctl's tile list (/api/svc/tiles), loaded before the first
+// status poll.
 (() => {
   const api = "/api/svc";
   const headers = { "X-Svcctl": "1" };
+  // Tile name -> {host, here, controls, page, uptime, terminal, portsHost,
+  // ports: [{label, port, href, unit}]}, null until loaded; and the tailnet's
+  // {domain, address}.
+  let tiles = null;
+  let tailnet = {};
+  const has = (name, control) => !!tiles?.[name]?.controls.includes(control);
   let states = {};
   // Tile name -> "idle"/"switching"/"failed" for switch tiles, and the status
   // the host keeps of that run ({stage, result, message, tag, ...}) or null.
@@ -68,7 +70,18 @@
             .then(({ error }) => Promise.reject({ status: response.status, error })),
     );
 
+  // Retried on each poll until svcctl answers: it may be down as the page loads.
+  const loadTiles = () =>
+    call("GET", "/tiles")
+      .then(({ tiles: list, tailnet: found }) => {
+        tiles = Object.fromEntries(list.map((tile) => [tile.name, tile]));
+        tailnet = found;
+        return refresh();
+      })
+      .catch(() => {});
+
   const refresh = () => {
+    if (!tiles) return loadTiles();
     const started = performance.now();
     return call("GET", "/status")
       .then((next) => {
@@ -80,7 +93,7 @@
         portStates = next.ports;
         syncUptimes();
         if (apiWentDown) {
-          for (const name in rebootSent) if (svcctlRebootTiles[name]) delete rebootSent[name];
+          for (const name in rebootSent) if (tiles[name]?.here) delete rebootSent[name];
         }
         apiWentDown = false;
         render();
@@ -94,7 +107,7 @@
   const fetchUptime = (name, poke) => {
     lastUptimeFetch[name] = performance.now();
     const query = poke ? "?refresh=1" : "";
-    fetch(`/api/hosts/${encodeURIComponent(svcctlUptimes[name])}${query}`)
+    fetch(`/api/hosts/${encodeURIComponent(tiles[name].uptime)}${query}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
       .then(({ uptime, uptime_age: age, addresses: found }) => {
         addresses[name] = found;
@@ -110,7 +123,7 @@
 
   const fetchAddresses = (name) => {
     addresses[name] = null;
-    fetch(`/api/hosts/${encodeURIComponent(svcctlUptimes[name])}`)
+    fetch(`/api/hosts/${encodeURIComponent(tiles[name].uptime)}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
       .then(({ addresses: found }) => {
         addresses[name] = found;
@@ -122,7 +135,8 @@
   };
 
   const syncUptimes = () => {
-    for (const name in svcctlUptimes) {
+    for (const name in tiles) {
+      if (!tiles[name].uptime) continue;
       if (!(name in addresses)) fetchAddresses(name);
       if (states[name] !== "up") {
         delete uptimes[name];
@@ -161,7 +175,7 @@
     if (
       action === "reboot" &&
       !confirm(
-        svcctlRebootTiles[name]
+        tiles[name]?.here
           ? `Reboot ${name}? The dashboard goes down with it.`
           : `Reboot ${name} now?`,
       )
@@ -193,7 +207,7 @@
         }
         if (action === "reboot") {
           rebootSent[name] = { at: Date.now(), sawDown: false };
-          if (svcctlRebootTiles[name]) apiWentDown = false;
+          if (tiles[name]?.here) apiWentDown = false;
           return render();
         }
         if (action.startsWith("tailscale-")) {
@@ -265,7 +279,7 @@
     const element = document.createElement("a");
     element.className = "svcctl-config";
     element.dataset.label = "Config";
-    element.href = `/hosts/?host=${encodeURIComponent(svcctlPages[name])}`;
+    element.href = `/hosts/?host=${encodeURIComponent(tiles[name].page)}`;
     element.title = `Config page of ${name}`;
     element.innerHTML = iconSvg("config");
     element.addEventListener("click", (event) => event.stopPropagation());
@@ -278,7 +292,7 @@
     "click",
     (event) => {
       const tile = event.target.closest?.("li.service[data-name]");
-      if (!tile || !(tile.dataset.name in svcctlTerminals)) return;
+      if (!tile || !tiles?.[tile.dataset.name]?.terminal) return;
       const link = event.target.closest("a");
       if (!link || link.closest(".svcctl")) return;
       if (displayState(tile.dataset.name) !== "up") event.preventDefault();
@@ -291,8 +305,8 @@
   const portsHost = (host) => {
     if (!host) return location.hostname;
     const here = location.hostname;
-    const tailnet = here.endsWith(`.${svcctlTailnet.domain}`) || here === svcctlTailnet.address;
-    return `${host.toLowerCase()}.${tailnet ? svcctlTailnet.domain : "local"}`;
+    const onTailnet = here.endsWith(`.${tailnet.domain}`) || here === tailnet.address;
+    return `${host.toLowerCase()}.${onTailnet ? tailnet.domain : "local"}`;
   };
 
   // Below the bar rather than over the tiles next to it, and outside it so
@@ -302,7 +316,7 @@
   // such an entry's port is closed, a start button below the list stands in
   // for its row.
   const portsMenu = (name) => {
-    const { host, ports } = svcctlPorts[name];
+    const { portsHost: host, ports } = tiles[name];
     const menu = document.createElement("div");
     menu.className = "svcctl-ports-menu";
     menu.hidden = true;
@@ -314,7 +328,7 @@
     list.append(empty);
     const starts = document.createElement("div");
     starts.className = "svcctl-ports-starts";
-    for (const { name: label, port, href, unit } of ports) {
+    for (const { label, port, href, unit } of ports) {
       const row = document.createElement("div");
       row.className = "svcctl-ports-row";
       row.dataset.port = port;
@@ -426,6 +440,7 @@
   // Only touches the DOM when something changed: the page's MutationObserver
   // calls this again on every mutation.
   const render = () => {
+    if (!tiles) return;
     // On the label under the header's Wheatley readings, as an attribute
     // theme.css prints: the text is React's, and an attribute it never set
     // survives its re-renders. The label is the deepest last element of the
@@ -438,14 +453,16 @@
     }
     for (const tile of document.querySelectorAll("li.service[data-name]")) {
       const name = tile.dataset.name;
+      const page = tiles[name]?.page;
       const kinds = {
-        unit: svcctlTiles.includes(name),
-        wake: svcctlWakeTiles.includes(name),
-        reboot: name in svcctlRebootTiles,
-        switch: svcctlSwitchTiles.includes(name),
-        config: name in svcctlPages,
-        tailscale: svcctlTailscaleTiles.includes(name),
-        ports: name in svcctlPorts,
+        unit: has(name, "unit"),
+        wake: has(name, "wake"),
+        reboot: has(name, "reboot"),
+        // Tiles with a host page switch from there (its config button).
+        switch: has(name, "switch") && !page,
+        config: !!page,
+        tailscale: has(name, "tailscale"),
+        ports: has(name, "ports"),
       };
       if (!Object.values(kinds).some(Boolean)) continue;
       const card = tile.firstElementChild;
@@ -478,7 +495,7 @@
       const portState = kinds.ports
         ? JSON.stringify([
             portStates[name] || {},
-            svcctlPorts[name].ports.map(({ unit }) => unit && displayState(unit)),
+            tiles[name].ports.map(({ unit }) => unit && displayState(unit)),
           ])
         : "";
       if (
@@ -523,12 +540,12 @@
         const power = bar.querySelector(".svcctl-power");
         const up = state === "up";
         power.disabled =
-          (up && !svcctlPoweroffTiles.includes(name)) ||
+          (up && !has(name, "poweroff")) ||
           state === "waking" ||
           state === "shutting-down" ||
           state === "rebooting";
         power.title = up ? `Power off ${name}` : `Wake ${name}`;
-        power.dataset.label = up && svcctlPoweroffTiles.includes(name) ? "Off" : "Wake";
+        power.dataset.label = up && has(name, "poweroff") ? "Off" : "Wake";
       }
       if (kinds.tailscale) {
         bar.dataset.tailscale = tailscaleState;
