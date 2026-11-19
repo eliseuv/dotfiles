@@ -10,6 +10,7 @@ import threading
 import time
 import types
 import unittest
+import unittest.mock
 from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,6 +123,19 @@ class RemoteLoginTests(unittest.TestCase):
         self.run.return_value = subprocess.CompletedProcess([], 0, "", "")
         self.ns["remote_any"](["host"], "switch-status")
         self.assertEqual(self.run.call_args.kwargs["timeout"], 20)
+
+    def test_connection_shared_only_with_a_runtime_directory(self):
+        self.run.return_value = subprocess.CompletedProcess([], 0, "", "")
+        with unittest.mock.patch.dict("os.environ", {"RUNTIME_DIRECTORY": "/run/svcctl"}):
+            self.ns["remote"]("host", "status x")
+        command = self.run.call_args.args[0]
+        self.assertIn("ControlPath=/run/svcctl/ssh-%C", command)
+        self.assertIn("ControlMaster=auto", command)
+        # Options before the destination, the verb last.
+        self.assertEqual(command[-2:], ["remote-control@host", "status x"])
+        with unittest.mock.patch.dict("os.environ", clear=True):
+            self.ns["remote"]("host", "status x")
+        self.assertFalse(any("Control" in arg for arg in self.run.call_args.args[0]))
 
     def test_every_name_timing_out_raises(self):
         self.run.side_effect = subprocess.TimeoutExpired("ssh", 20)

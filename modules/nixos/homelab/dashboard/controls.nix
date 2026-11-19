@@ -407,6 +407,9 @@ in
         );
         User = "svcctl";
         Group = "svcctl";
+        # The shared SSH connections' sockets (svcctl.py), and net-snmp's
+        # state for the host pages.
+        RuntimeDirectory = "svcctl";
         Restart = "on-failure";
         # Talks to systemd over D-Bus (AF_UNIX), serves on loopback, and
         # broadcasts wake packets and pings (unprivileged ICMP) and SSHes to

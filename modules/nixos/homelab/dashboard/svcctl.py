@@ -282,6 +282,28 @@ def send_magic_packet(mac):
         sock.sendto(payload, ("255.255.255.255", 9))
 
 
+def shared_connection():
+    # One connection per host name, shared by every call to it and kept a
+    # minute past the last: the watchers poll a host that's up every 30 s, so
+    # it holds one login rather than taking one per poll. Keepalives close a
+    # connection whose host went away without a word (Tailscale turned off,
+    # unplugged) within ~9 s, and a call caught on it falls back to a fresh
+    # login by itself, inside the timeout. Sockets in the runtime directory
+    # and connections in the unit's cgroup both go with svcctl; %C keeps the
+    # path within a socket's 108 bytes. Without that directory (tests, a
+    # run by hand), each call logs in on its own.
+    directory = os.environ.get("RUNTIME_DIRECTORY")
+    if not directory:
+        return []
+    return [
+        "-o", "ControlMaster=auto",
+        "-o", f"ControlPath={directory}/ssh-%C",
+        "-o", "ControlPersist=60",
+        "-o", "ServerAliveInterval=3",
+        "-o", "ServerAliveCountMax=2",
+    ]
+
+
 def remote(host, verb, user="remote-control", timeout=20):
     # The host's authorized_keys forces its remote-control command, which
     # only takes the verb from here. known_hosts comes from the system file
@@ -298,6 +320,7 @@ def remote(host, verb, user="remote-control", timeout=20):
             "-o", "ConnectTimeout=5",
             "-o", "StrictHostKeyChecking=yes",
             "-o", "UserKnownHostsFile=/dev/null",
+            *shared_connection(),
             f"{user}@{host}",
             verb,
         ],

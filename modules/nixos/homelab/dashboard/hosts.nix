@@ -200,7 +200,8 @@ in
     });
 
     # Merged into svcctl's unit (controls.nix): snmpget for the SNMP tiles,
-    # and somewhere to keep reports, diffs and net-snmp's engine state.
+    # and somewhere to keep reports and diffs; net-snmp's engine state goes in
+    # its runtime directory.
     systemd.services.svcctl = {
       path = [ pkgs.net-snmp ];
       environment = lib.optionalAttrs (snmpSecrets != [ ]) {
@@ -208,7 +209,6 @@ in
       };
       serviceConfig = {
         StateDirectory = "svcctl";
-        RuntimeDirectory = "svcctl";
       };
     };
 

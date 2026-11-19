@@ -112,10 +112,12 @@ in
     };
     users.groups.${user} = { };
 
-    # The dashboard logs in every few seconds, and each login would otherwise
-    # start a user@.service for this user, with every per-user unit (rootless
-    # Docker, devmon, ...), only to tear it down again. A switch that lands
-    # while one is stopping fails reloading it. So this user gets no logind
+    # The dashboard keeps one connection open while this host is up, logging
+    # in again whenever it drops (a reboot, a network change). Each login
+    # would otherwise start a user@.service for this user, with every per-user
+    # unit (rootless Docker, devmon, ...), keep it for as long as the
+    # connection lasts and tear it down after. A switch that lands while one
+    # is stopping fails reloading it. So this user gets no logind
     # session at all: a background-light one still creates /run/user/<uid>,
     # which switch-to-configuration takes as a running user manager and fails
     # to reach. polkit only checks the user, not a session.
