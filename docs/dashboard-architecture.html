@@ -89,7 +89,7 @@
 <main>
 <h1>Wheatley dashboard: reading from and commanding remote hosts</h1>
 <p>Architecture of the homelab dashboard's control and reporting paths, as implemented in the dotfiles flake.
-Snapshot of <code>master</code> at <code>03a6108a</code>, 2026-11-19, after the tile list and the hostctl merge (<a href="#changes">changes</a>).</p>
+Snapshot of <code>master</code> at <code>c564fd8a</code>, 2026-11-19, after the tile list, the hostctl merge and shared SSH connections (<a href="#changes">changes</a>).</p>
 
 <nav>
   <ol>
@@ -175,7 +175,7 @@ deploy state.
   <path class="ln" d="M625,115 V150"/>
 
   <rect class="box" x="385" y="290" width="315" height="55" rx="6"/>
-  <text class="c b" x="542" y="312">OpenSSH client · -F /dev/null · BatchMode</text>
+  <text class="c b" x="542" y="312">OpenSSH · one shared connection per host</text>
   <text class="c s" x="542" y="330">strict host keys · tailnet name, then .local</text>
   <path class="ln" d="M460,260 V290"/>
   <path class="ln" d="M625,260 V290"/>
@@ -460,7 +460,7 @@ shows its last report.
 </p>
 
 <figure>
-<svg viewBox="0 0 1000 330" role="img" aria-label="Read path">
+<svg viewBox="0 0 1000 350" role="img" aria-label="Read path">
   <rect class="rem" x="20" y="40" width="200" height="75" rx="6"/>
   <text class="c b" x="120" y="62">target: host-report</text>
   <text class="c s" x="120" y="80">generations · diff N</text>
@@ -503,9 +503,10 @@ shows its last report.
   <path class="ln" d="M760,190 L820,165"/>
 
   <text class="s" x="20" y="268">svcctl's live state comes from its own threads: ping every 5 s · open ports every 5 s (only while the host answers) ·</text>
-  <text class="s" x="20" y="286">remote unit status 5 s while settling, else 30 s · switch-status 10 s, 30 s when unreachable · Tailscale status 30 s.</text>
-  <text class="s" x="20" y="304">"Up to date" is a store-path comparison against an evaluation, not a build: a commit that changes nothing in a host's</text>
-  <text class="s" x="20" y="322">system leaves it up to date.</text>
+  <text class="s" x="20" y="286">remote unit status 5 s while settling, else 30 s · switch-status 10 s during a switch · Tailscale status 30 s; all over</text>
+  <text class="s" x="20" y="304">one kept-open SSH connection per host, so an up host costs one login, not one per poll.</text>
+  <text class="s" x="20" y="322">"Up to date" is a store-path comparison against an evaluation, not a build: a commit that changes nothing in a host's</text>
+  <text class="s" x="20" y="340">system leaves it up to date.</text>
 </svg>
 <figcaption>Figure 4. svcctl's host pages and dotfiles-eval. The commit each generation was built from is written to <code>revisionsDir</code>
 by every switch (service or Justfile), keyed by store hash, so host-report can name it without the system embedding it.</figcaption>
@@ -524,8 +525,8 @@ by every switch (service or Justfile), keyed by store hash, so host-report can n
     validated by regex or by host-report itself.</li>
   <li><b>No sudo.</b> polkit rules keyed on <code>subject.user == "remote-control"</code> allow exactly the logind actions and
     <code>manage-units</code> verbs the dispatcher uses. Tailscale goes through two root oneshot units, because the CLI only obeys its operator.</li>
-  <li><b>No logind session.</b> A PAM rule jumps over <code>pam_systemd</code> for this user. Without it, the frequent polling
-    logins spun up and tore down <code>user@.service</code>, and a switch landing mid-teardown failed.</li>
+  <li><b>No logind session.</b> A PAM rule jumps over <code>pam_systemd</code> for this user. Without it, the polling logins
+    (then one per poll, now one per connection) spun up and tore down <code>user@.service</code>, and a switch landing mid-teardown failed.</li>
   <li><b>Switch runs as a unit, not in the SSH session.</b> <code>dotfiles-switch.service</code> builds as the primary user and
     activates as root through systemd's <code>+</code> prefix. It pulls anonymously over HTTPS and only <em>tries</em> to push the generation tag.</li>
 </ul>
@@ -682,6 +683,19 @@ simultaneous starts. This is acknowledged and mitigated by the UI disabling both
     <td>Unchanged API, still open and read-only. A timeout on the first name now falls back to the mDNS name like
       svcctl's other logins. The report cache moves to <code>/var/lib/svcctl</code> and refills within one refresh;
       <code>/var/lib/hostctl</code> is left behind on wheatley.</td>
+  </tr>
+  <tr>
+    <td><b>Timeout restored.</b> The merge's new <code>timeout</code> parameter of <code>remote_any()</code> was shadowed by a local
+      variable, so every SSH call ran without one.</td>
+    <td>Nothing; a test now runs the real <code>remote_any()</code> and checks the timeout reaches each attempt.</td>
+    <td>Calls are bounded again: 20 s for buttons and watchers, 60 s for reports.</td>
+  </tr>
+  <tr>
+    <td><b>Shared SSH connections.</b> svcctl's ssh calls share one connection per host name (<code>ControlMaster=auto</code>,
+      <code>ControlPersist=60</code>, keepalives every 3 s), with sockets in <code>/run/svcctl</code>.</td>
+    <td>A login per poll: about ten a minute across the hosts, down to one per host while it stays up.</td>
+    <td>Calls over a kept connection take ~25 ms instead of ~150 ms. A host that vanishes silently is dropped within ~9 s;
+      a call caught on its dead connection falls back to a fresh login inside the timeout. Hosts unchanged.</td>
   </tr>
 </table>
 
