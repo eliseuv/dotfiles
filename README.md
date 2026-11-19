@@ -19,6 +19,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 - **Editor**: Neovim
 - **Helper Tools**: `nh`, `just`
 - **Codex Remote Control**: private service socket and [app pairing helper](docs/codex-remote-control.md)
+- **Homelab Dashboard**: Wheatley's dashboard wakes, powers off, restarts, switches and opens terminals on the other hosts ([architecture](docs/dashboard-architecture.html))
 - **Other Inputs**: `spicetify-nix`, `yt-x`, `catppuccin`, `nix-minecraft`
 
 ## Structure
@@ -292,6 +293,13 @@ already derives at runtime.
 
 ### Dashboard host deployments
 
+The dashboard reads from anywhere on the LAN or tailnet, but everything behind
+its login (buttons, terminals, Pluto, switch output) answers only over the
+tailnet: from the LAN it refuses before asking for the password, which plain
+HTTP would carry in the clear. Open it by its tailnet name, `http://wheatley`,
+to use the controls; the Homelab rofi menu likewise only acts while Tailscale
+is on.
+
 Open a host's configuration page from its tile on Wheatley's dashboard. The
 page shows running and booted systems, master's evaluated system, and report
 freshness. **Refresh host report** requests a fresh report (limited to once
@@ -316,7 +324,32 @@ progress. **Home switch** does the same pull, then switches every user's
 Home Manager on that host, leaving the system as it is; it tags nothing, and
 neither switch starts while the other runs. Recent switch
 output shows the latest 300 journal lines from the current boot, capped at
-256 KiB; it refreshes while expanded during a switch. Like host status, this
-output is readable within the dashboard's LAN/tailnet reach. Remote output
-requires the updated remote-control command. Roll out host configuration
-changes before using the new remote features.
+256 KiB; it refreshes while expanded during a switch. Unlike host status, it
+needs the dashboard login. Remote output requires the updated remote-control
+command. Roll out host configuration changes before using the new remote
+features.
+
+### Giving a host a dashboard tile
+
+A tile names its machine once, in wheatley's config:
+
+```nix
+homelab.services.glados.dashboard = {
+  name = "GLaDOS";
+  group = "Desktops";
+  icon = "mdi-robot-industrial";
+  link = false;
+  host = "GLaDOS";
+  ports = ports.GLaDOS.dev; # optional: its dev servers' ports menu
+};
+```
+
+Its buttons follow from what that host enables in its own
+`hosts/<name>/default.nix`: wake (any host with a MAC in `my.wakeOnLan.hosts`),
+power off and restart (`my.services.remotePowerOff`), switch and the host page
+(`dotfilesSwitch`), Tailscale on/off (`remoteTailscale`), the ports menu's
+start/stop (`remoteUnits`) and its terminal (`ttyd`). Those settings must stay
+in `default.nix`, where wheatley reads them; the host's build fails otherwise.
+A terminal also needs the host's tailnet address and ttyd port in
+`modules/nixos/homelab/network.nix`. Machines outside `hosts/`, like the NAS,
+are described in `homelab.externalHosts` instead.
