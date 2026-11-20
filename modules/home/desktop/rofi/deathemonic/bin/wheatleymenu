@@ -165,9 +165,19 @@ if [[ "$row" -eq 0 ]]; then
 fi
 
 entry=${HOSTS[$((row - 1))]}
-IFS='|' read -r tile ssh_host page ports_host < <(
-    jq -r '[.name, .address // "\(.host | ascii_downcase).local", .page // "", .portsHost // ""] | join("|")' <<< "$entry"
+IFS='|' read -r tile host ssh_host page ports_host < <(
+    jq -r '[.name, .host, .address // "\(.host | ascii_downcase).local", .page // "", .portsHost // ""] | join("|")' <<< "$entry"
 )
+# On the tailnet, SSH by the peer's short MagicDNS name: the LAN name only
+# resolves at home. Short rather than the FQDN so ~/.ssh/config aliases and
+# known_hosts entries apply. Matched by HostName, since a machine's tailnet
+# name can differ from it (CompanionCube is comp-cube).
+if [ -z "$domain" ]; then
+    tailnet_name=$(tailscale status --json 2> /dev/null | jq -r --arg host "${host,,}" '
+        [.Peer[]? | select((.HostName | ascii_downcase) == $host)][0].DNSName // empty
+        | split(".")[0]')
+    ssh_host=${tailnet_name:-$ssh_host}
+fi
 up=$(jq -r --arg tile "$tile" '.tiles[$tile] == "up"' <<< "$status")
 has() { jq -e --arg control "$1" '.controls | index($control)' <<< "$entry" > /dev/null; }
 
