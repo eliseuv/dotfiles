@@ -539,7 +539,9 @@
       if (kinds.wake) {
         const power = bar.querySelector(".svcctl-power");
         const up = state === "up";
+        // In Windows it's already on, and has no login to power it off.
         power.disabled =
+          state === "windows" ||
           (up && !has(name, "poweroff")) ||
           state === "waking" ||
           state === "shutting-down" ||

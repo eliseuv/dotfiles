@@ -6,7 +6,8 @@ touched. With `hosts` empty the unit is here, and polkit enforces the same
 list; otherwise it's on another host, driven through the SSH login below,
 whose forced command enforces its own list. `wake` maps tile names to {mac, host, poweroff} for
 tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
-from pinging `host`. Those with `poweroff` are powered off by an SSH login with
+from pinging `host`, or "windows" when it answers only at its MAC's LAN
+address, as Windows. Those with `poweroff` are powered off by an SSH login with
 SSH_KEY, which the host pins to its remote-control forced command.
 `reboot` and `switch` map tile names to {hosts} for hosts that can be
 rebooted, or whose dotfiles-switch.service (or dotfiles-home-switch.service,
@@ -72,9 +73,18 @@ for targets in (rebootable, switchable, tailscalable, remote_units, port_targets
         if target["hosts"] and name not in probed:
             probed[name] = target["hosts"]
 
-# Tile name -> "up"/"down", kept fresh by probe() rather than pinged per
-# request: a sleeping host's mDNS lookup alone takes ~9s to fail.
+# Tile name -> "up"/"down", or "windows" for a wake tile's machine booted into
+# Windows, kept fresh by probe() rather than pinged per request: a sleeping
+# host's mDNS lookup alone takes ~9s to fail.
 reachable = {name: "unknown" for name in probed}
+
+# Wake tile name -> the IPv4 address its mDNS name last resolved to, a place to
+# look for it once mDNS stops answering (see windows_reply()).
+last_address = {}
+
+# Initial TTLs: Linux and the NAS send 64, Windows 128, and a LAN hop takes
+# nothing off, so a reply above 64 is Windows.
+WINDOWS_TTL = range(65, 129)
 
 # Tile name -> "idle"/"switching"/"failed" for remote switch tiles, and the
 # status the host keeps of its latest run, from watch_switch(); the local one
@@ -231,7 +241,7 @@ def memory_total():
 
 
 def ping(host):
-    # Round-trip time in ms, None if unanswered.
+    # {rtt (ms), ttl, address (IPv4 pinged)}, None if unanswered.
     try:
         result = subprocess.run(
             ["ping", "-c1", "-W1", host],
@@ -241,15 +251,62 @@ def ping(host):
         )
     except subprocess.TimeoutExpired:
         return None
-    match = re.search(r"time=([\d.]+) ms", result.stdout)
-    return float(match.group(1)) if result.returncode == 0 and match else None
+    rtt = re.search(r"time=([\d.]+) ms", result.stdout)
+    if result.returncode != 0 or not rtt:
+        return None
+    ttl = re.search(r"ttl=(\d+)", result.stdout)
+    address = re.search(r"^PING \S+ \(([\d.]+)\)", result.stdout, re.MULTILINE)
+    return {
+        "rtt": float(rtt.group(1)),
+        "ttl": int(ttl.group(1)) if ttl else None,
+        "address": address.group(1) if address else None,
+    }
+
+
+def arp_addresses(mac):
+    # IPv4 addresses the kernel's ARP table holds at `mac`, complete entries
+    # only (flags other than 0x0).
+    try:
+        rows = Path("/proc/net/arp").read_text().splitlines()[1:]
+    except OSError:
+        return []
+    return [
+        fields[0]
+        for fields in map(str.split, rows)
+        if len(fields) >= 4 and fields[3].lower() == mac.lower() and fields[2] != "0x0"
+    ]
+
+
+def windows_reply(mac, last):
+    # A machine booted into Windows answers no mDNS, but still pings at its
+    # LAN address: one the ARP table holds at its MAC, or the one its mDNS
+    # name last had. Passive on purpose: no ARP sweep, so after a restart here
+    # this relies on Windows' own LAN chatter having put it in the table. The
+    # MAC is checked again after the ping, since DHCP may have given an old
+    # address to another device.
+    for address in dict.fromkeys(arp_addresses(mac) + ([last] if last else [])):
+        reply = ping(address)
+        if reply and reply["ttl"] in WINDOWS_TTL and address in arp_addresses(mac):
+            return reply
+    return None
 
 
 def probe(name, hosts):
+    mac = wakeable.get(name, {}).get("mac")
     while True:
-        rtt = next((r for r in map(ping, hosts) if r is not None), None)
-        latency[name] = rtt
-        reachable[name] = "up" if rtt is not None else "down"
+        reply = next((r for r in map(ping, hosts) if r is not None), None)
+        state = "up" if reply else "down"
+        if mac:
+            if reply and reply["ttl"] in WINDOWS_TTL:
+                state = "windows"
+            elif reply and reply["address"]:
+                last_address[name] = reply["address"]
+            if not reply:
+                reply = windows_reply(mac, last_address.get(name))
+                if reply:
+                    state = "windows"
+        latency[name] = reply["rtt"] if reply else None
+        reachable[name] = state
         time.sleep(5)
 
 
