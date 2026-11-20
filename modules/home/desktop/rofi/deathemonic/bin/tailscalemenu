@@ -68,10 +68,10 @@ peer_dns=()
 peer_names=()
 while IFS=$'\t' read -r online os name ip dns; do
     case "$os" in
-    linux) icon="" ;;
-    windows) icon="" ;;
-    android) icon="" ;;
-    macOS | iOS) icon="" ;;
+    linux) icon="" ;;
+    windows) icon="" ;;
+    android) icon="" ;;
+    macOS | iOS) icon="" ;;
     *) icon="󰍹" ;;
     esac
     [[ "$online" == "true" ]] && dot="●" || dot="○"
