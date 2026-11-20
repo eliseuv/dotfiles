@@ -151,6 +151,8 @@ for entry in "${HOSTS[@]}"; do
     ping=$(jq -r --arg tile "$tile" '.ping[$tile] // empty | round' <<< "$status")
     if [ "$state" = "up" ]; then
         labels+=("●  $icon  $tile    ${ping:+$ping ms}")
+    elif [ "$state" = "windows" ]; then
+        labels+=("◐  $icon  $tile    Windows")
     else
         labels+=("○  $icon  $tile    down")
     fi
@@ -216,7 +218,8 @@ if [ "$up" = "true" ]; then
         sublabels+=("󰐥  Power off")
         actions+=("poweroff")
     fi
-elif has wake; then
+# In Windows it's already on, with no SSH to drive it: only its page is left.
+elif [ "$(jq -r --arg tile "$tile" '.tiles[$tile]' <<< "$status")" != "windows" ] && has wake; then
     sublabels+=("󰐥  Wake")
     actions+=("wake")
 fi

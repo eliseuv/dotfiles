@@ -53,6 +53,12 @@ for entry in "${HOSTS[@]}"; do
     [ "${host,,}" = "$self" ] && continue
     total=$((total + 1))
     state=$(jq -r --arg tile "$tile" '.tiles[$tile] // "unknown"' <<< "$status")
+    # On, but not in an OS the homelab can drive, so not counted as up.
+    if [ "$state" = "windows" ]; then
+        icons+=("<span alpha=\"70%\">$icon</span>")
+        lines+=("◐ $tile  Windows")
+        continue
+    fi
     if [ "$state" != "up" ]; then
         icons+=("<span alpha=\"40%\">$icon</span>")
         lines+=("○ $tile")
