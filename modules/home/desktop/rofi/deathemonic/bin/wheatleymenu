@@ -7,7 +7,7 @@ ddir="$HOME/.config/rofi/config"
 
 # Bitwarden login entry holding the dashboard's basic-auth username and
 # password (svcctl/htpasswd on wheatley).
-RBW_ENTRY="Wheatley dashboard"
+RBW_ENTRY="Wheatley Dashboard"
 
 # The hosts, their controls and ports come from svcctl's tile list
 # (dashboard/controls.nix); only the glyphs are the menu's own.
