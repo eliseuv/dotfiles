@@ -229,7 +229,8 @@ window#waybar {
 }
 
 #custom-wheatley.partial {
-    color: @main_dim;
+    /* Up hosts stay lit; the down ones are dimmed per icon by wheatley.sh */
+    color: @active;
     border-color: @main_dim;
 }
 
