@@ -19,7 +19,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 - **Editor**: Neovim
 - **Helper Tools**: `nh`, `just`
 - **Codex Remote Control**: private service socket and [app pairing helper](docs/codex-remote-control.md)
-- **Homelab Dashboard**: Wheatley's dashboard wakes, powers off, restarts, switches and opens terminals on the other hosts ([architecture](docs/dashboard-architecture.html))
+- **Homelab Dashboard**: Wheatley's dashboard wakes, powers off, restarts, switches and opens terminals on the other hosts ([svcctl](docs/svcctl.md))
 - **Other Inputs**: `spicetify-nix`, `yt-x`, `catppuccin`, `nix-minecraft`
 
 ## Structure
