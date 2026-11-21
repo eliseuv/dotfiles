@@ -28,6 +28,11 @@ in
         preloadindex = true;
       };
 
+      # Carries along the generation tags a dashboard switch couldn't push
+      # (services/dotfiles-switch.nix); only annotated tags reachable from
+      # what's pushed, so lightweight tags stay local.
+      push.followTags = true;
+
       url = {
         "git@github.com:".insteadOf = "gh:";
         "git@github.com:eliseuv/".insteadOf = "evf/";

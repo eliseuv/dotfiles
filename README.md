@@ -317,7 +317,7 @@ to amend or squash; a checkout on any branch but master is refused, and a
 rebase conflict aborts the switch with the tree as it was. Each switched
 generation is tagged `<host>-<generation>` like `just commit-gen` does; the
 service only tries to push the tag, so it usually stays local until the next
-`git push --follow-tags` from that host. The page shows the stage a switch is
+`git push` from that host (`push.followTags` is set) or `just commit-gen`. The page shows the stage a switch is
 at and, when one fails, the stage and reason. `just system-switch`,
 `system-boot` and `system-test` refuse to run while a dashboard switch is in
 progress. **Home switch** does the same pull, then switches every user's

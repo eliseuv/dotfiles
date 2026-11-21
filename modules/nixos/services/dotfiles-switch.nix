@@ -134,8 +134,8 @@ let
   # built in this run is the profile (never for a home switch, which builds
   # none: its RuntimeDirectory has no system link), which a failed activation can leave it
   # as too, and tries to push only the tag. Without an agent or a key the push
-  # usually fails; the tag stays local until the next `git push --follow-tags`
-  # from here. Then completes the run's status.
+  # usually fails; the tag stays local until the next push from here (the
+  # user's git sets push.followTags, and commit-gen always pushes). Then completes the run's status.
   finish = pkgs.writeShellScript "dotfiles-switch-finish" ''
     set -uo pipefail
     dir=$STATE_DIRECTORY
