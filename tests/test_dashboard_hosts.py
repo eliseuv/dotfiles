@@ -155,6 +155,20 @@ class HostRoutingTests(unittest.TestCase):
         handler.reply.assert_called_once_with(200, {"host": "h"})
 
 
+class HandlerErrorTests(unittest.TestCase):
+    def test_unexpected_error_answers_500_once(self):
+        ns = definitions("svcctl.py")
+        ns["host_pages"] = Mock(get=Mock(side_effect=KeyError("x")))
+        handler = types.SimpleNamespace(path="/api/hosts/h", reply=Mock())
+        with unittest.mock.patch("traceback.print_exc"):
+            ns["Handler"].do_GET(handler)
+        self.assertEqual(handler.reply.call_args.args[0], 500)
+        handler = types.SimpleNamespace(path="/api/hosts/h", reply=Mock(), replied=True)
+        with unittest.mock.patch("traceback.print_exc"):
+            ns["Handler"].do_GET(handler)
+        handler.reply.assert_not_called()
+
+
 class SwitchLogTests(unittest.TestCase):
     def setUp(self):
         self.ns = definitions("svcctl.py")

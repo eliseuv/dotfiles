@@ -598,8 +598,24 @@ def watch_unit(name):
         remote_unit_poke[name].clear()
 
 
+def answering_errors(method):
+    # An unexpected error would otherwise drop the connection without a
+    # reply, which nginx turns into a 502 that says nothing; logged here, and
+    # a 500 when nothing was sent yet.
+    def wrapper(self):
+        try:
+            method(self)
+        except Exception:
+            traceback.print_exc()
+            if not getattr(self, "replied", False):
+                self.reply(500, {"error": "internal error; svcctl's journal has it"})
+
+    return wrapper
+
+
 class Handler(BaseHTTPRequestHandler):
     def reply(self, status, body=None):
+        self.replied = True
         # The access line only has the status; the cause is in the body.
         if status >= 500 and body and "error" in body:
             sys.stderr.write("%s\n" % body["error"])
@@ -641,6 +657,7 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(202, {"ok": True})
         return result
 
+    @answering_errors
     def do_GET(self):
         # Read-only and open without the header, as the host pages' API
         # always was: the pages and the bar fetch it plainly.
@@ -729,6 +746,7 @@ class Handler(BaseHTTPRequestHandler):
             },
         )
 
+    @answering_errors
     def do_POST(self):
         if not self.guarded():
             return
