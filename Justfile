@@ -66,10 +66,9 @@ commit-gen:
     # Not `read < <(...)`: a failed tag-gen would go unnoticed.
     tagged=$({{just_executable()}} tag-gen)
     read -r tag outcome <<<"$tagged"
-    if [ "$outcome" = exists ]; then
-        echo "commit-gen: $tag already exists, generation unchanged, skipping"
-        exit 0
-    fi
+    # Still push when the tag already exists: a dashboard switch may have
+    # created it without managing to push it.
+    [ "$outcome" = exists ] && echo "commit-gen: $tag already exists, generation unchanged"
     # A user without push access (dani on chell) keeps the tag local; the
     # next push by someone with access carries it along, as --follow-tags
     # pushes every missing annotated tag reachable from what it pushes. Any

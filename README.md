@@ -210,8 +210,8 @@ Notes:
   `deploy-service` still runs `system-switch`.
 - If the switch itself is then also a no-op (same generation, nothing
   changed to activate), `commit-gen` finds its generation tag already
-  exists — from the run that actually deployed it — and skips instead of
-  failing. Re-running `deploy-service` is safe either way.
+  exists — from the run that actually deployed it — and only pushes
+  instead of failing. Re-running `deploy-service` is safe either way.
 
 Example, deploying ledger to wheatley:
 
