@@ -511,8 +511,18 @@ def watch_switch(name):
         with switch_watchers_lock:
             if answered and remote_switch[name] != "switching" and name not in pending_switch:
                 switch_watchers.discard(name)
+                collect_tags()
                 return
         time.sleep(10 if answered else 30)
+
+
+def collect_tags():
+    # The switch has exported its generation tag by now; tags.nix publishes
+    # it. Also runs when a watcher started at startup first gets an answer,
+    # which costs one needless collection.
+    unit = os.environ.get("SVCCTL_TAG_COLLECT")
+    if unit:
+        subprocess.run(["systemctl", "start", "--no-block", unit], capture_output=True)
 
 
 def start_switch_watch(name):

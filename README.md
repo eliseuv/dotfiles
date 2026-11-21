@@ -317,9 +317,11 @@ to amend or squash; a checkout on any branch but master is refused, and a
 rebase conflict aborts the switch with the tree as it was. Each switched
 generation is tagged `<host>-<generation>` like `just commit-gen` does; the
 service has no GitHub credential, so it exports the raw tag object to
-`/var/lib/dotfiles-switch/tags` (read through the remote-control `tags` verb)
-instead of pushing it, and the tag stays local until the next `git push` from
-that host (`push.followTags` is set) or `just commit-gen`. The page shows the stage a switch is
+`/var/lib/dotfiles-switch/tags` instead of pushing it. wheatley collects those
+from every host with a switch tile (`tag-collect`: after each switch it
+starts, and every 15 min) and pushes them with the git hub's key
+(`tag-publish`), unchanged, so a later `git push` from the host
+(`push.followTags` is set) finds the tag already there. The page shows the stage a switch is
 at and, when one fails, the stage and reason. `just system-switch`,
 `system-boot` and `system-test` refuse to run while a dashboard switch is in
 progress. **Home switch** does the same pull, then switches every user's
