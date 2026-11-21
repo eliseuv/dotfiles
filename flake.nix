@@ -152,7 +152,25 @@
           patches-index = patches.index;
         };
 
-      checks.${system}.patches-index = patches.check;
+      checks.${system} = {
+        patches-index = patches.check;
+        # svcctl's unit tests, against the interpreter its service runs on.
+        dashboard = pkgs.runCommand "dashboard-tests" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+          cp -r ${
+            nixpkgs.lib.fileset.toSource {
+              root = ./.;
+              fileset = nixpkgs.lib.fileset.unions [
+                ./tests
+                (nixpkgs.lib.fileset.fileFilter (file: file.hasExt "py") ./modules/nixos/homelab/dashboard)
+              ];
+            }
+          } src
+          chmod -R u+w src
+          cd src
+          python3 -m unittest discover -s tests
+          touch $out
+        '';
+      };
 
       inherit (hosts) nixosConfigurations homeConfigurations;
 
