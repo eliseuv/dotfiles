@@ -22,7 +22,7 @@
 # published is queued again by the next collection.
 #
 # Collection runs on a timer, so a host that was off is caught later; after
-# this host's own switch (onSuccess/onFailure); and when svcctl sees a
+# this host's own successful switch (onSuccess); and when svcctl sees a
 # remote switch it started end (svcctl.py).
 {
   config,
@@ -251,10 +251,12 @@ in
           };
         };
 
-        # finish (ExecStopPost) has exported the tag by the time either fires.
+        # finish (ExecStopPost) has exported the tag by the time it fires.
+        # Not onFailure too: two trigger links from one unit have systemd log
+        # on every start that it can't pick one. A failed switch's tag (its
+        # activation failed after the profile moved) waits for the timer.
         systemd.services.dotfiles-switch = lib.mkIf switchesHere {
           onSuccess = [ "tag-collect.service" ];
-          onFailure = [ "tag-collect.service" ];
         };
 
         # For svcctl.py, once a remote switch it watches ends.
