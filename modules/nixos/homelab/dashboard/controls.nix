@@ -71,18 +71,21 @@ let
       found = machine service;
     in
     if found != null && !found.local then found else null;
-  # {hosts, user} for SSHing to `found`; `hosts` empty for this host.
+  # {hosts, user, machine} for SSHing to `found`; `hosts` empty and
+  # `machine` null for this host. `machine` names its entry in `probes`.
   login =
     found:
     if found != null then
       {
         hosts = found.sshTargets;
         user = found.sshUser;
+        machine = if found.local then null else found.host;
       }
     else
       {
         hosts = [ ];
         user = "remote-control";
+        machine = null;
       };
 
   controlled = lib.filterAttrs (_: service: service.dashboard.unit != null) tiles;
@@ -130,7 +133,7 @@ let
       ) (lib.filterAttrs (_: service: portsMachine service != null) tiles)
     );
 
-  # Tile name -> {mac, host, user, poweroff}.
+  # Tile name -> {mac, host, user, poweroff, machine}.
   wakeable = lib.mapAttrs' (
     _: service:
     let
@@ -140,6 +143,7 @@ let
       inherit (found) mac poweroff;
       host = found.pingHost;
       user = found.sshUser;
+      machine = found.host;
     }
   ) (tilesWith "wake");
 
@@ -154,14 +158,38 @@ let
   canRebootHere = actsHere "reboot";
   canSwitchHere = actsHere "switch";
 
-  # Tile name -> {hosts, ports}; `hosts` empty for this host.
+  # Tile name -> {hosts, ports, machine}; `hosts` empty for this host.
   portTargets = lib.mapAttrs' (
     _: service:
     lib.nameValuePair service.dashboard.name {
-      inherit (login (portsMachine service)) hosts;
+      inherit (login (portsMachine service)) hosts machine;
       ports = map (entry: entry.port) (lib.attrValues service.dashboard.ports);
     }
   ) (lib.filterAttrs (_: service: service.dashboard.ports != { }) tiles);
+
+  # Machine -> {hosts, lan, mac}: what svcctl pings to tell whether another
+  # machine is up, once however many tiles act on it. With `lan` (a machine
+  # it can wake) that LAN name is tried first, and whether it answers is
+  # kept apart, for the wake button; `mac` also tells it booted into
+  # Windows. Then `hosts` in turn, its SSH names.
+  probes = lib.listToAttrs (
+    map
+      (found: {
+        name = found.host;
+        value = {
+          hosts = found.sshTargets;
+          lan = if found.wake then found.pingHost else null;
+          mac = if found.wake then found.mac else null;
+        };
+      })
+      (
+        lib.filter (found: found != null && !found.local) (
+          map machine (lib.attrValues hostTiles)
+          ++ map unitMachine (lib.attrValues controlled)
+          ++ map portsMachine (lib.attrValues tiles)
+        )
+      )
+  );
 
   groupIndex =
     group: lib.lists.findFirstIndex (entry: entry.name == group) null (import ./_groups.nix);
@@ -229,6 +257,7 @@ let
         switch = hostActions "switch";
         tailscale = hostActions "tailscale";
         ports = portTargets;
+        inherit probes;
         tiles = tileList;
         # For links to other hosts' ports by the name the client reached this
         # one with (controls.js).

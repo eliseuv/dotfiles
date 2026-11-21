@@ -364,6 +364,59 @@ class SwitchTrackingTests(unittest.TestCase):
         self.assertEqual(self.track("failed\nexit-code\n")[0], "failed")
 
 
+class ProbeTests(unittest.TestCase):
+    def setUp(self):
+        self.ns = definitions("svcctl.py")
+        self.answers = {}
+        self.pinged = []
+
+        def ping(host):
+            self.pinged.append(host)
+            return self.answers.get(host)
+        self.windows = Mock(return_value=None)
+        self.ns.update(
+            machines={
+                "GLaDOS": {"hosts": ["glados.tail", "glados.local"], "lan": "GLaDOS.local",
+                           "mac": "aa:bb:cc:dd:ee:ff"},
+                "nas": {"hosts": ["nas.tail", "nas.local"], "lan": None, "mac": None},
+            },
+            ping=ping, windows_reply=self.windows, last_address={}, WINDOWS_TTL=range(65, 129),
+        )
+
+    def reply(self, ttl=64, address="192.168.0.5"):
+        return {"rtt": 1.5, "ttl": ttl, "address": address}
+
+    def test_at_home_one_ping_on_the_lan(self):
+        self.answers["GLaDOS.local"] = self.reply()
+        self.assertEqual(self.ns["probe_once"]("GLaDOS"), {"state": "up", "lan": True, "rtt": 1.5})
+        self.assertEqual(self.pinged, ["GLaDOS.local"])
+        self.assertEqual(self.ns["last_address"], {"GLaDOS": "192.168.0.5"})
+
+    def test_away_is_up_but_not_on_the_lan(self):
+        self.answers["glados.tail"] = self.reply(address="100.64.0.2")
+        self.assertEqual(self.ns["probe_once"]("GLaDOS"), {"state": "up", "lan": False, "rtt": 1.5})
+        self.assertEqual(self.ns["last_address"], {})
+
+    def test_lan_name_not_pinged_twice_and_off_is_down(self):
+        self.assertEqual(self.ns["probe_once"]("GLaDOS")["state"], "down")
+        self.assertEqual(self.pinged, ["GLaDOS.local", "glados.tail"])
+        self.windows.assert_called_once_with("aa:bb:cc:dd:ee:ff", None)
+
+    def test_windows_by_ttl_or_by_its_mac(self):
+        self.answers["GLaDOS.local"] = self.reply(ttl=128)
+        self.assertEqual(self.ns["probe_once"]("GLaDOS")["state"], "windows")
+        del self.answers["GLaDOS.local"]
+        self.windows.return_value = self.reply(ttl=128)
+        self.assertEqual(self.ns["probe_once"]("GLaDOS"),
+                         {"state": "windows", "lan": True, "rtt": 1.5})
+
+    def test_machine_without_wake_tries_its_names_in_turn(self):
+        self.answers["nas.local"] = self.reply(ttl=128)
+        self.assertEqual(self.ns["probe_once"]("nas")["state"], "up")
+        self.assertEqual(self.pinged, ["nas.tail", "nas.local"])
+        self.windows.assert_not_called()
+
+
 class SupervisionTests(unittest.TestCase):
     def test_loop_restarts_after_an_error_and_ends_on_return(self):
         ns = definitions("svcctl.py")

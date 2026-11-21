@@ -4,11 +4,13 @@ holds these sections:
 `units` maps tile names to {unit, hosts, user}; nothing else can be
 touched. With `hosts` empty the unit is here, and polkit enforces the same
 list; otherwise it's on another host, driven through the SSH login below,
-whose forced command enforces its own list. `wake` maps tile names to {mac, host, poweroff} for
-tiles that wake another machine: Wake-on-LAN instead of a unit, and up/down
-from pinging `host`, or "windows" when it answers only at its MAC's LAN
-address, as Windows. Those with `poweroff` are powered off by an SSH login with
-SSH_KEY, which the host pins to its remote-control forced command.
+whose forced command enforces its own list. `wake` maps tile names to
+{mac, host, poweroff} for tiles that wake another machine: Wake-on-LAN
+instead of a unit. Those with `poweroff` are powered off by an SSH login to
+`host`, its LAN name, with SSH_KEY, which the host pins to its remote-control
+forced command. `probes` maps machines to {hosts, lan, mac}: pinged for
+whether they're up, once per machine, and every tile acting on another machine
+names it as `machine`; "windows" for a wakeable one answering as Windows.
 `reboot` and `switch` map tile names to {hosts} for hosts that can be
 rebooted, or whose dotfiles-switch.service (or dotfiles-home-switch.service,
 the homes only) can be started: here when `hosts`
@@ -46,6 +48,7 @@ rebootable = config["reboot"]
 switchable = config["switch"]
 tailscalable = config["tailscale"]
 port_targets = config["ports"]
+machines = config["probes"]
 tile_list = {"tiles": config["tiles"], "tailnet": config["tailnet"]}
 ssh_key = sys.argv[3] if len(sys.argv) > 3 else None
 
@@ -66,21 +69,25 @@ SWITCH_START_GRACE = 60
 local_units = {name: target["unit"] for name, target in units.items() if not target["hosts"]}
 remote_units = {name: target for name, target in units.items() if target["hosts"]}
 
-# Tile name -> hosts to ping for up/down, up if any answers: wake tiles, and
-# remote reboot, switch, tailscale and unit tiles that aren't also wake tiles.
-probed = {name: [target["host"]] for name, target in wakeable.items()}
-for targets in (rebootable, switchable, tailscalable, remote_units, port_targets):
-    for name, target in targets.items():
-        if target["hosts"] and name not in probed:
-            probed[name] = target["hosts"]
+# Tile name -> the machine (in `machines`) whose probe tells whether it's up:
+# wake tiles, and remote reboot, switch, tailscale, unit and ports tiles.
+machine_of = {
+    name: target["machine"]
+    for targets in (wakeable, rebootable, switchable, tailscalable, remote_units, port_targets)
+    for name, target in targets.items()
+    if target.get("machine")
+}
 
-# Tile name -> "up"/"down", or "windows" for a wake tile's machine booted into
-# Windows, kept fresh by probe() rather than pinged per request: a sleeping
-# host's mDNS lookup alone takes ~9s to fail.
-reachable = {name: "unknown" for name in probed}
+# Machine -> {state, lan, rtt}, kept fresh by probe() rather than pinged per
+# request: a sleeping host's mDNS lookup alone takes ~9s to fail. `state` is
+# "up"/"down"/"unknown", or "windows" for a machine it can wake that booted
+# into Windows; `lan` whether that one answered on the LAN, where its wake
+# and power-off reach it; `rtt` the answer's round trip in ms, None while
+# down. Replaced whole, so a reader never sees half of one probe.
+probe_state = {machine: {"state": "unknown", "lan": False, "rtt": None} for machine in machines}
 
-# Wake tile name -> the IPv4 address its mDNS name last resolved to, a place to
-# look for it once mDNS stops answering (see windows_reply()).
+# Machine -> the IPv4 address its LAN name last resolved to, a place to look
+# for it once mDNS stops answering (see windows_reply()).
 last_address = {}
 
 # Initial TTLs: Linux and the NAS send 64, Windows 128, and a LAN hop takes
@@ -115,10 +122,6 @@ tailscale_state = {name: "unknown" for name in tailscalable}
 # watch_unit(); its event wakes the watcher early after an action.
 remote_unit_state = {name: "unknown" for name in remote_units}
 remote_unit_poke = {name: threading.Event() for name in remote_units}
-
-
-# Tile name -> round-trip time in ms of the last answered ping, None while down.
-latency = {name: None for name in probed}
 
 
 # Tile name -> {port: open?}, from watch_ports().
@@ -308,23 +311,40 @@ def windows_reply(mac, last):
     return None
 
 
-def probe(name, hosts):
-    mac = wakeable.get(name, {}).get("mac")
+def probe_once(machine):
+    # The LAN name first, so a machine at home costs one ping; it's often
+    # also among the SSH names, in another case.
+    target = machines[machine]
+    lan, mac = target["lan"], target["mac"]
+    others = [host for host in target["hosts"] if not lan or host.lower() != lan.lower()]
+    reply = ping(lan) if lan else None
+    on_lan = reply is not None
+    if reply is None:
+        reply = next((r for r in map(ping, others) if r is not None), None)
+    if reply is None and mac:
+        reply = windows_reply(mac, last_address.get(machine))
+        on_lan = reply is not None
+        state = "windows" if reply else "down"
+    elif reply is None:
+        state = "down"
+    elif mac and reply["ttl"] in WINDOWS_TTL:
+        state = "windows"
+    else:
+        state = "up"
+        if on_lan and reply["address"]:
+            last_address[machine] = reply["address"]
+    return {"state": state, "lan": on_lan, "rtt": reply["rtt"] if reply else None}
+
+
+def probe(machine):
     while True:
-        reply = next((r for r in map(ping, hosts) if r is not None), None)
-        state = "up" if reply else "down"
-        if mac:
-            if reply and reply["ttl"] in WINDOWS_TTL:
-                state = "windows"
-            elif reply and reply["address"]:
-                last_address[name] = reply["address"]
-            if not reply:
-                reply = windows_reply(mac, last_address.get(name))
-                if reply:
-                    state = "windows"
-        latency[name] = reply["rtt"] if reply else None
-        reachable[name] = state
+        probe_state[machine] = probe_once(machine)
         time.sleep(5)
+
+
+def tile_state(name):
+    machine = machine_of.get(name)
+    return probe_state[machine]["state"] if machine else "unknown"
 
 
 def port_open(host, port):
@@ -343,7 +363,7 @@ def watch_ports(name, target):
     host = target["hosts"][0] if target["hosts"] else "127.0.0.1"
     while True:
         state = {str(port): False for port in target["ports"]}
-        if not target["hosts"] or reachable.get(name) == "up":
+        if not target["hosts"] or tile_state(name) == "up":
             state = {str(port): port_open(host, port) for port in target["ports"]}
         port_state[name] = state
         time.sleep(5)
@@ -567,7 +587,7 @@ def watch_switch(name):
     target = switchable[name]
     while True:
         answered = False
-        if reachable.get(name) == "up":
+        if tile_state(name) == "up":
             try:
                 result = remote_any(target["hosts"], "switch-status", target["user"])
                 if result.returncode == 0:
@@ -616,7 +636,7 @@ def watch_tailscale(name):
     # One login per poll, so only while the host answers pings; it can also be
     # toggled from its own desktop, which this is the only way to notice.
     while True:
-        if reachable.get(name) == "up":
+        if tile_state(name) == "up":
             try:
                 result = remote_any(
                     tailscalable[name]["hosts"], "tailscale-status", tailscalable[name]["user"]
@@ -636,7 +656,7 @@ def watch_unit(name):
     # it's settled. It can also be started there by hand.
     target = remote_units[name]
     while True:
-        if reachable.get(name) == "up":
+        if tile_state(name) == "up":
             try:
                 result = remote_any(target["hosts"], f"status {target['unit']}", target["user"])
                 if result.returncode == 0 and result.stdout.strip():
@@ -758,7 +778,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, tile_list)
         if self.path != "/api/svc/status":
             return self.reply(404)
-        states = dict(reachable)
+        states = {name: tile_state(name) for name in machine_of}
         # This host is up for as long as it's answering.
         states.update(
             (name, "up") for name, target in rebootable.items() if not target["hosts"]
@@ -773,7 +793,7 @@ class Handler(BaseHTTPRequestHandler):
         states.update(
             (name, state)
             for name, state in remote_unit_state.items()
-            if reachable.get(name) == "up"
+            if tile_state(name) == "up"
         )
         self.reply(
             200,
@@ -782,7 +802,11 @@ class Handler(BaseHTTPRequestHandler):
                 "switch": switch,
                 "switch_detail": switch_detail,
                 "tailscale": tailscale_state,
-                "ping": latency,
+                "ping": {name: probe_state[machine]["rtt"] for name, machine in machine_of.items()},
+                # Wake tiles: whether the machine answers on the LAN, where
+                # wake and power-off reach it; up only over the tailnet, it's
+                # away and the button can't act on it.
+                "lan": {name: probe_state[machine_of[name]]["lan"] for name in wakeable},
                 "ports": port_state,
             },
         )
@@ -872,8 +896,8 @@ if "pages" in config:
     )
     host_pages.start(spawn)
 spawn(sample_usage)
-for name, hosts in probed.items():
-    spawn(probe, name, hosts)
+for machine in machines:
+    spawn(probe, machine)
 for name, target in port_targets.items():
     spawn(watch_ports, name, target)
 if ssh_key:

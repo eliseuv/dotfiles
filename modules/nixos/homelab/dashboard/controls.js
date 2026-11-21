@@ -44,6 +44,9 @@
   const lastUptimeFetch = {};
   // Tile name -> {port: open?} for ports tiles.
   let portStates = {};
+  // Wake tile name -> whether its host answers on the LAN, where wake and
+  // power-off reach it: up over the tailnet alone, it's away.
+  let lanStates = {};
   // Tile name -> when its wake was sent; shown as "waking" until the host
   // answers pings or the window lapses (a cold boot takes a while).
   const wakeSent = {};
@@ -91,6 +94,7 @@
         switchDetails = next.switch_detail || {};
         tailscaleStates = next.tailscale;
         portStates = next.ports;
+        lanStates = next.lan || {};
         syncUptimes();
         if (apiWentDown) {
           for (const name in rebootSent) if (tiles[name]?.here) delete rebootSent[name];
@@ -486,6 +490,7 @@
       // recorded their kind is the full switch's.
       const homeRun = switchDetail.kind === "home";
       const tailscaleState = kinds.tailscale ? tailscaleStates[name] || "unknown" : "";
+      const away = kinds.wake && state === "up" && lanStates[name] === false ? "away" : "";
       let ping = "";
       if (state === "up" && uptimes[name]) {
         const { seconds, at } = uptimes[name];
@@ -505,9 +510,11 @@
         (bar.dataset.switch || "") === switchState &&
         (bar.dataset.switchReason || "") === switchReason &&
         (bar.dataset.switchKind || "") === (switchDetail.kind || "") &&
-        (bar.dataset.tailscale || "") === tailscaleState
+        (bar.dataset.tailscale || "") === tailscaleState &&
+        (bar.dataset.away || "") === away
       )
         continue;
+      bar.dataset.away = away;
       bar.dataset.state = state;
       bar.dataset.switch = switchState;
       bar.dataset.switchReason = switchReason;
@@ -540,13 +547,15 @@
         const power = bar.querySelector(".svcctl-power");
         const up = state === "up";
         // In Windows it's already on, and has no login to power it off.
+        // Away, the power-off login (by its LAN name) can't reach it.
         power.disabled =
           state === "windows" ||
           (up && !has(name, "poweroff")) ||
+          !!away ||
           state === "waking" ||
           state === "shutting-down" ||
           state === "rebooting";
-        power.title = up ? `Power off ${name}` : `Wake ${name}`;
+        power.title = away ? `${name} is away from the LAN` : up ? `Power off ${name}` : `Wake ${name}`;
         power.dataset.label = up && has(name, "poweroff") ? "Off" : "Wake";
       }
       if (kinds.tailscale) {

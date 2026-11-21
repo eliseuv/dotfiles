@@ -214,7 +214,8 @@ if [ "$up" = "true" ]; then
         sublabels+=("󰜉  Restart")
         actions+=("reboot")
     fi
-    if has poweroff; then
+    # By its LAN name only: up over the tailnet alone, it's away.
+    if has poweroff && [ "$(jq -r --arg tile "$tile" '.lan[$tile] != false' <<< "$status")" = "true" ]; then
         sublabels+=("󰐥  Power off")
         actions+=("poweroff")
     fi
