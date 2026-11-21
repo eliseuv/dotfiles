@@ -468,6 +468,25 @@ class ProbePacingTests(unittest.TestCase):
         hurry.assert_called_once_with("Tile")
 
 
+class ConfigTests(unittest.TestCase):
+    def test_problems_named_before_anything_starts(self):
+        ns = definitions("svcctl.py")
+        ns.update(REQUIRED_KEYS={"reboot": {"hosts", "user", "machine"},
+                                 "probes": {"hosts", "lan", "mac"}},
+                  PAGE_KEYS={"tile", "hosts", "user", "switch"})
+        good = {"reboot": {"Here": {"hosts": [], "user": "u", "machine": None},
+                           "There": {"hosts": ["t"], "user": "u", "machine": "t"}},
+                "probes": {"t": {"hosts": ["t"], "lan": None, "mac": None}},
+                "tiles": [], "tailnet": {}}
+        self.assertEqual(ns["config_problems"](good), [])
+        bad = {**good, "reboot": {"Here": {"hosts": [], "machine": "here"}}, "tiles": None,
+               "pages": {"hosts": {"h": {"tile": "H"}}}}
+        del bad["tailnet"]
+        self.assertEqual(ns["config_problems"](bad), [
+            "no `tailnet` section", "reboot.Here: no user", "reboot.Here: machine here has no probe",
+            "pages: no eval_file", "pages: no host_report", "pages.hosts.h: no hosts, switch, user"])
+
+
 class SupervisionTests(unittest.TestCase):
     def test_loop_restarts_after_an_error_and_ends_on_return(self):
         ns = definitions("svcctl.py")

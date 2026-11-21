@@ -39,9 +39,50 @@ from urllib.parse import unquote
 
 import host_pages
 
+# Keys each entry of a section needs. A config that lacks one, or names a
+# machine with no probe, stops svcctl at startup saying so, rather than as a
+# KeyError in some thread or request later.
+REQUIRED_KEYS = {
+    "units": {"unit", "hosts", "user", "machine"},
+    "wake": {"mac", "host", "user", "poweroff", "machine"},
+    "reboot": {"hosts", "user", "machine"},
+    "switch": {"hosts", "user", "machine"},
+    "tailscale": {"hosts", "user", "machine"},
+    "ports": {"hosts", "ports", "machine"},
+    "probes": {"hosts", "lan", "mac"},
+}
+PAGE_KEYS = {"tile", "hosts", "user", "switch"}
+
+
+def config_problems(config):
+    problems = [
+        f"no `{section}` section"
+        for section in [*REQUIRED_KEYS, "tiles", "tailnet"]
+        if section not in config
+    ]
+    probes = config.get("probes", {})
+    for section, keys in REQUIRED_KEYS.items():
+        for name, entry in config.get(section, {}).items():
+            missing = keys - entry.keys()
+            if missing:
+                problems.append(f"{section}.{name}: no {', '.join(sorted(missing))}")
+            if entry.get("machine") is not None and entry["machine"] not in probes:
+                problems.append(f"{section}.{name}: machine {entry['machine']} has no probe")
+    if "pages" in config:
+        pages = config["pages"]
+        problems += [f"pages: no {key}" for key in ("hosts", "eval_file", "host_report") if key not in pages]
+        for name, entry in pages.get("hosts", {}).items():
+            missing = PAGE_KEYS - entry.keys()
+            if missing:
+                problems.append(f"pages.hosts.{name}: no {', '.join(sorted(missing))}")
+    return problems
+
+
 port = int(sys.argv[1])
 with open(sys.argv[2]) as file:
     config = json.load(file)
+if problems := config_problems(config):
+    sys.exit("svcctl: unusable config:\n  " + "\n  ".join(problems))
 units = config["units"]
 wakeable = config["wake"]
 rebootable = config["reboot"]
