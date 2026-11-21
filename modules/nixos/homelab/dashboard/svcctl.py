@@ -86,6 +86,16 @@ machine_of = {
 # down. Replaced whole, so a reader never sees half of one probe.
 probe_state = {machine: {"state": "unknown", "lan": False, "rtt": None} for machine in machines}
 
+# Seconds between probes of a machine that answers, and of one that doesn't:
+# those are most of the pings, each a failing mDNS lookup and the Windows
+# check. After a wake, power-off or reboot from here it's probed as often as
+# an up one for PROBE_HURRY seconds, its event cutting the wait short.
+PROBE_INTERVAL = 5
+PROBE_DOWN_INTERVAL = 30
+PROBE_HURRY = 180
+probe_hurry_until = {machine: 0.0 for machine in machines}
+probe_poke = {machine: threading.Event() for machine in machines}
+
 # Machine -> the IPv4 address its LAN name last resolved to, a place to look
 # for it once mDNS stops answering (see windows_reply()).
 last_address = {}
@@ -339,7 +349,17 @@ def probe_once(machine):
 def probe(machine):
     while True:
         probe_state[machine] = probe_once(machine)
-        time.sleep(5)
+        answering = probe_state[machine]["state"] != "down"
+        hurried = time.monotonic() < probe_hurry_until[machine]
+        probe_poke[machine].wait(PROBE_INTERVAL if answering or hurried else PROBE_DOWN_INTERVAL)
+        probe_poke[machine].clear()
+
+
+def hurry_probe(name):
+    machine = machine_of.get(name)
+    if machine:
+        probe_hurry_until[machine] = time.monotonic() + PROBE_HURRY
+        probe_poke[machine].set()
 
 
 def tile_state(name):
@@ -822,6 +842,7 @@ class Handler(BaseHTTPRequestHandler):
         action, name = parts[2], unquote(parts[3])
         if action == "wake" and name in wakeable:
             send_magic_packet(wakeable[name]["mac"])
+            hurry_probe(name)
             return self.reply(202, {"ok": True})
         if action == "poweroff" and wakeable.get(name, {}).get("poweroff") and ssh_key:
             try:
@@ -830,15 +851,17 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(504, {"error": "ssh timed out"})
             if result.returncode != 0:
                 return self.reply(500, {"error": result.stderr.strip()})
+            hurry_probe(name)
             return self.reply(202, {"ok": True})
         if action == "reboot" and name in rebootable:
             # --no-block so the reply makes it back through nginx before
             # shutdown stops it; polkit allows ignoring inhibitors.
-            self.host_action(
+            if self.host_action(
                 rebootable[name],
                 "reboot",
                 ["systemctl", "--no-block", "--check-inhibitors=no", "reboot"],
-            )
+            ):
+                hurry_probe(name)
             return
         if action in SWITCH_ACTIONS and name in switchable:
             target = switchable[name]

@@ -417,6 +417,57 @@ class ProbeTests(unittest.TestCase):
         self.windows.assert_not_called()
 
 
+class ProbePacingTests(unittest.TestCase):
+    def setUp(self):
+        self.ns = definitions("svcctl.py")
+        self.clock = [1000.0]
+        self.states = []
+        self.waits = []
+
+        class Stop(Exception):
+            pass
+        self.Stop = Stop
+
+        def wait(seconds):
+            self.waits.append(seconds)
+            if len(self.waits) == len(self.states):
+                raise Stop
+        self.ns.update(
+            machines={"m": {}}, machine_of={"Tile": "m"}, probe_state={},
+            probe_once=lambda machine: {"state": self.states[len(self.waits)]},
+            probe_hurry_until={"m": 0.0}, probe_poke={"m": Mock(wait=wait)},
+            PROBE_INTERVAL=5, PROBE_DOWN_INTERVAL=30, PROBE_HURRY=180,
+            time=types.SimpleNamespace(monotonic=lambda: self.clock[0]),
+        )
+
+    def run_probe(self, *states):
+        self.states = list(states)
+        with self.assertRaises(self.Stop):
+            self.ns["probe"]("m")
+        return self.waits
+
+    def test_down_machines_are_probed_less_often(self):
+        self.assertEqual(self.run_probe("up", "windows", "down"), [5, 5, 30])
+
+    def test_an_action_hurries_the_probe(self):
+        self.ns["hurry_probe"]("Tile")
+        self.ns["probe_poke"]["m"].set.assert_called_once()
+        self.assertEqual(self.run_probe("down"), [5])
+        self.clock[0] += 181
+        self.waits.clear()
+        self.assertEqual(self.run_probe("down"), [30])
+        self.ns["hurry_probe"]("Local tile")
+
+    def test_wake_hurries_its_machine(self):
+        hurry, packet = Mock(), Mock()
+        self.ns.update(wakeable={"Tile": {"mac": "aa"}}, hurry_probe=hurry,
+                       send_magic_packet=packet, forget_local_status=Mock())
+        handler = types.SimpleNamespace(path="/api/svc/wake/Tile", guarded=lambda: True, reply=Mock())
+        self.ns["Handler"].do_POST(handler)
+        packet.assert_called_once_with("aa")
+        hurry.assert_called_once_with("Tile")
+
+
 class SupervisionTests(unittest.TestCase):
     def test_loop_restarts_after_an_error_and_ends_on_return(self):
         ns = definitions("svcctl.py")
