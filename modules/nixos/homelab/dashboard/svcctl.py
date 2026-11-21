@@ -30,6 +30,7 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
@@ -135,6 +136,22 @@ tile_of_unit = {target["unit"]: name for name, target in units.items() if not ta
 # Latest sample, replaced whole by sample_usage(); each entry is
 # {unit, label, cpu, memory, tasks, read, write}.
 usage = []
+
+
+def supervised(target, *args):
+    # An exception would otherwise end the thread for good, freezing what it
+    # keeps (a tile's state, the usage table) at its last value. Logs it and
+    # starts the loop again; a target that returns is done.
+    while True:
+        try:
+            return target(*args)
+        except Exception:
+            traceback.print_exc()
+            time.sleep(5)
+
+
+def spawn(target, *args):
+    threading.Thread(target=supervised, args=(target, *args), daemon=True).start()
 
 
 def read_int(path):
@@ -530,7 +547,7 @@ def start_switch_watch(name):
         if name in switch_watchers:
             return
         switch_watchers.add(name)
-    threading.Thread(target=watch_switch, args=(name,), daemon=True).start()
+    spawn(watch_switch, name)
 
 
 def tailscale_backend(status_output):
@@ -793,17 +810,17 @@ if "pages" in config:
         remote_any if ssh_key else None,
         os.environ.get("SVCCTL_SNMP_CONF"),
     )
-    host_pages.start()
-threading.Thread(target=sample_usage, daemon=True).start()
+    host_pages.start(spawn)
+spawn(sample_usage)
 for name, hosts in probed.items():
-    threading.Thread(target=probe, args=(name, hosts), daemon=True).start()
+    spawn(probe, name, hosts)
 for name, target in port_targets.items():
-    threading.Thread(target=watch_ports, args=(name, target), daemon=True).start()
+    spawn(watch_ports, name, target)
 if ssh_key:
     for name in remote_switch:
         start_switch_watch(name)
     for name in tailscalable:
-        threading.Thread(target=watch_tailscale, args=(name,), daemon=True).start()
+        spawn(watch_tailscale, name)
     for name in remote_units:
-        threading.Thread(target=watch_unit, args=(name,), daemon=True).start()
+        spawn(watch_unit, name)
 ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

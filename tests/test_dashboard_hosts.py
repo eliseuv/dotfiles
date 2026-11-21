@@ -300,5 +300,29 @@ class SwitchTrackingTests(unittest.TestCase):
         self.assertEqual(self.track("failed\nexit-code\n")[0], "failed")
 
 
+class SupervisionTests(unittest.TestCase):
+    def test_loop_restarts_after_an_error_and_ends_on_return(self):
+        ns = definitions("svcctl.py")
+        ns["time"] = types.SimpleNamespace(sleep=Mock())
+        calls = []
+
+        def loop():
+            calls.append(None)
+            if len(calls) < 3:
+                raise OSError("fork failed")
+            return "done"
+        with unittest.mock.patch("traceback.print_exc"):
+            self.assertEqual(ns["supervised"](loop), "done")
+        self.assertEqual(len(calls), 3)
+
+    def test_refresh_clears_refreshing_on_any_error(self):
+        ns = definitions("host_pages.py")
+        ns.update(hosts={"host": {}}, state={"host": {}}, resolve_lan_address=Mock(),
+                  run_report=Mock(side_effect=ValueError("bad")))
+        with self.assertRaises(ValueError):
+            ns["refresh"]("host")
+        self.assertFalse(ns["state"]["host"]["refreshing"])
+
+
 if __name__ == "__main__":
     unittest.main()

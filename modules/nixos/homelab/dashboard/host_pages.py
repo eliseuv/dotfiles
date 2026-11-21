@@ -47,8 +47,7 @@ lan_addresses = {}
 state = {}
 pokes = {}
 
-# The refreshers share one file (and its temp file), and an unhandled error
-# ends a refresher thread for good.
+# The refreshers share one file (and its temp file).
 lan_addresses_lock = threading.Lock()
 
 # Serialize requests for each host/pair so concurrent clients share the cache.
@@ -91,9 +90,10 @@ def configure(pages, state_directory, runtime_directory, remote, snmp_conf):
     pokes = {host: threading.Event() for host in hosts}
 
 
-def start():
+def start(spawn):
+    # `spawn` is svcctl's, which restarts a refresher an error ended.
     for host in hosts:
-        threading.Thread(target=refresher, args=(host,), daemon=True).start()
+        spawn(refresher, host)
 
 
 def load_cached(host):
@@ -184,6 +184,8 @@ def refresh(host):
     entry = state[host]
     entry["refreshing"] = True
     entry["attempted_at"] = time.time()
+    # Cleared whatever happens, or the page polls for a refresh that never
+    # lands.
     try:
         report = snmp_uptime(host) if hosts[host].get("snmp") else run_report(host, "generations")
     except RuntimeError as error:
@@ -196,7 +198,8 @@ def refresh(host):
             reports_dir / f"{host}.json",
             {"report": report, "fetched_at": entry["fetched_at"]},
         )
-    entry["refreshing"] = False
+    finally:
+        entry["refreshing"] = False
 
 
 def refresher(host):
