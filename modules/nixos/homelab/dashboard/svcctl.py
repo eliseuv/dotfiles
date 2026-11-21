@@ -1,6 +1,8 @@
-"""svcctl PORT CONFIG_JSON [SSH_KEY]: start/stop/restart a fixed set of
-systemd units for the dashboard's tile buttons (controls.nix). CONFIG_JSON
-holds these sections:
+"""svcctl LISTEN CONFIG_JSON [SSH_KEY]: start/stop/restart a fixed set of
+systemd units for the dashboard's tile buttons (controls.nix). LISTEN is
+`socket`, to serve on the socket systemd passes (svcctl.socket, which only
+nginx may connect to), or a loopback TCP port, for tests and runs by hand.
+CONFIG_JSON holds these sections:
 `units` maps tile names to {unit, hosts, user}; nothing else can be
 touched. With `hosts` empty the unit is here, and polkit enforces the same
 list; otherwise it's on another host, driven through the SSH login below,
@@ -78,7 +80,7 @@ def config_problems(config):
     return problems
 
 
-port = int(sys.argv[1])
+listen = sys.argv[1]
 with open(sys.argv[2]) as file:
     config = json.load(file)
 if problems := config_problems(config):
@@ -948,6 +950,25 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         sys.stderr.write("%s\n" % (format % args))
 
+    def address_string(self):
+        # A Unix socket's client has no address; nginx is the only one.
+        return str(self.client_address[0]) if self.client_address else "nginx"
+
+
+# The first descriptor systemd passes (sd_listen_fds(3)).
+LISTEN_FDS_START = 3
+
+
+def make_server(listen):
+    if listen != "socket":
+        return ThreadingHTTPServer(("127.0.0.1", int(listen)), Handler)
+    if os.environ.get("LISTEN_PID") != str(os.getpid()) or os.environ.get("LISTEN_FDS") != "1":
+        sys.exit("svcctl: started with `socket`, but systemd passed no socket")
+    server = ThreadingHTTPServer(None, Handler, bind_and_activate=False)
+    server.socket.close()
+    server.socket = socket.socket(fileno=LISTEN_FDS_START)
+    return server
+
 
 if "pages" in config:
     state_directory = Path(os.environ["STATE_DIRECTORY"])
@@ -971,4 +992,4 @@ if ssh_key:
         spawn(watch_tailscale, name)
     for name in remote_units:
         spawn(watch_unit, name)
-ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
+make_server(listen).serve_forever()

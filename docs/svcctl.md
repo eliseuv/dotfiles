@@ -11,8 +11,9 @@ wheatley, the always-on server, and does three jobs:
   diffs and deploy state against master.
 
 It is one Python process using only the standard library
-(`svcctl.py` plus its `host_pages.py` module). It listens on
-`127.0.0.1:8099` behind the dashboard's nginx and runs unprivileged. Every
+(`svcctl.py` plus its `host_pages.py` module). It runs unprivileged, behind
+the dashboard's nginx, on a Unix socket (`/run/svcctl.sock`) that only nginx
+may connect to. Every
 remote operation, read or write, leaves wheatley as an SSH login to a
 dedicated user on the target host. That user's only key is pinned to a forced
 command that accepts a fixed set of verbs.
@@ -43,7 +44,7 @@ flowchart LR
   end
   subgraph wheatley
     nginx["nginx, dashboard vhost<br/>reads open; login on the tailnet only"]
-    svcctl["svcctl :8099<br/>/api/svc/ + /api/hosts/"]
+    svcctl["svcctl, /run/svcctl.sock<br/>/api/svc/ + /api/hosts/"]
     systemd["systemd / logind<br/>(polkit-gated D-Bus)"]
     eval["dotfiles-eval.timer<br/>master.json"]
     ssh["OpenSSH<br/>one shared connection per host"]
@@ -285,7 +286,7 @@ sequenceDiagram
   participant U as dotfiles-switch
   B->>N: POST /api/svc/switch/GLaDOS (X-Svcctl, Basic)
   N->>N: tailnet? auth_basic
-  N->>S: proxy to 127.0.0.1:8099
+  N->>S: proxy to /run/svcctl.sock
   S->>H: ssh remote-control@glados.<tailnet> switch
   Note over S,H: exit 255: retry glados.local
   H->>H: print switch-status (the run before)
@@ -364,7 +365,8 @@ allowlist and polkit are each enforced twice: on wheatley and on the target.
 
 | Layer | Enforced by | Rules out |
 |---|---|---|
-| Network reach | nginx on the LAN and tailnet; svcctl on loopback | The internet |
+| Network reach | nginx on the LAN and tailnet | The internet |
+| Socket permissions | `/run/svcctl.sock`: owner svcctl, group nginx, mode 0660, created by `svcctl.socket` | Anything else on wheatley reaching svcctl without nginx's login |
 | Custom header | `X-Svcctl: 1` | Other websites driving the API |
 | Login on the tailnet only | `geo $dashboard_tailnet`, then 403 in the rewrite phase | The password crossing the LAN in the clear (the dashboard is plain HTTP) |
 | Basic auth | `auth_basic $dashboard_action_realm` on non-GET, logs, terminals | Unauthenticated actions |
@@ -399,7 +401,7 @@ The service unit runs with `ProtectSystem=strict`, `ProtectHome`,
 
 | | |
 |---|---|
-| Unit | `svcctl.service`, user and group `svcctl` (in `systemd-journal` when wheatley can switch itself) |
+| Unit | `svcctl.service`, user and group `svcctl` (in `systemd-journal` when wheatley can switch itself). Its socket comes from `svcctl.socket`, which holds it across restarts, so requests made while svcctl restarts wait instead of failing |
 | Logs | `journalctl -u svcctl`: access lines, tracebacks, 5xx causes |
 | Runtime directory | `/run/svcctl`: shared SSH sockets (`ssh-%C`) and net-snmp's state |
 | State directory | `/var/lib/svcctl`: `reports/`, `diffs/`, `addresses.json`. Safe to delete; it refills |
@@ -407,19 +409,29 @@ The service unit runs with `ProtectSystem=strict`, `ProtectHome`,
 | Environment | `SVCCTL_SWITCH_STATUS`, `SVCCTL_TAG_COLLECT`, `SVCCTL_SNMP_CONF`, `STATE_DIRECTORY`, `RUNTIME_DIRECTORY` |
 | Tests | `python3 -m unittest discover -s tests`, also run by `nix flake check` |
 
-Useful checks:
+Useful checks. These go through nginx, like every client: reads need no
+login, and actions need it even from wheatley itself.
 
 ```sh
-curl -s -H 'X-Svcctl: 1' localhost:8099/api/svc/status | jq
-curl -s -H 'X-Svcctl: 1' localhost:8099/api/svc/usage | jq '.services[] | select(.unit == "svcctl.service")'
+curl -s -H 'X-Svcctl: 1' http://localhost/api/svc/status | jq
+curl -s -H 'X-Svcctl: 1' http://localhost/api/svc/usage | jq '.services[] | select(.unit == "svcctl.service")'
 journalctl -u svcctl -g Traceback
 ```
 
-To run a copy by hand, for example against a freshly built config:
+To run a copy by hand, for example against a freshly built config, give it a
+loopback port instead of `socket`:
 
 ```sh
 d=$(mktemp -d)
 STATE_DIRECTORY=$d RUNTIME_DIRECTORY=$d python3 svcctl.py 18099 <svcctl.json>
+```
+
+Or under socket activation, the way systemd runs it:
+
+```sh
+STATE_DIRECTORY=$d RUNTIME_DIRECTORY=$d systemd-socket-activate -l $d/s.sock \
+  -E STATE_DIRECTORY -E RUNTIME_DIRECTORY -E PATH python3 svcctl.py socket <svcctl.json>
+curl -s --unix-socket $d/s.sock -H 'X-Svcctl: 1' http://x/api/svc/status
 ```
 
 Without the key argument it starts no SSH watchers, and remote actions answer

@@ -487,6 +487,36 @@ class ConfigTests(unittest.TestCase):
             "pages: no eval_file", "pages: no host_report", "pages.hosts.h: no hosts, switch, user"])
 
 
+class ListenTests(unittest.TestCase):
+    def test_serves_on_the_socket_systemd_passes(self):
+        import os, socket
+        ns = definitions("svcctl.py")
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = f"{directory.name}/svcctl.sock"
+        listener = socket.socket(socket.AF_UNIX)
+        listener.bind(path)
+        listener.listen()
+        ns.update(LISTEN_FDS_START=os.dup(listener.fileno()), tile_list={"tiles": [], "tailnet": {}})
+        listener.close()
+        with unittest.mock.patch.dict("os.environ", {"LISTEN_PID": str(os.getpid()), "LISTEN_FDS": "1"}):
+            server = ns["make_server"]("socket")
+        self.addCleanup(server.server_close)
+        threading.Thread(target=server.handle_request, daemon=True).start()
+        with socket.socket(socket.AF_UNIX) as client, \
+                unittest.mock.patch("sys.stderr"):
+            client.connect(path)
+            client.sendall(b"GET /api/svc/tiles HTTP/1.0\r\nX-Svcctl: 1\r\n\r\n")
+            response = b"".join(iter(lambda: client.recv(4096), b""))
+        self.assertTrue(response.startswith(b"HTTP/1.0 200"), response)
+        self.assertTrue(response.endswith(b'{"tiles": [], "tailnet": {}}'))
+
+    def test_socket_without_one_from_systemd_exits(self):
+        ns = definitions("svcctl.py")
+        with unittest.mock.patch.dict("os.environ", clear=True), self.assertRaises(SystemExit):
+            ns["make_server"]("socket")
+
+
 class SupervisionTests(unittest.TestCase):
     def test_loop_restarts_after_an_error_and_ends_on_return(self):
         ns = definitions("svcctl.py")

@@ -2,8 +2,9 @@
 # systemd unit (`homelab.services.<name>.dashboard.unit`); with `unitHost` the
 # unit is on that host, driven through the same SSH login as power-off below,
 # which the host limits to its `my.services.remoteUnits`. svcctl.py serves
-# the API on loopback behind the dashboard's nginx, so it shares the
-# dashboard's reach (LAN + tailnet). nginx puts every action (any non-GET),
+# the API behind the dashboard's nginx, on a Unix socket only nginx may
+# connect to, so it shares the dashboard's reach (LAN + tailnet) and nothing
+# else on this host gets past nginx's login. nginx puts every action (any non-GET),
 # the switch logs, terminals and proxied links behind basic auth, and only
 # over the tailnet, which encrypts it: the dashboard is plain HTTP, so from
 # the LAN the password would cross the wire in the clear. Reading the status
@@ -52,7 +53,11 @@
   ...
 }:
 let
-  port = 8099;
+  # Created by systemd (svcctl.socket) so its group can be nginx's, which
+  # svcctl isn't in; outside svcctl's RuntimeDirectory, which goes when it
+  # stops.
+  socketPath = "/run/svcctl.sock";
+  upstream = "http://unix:${socketPath}:";
 
   tiles = lib.filterAttrs (_: service: service.dashboard != null) config.homelab.services;
   machineOf = import ./_machines.nix { inherit config lib hostSpecs; };
@@ -408,9 +413,24 @@ in
       });
     '';
 
+    systemd.sockets.svcctl = {
+      description = "Dashboard service controls' API";
+      wantedBy = [ "sockets.target" ];
+      listenStreams = [ socketPath ];
+      socketConfig = {
+        SocketUser = "svcctl";
+        SocketGroup = config.services.nginx.group;
+        SocketMode = "0660";
+      };
+    };
+
     systemd.services.svcctl = {
       description = "Dashboard service controls";
+      # Started at boot rather than on the first request: its pollers keep
+      # the state that request reads.
       wantedBy = [ "multi-user.target" ];
+      requires = [ "svcctl.socket" ];
+      after = [ "svcctl.socket" ];
       path = [
         config.systemd.package
         pkgs.iputils
@@ -428,7 +448,7 @@ in
           [
             (lib.getExe pkgs.python3)
             "${source}/svcctl.py"
-            (toString port)
+            "socket"
             "${configFile}"
           ]
           ++ lib.optional needsKey config.sops.secrets.${sshKey}.path
@@ -439,7 +459,7 @@ in
         # state for the host pages.
         RuntimeDirectory = "svcctl";
         Restart = "on-failure";
-        # Talks to systemd over D-Bus (AF_UNIX), serves on loopback, and
+        # Talks to systemd over D-Bus and serves nginx (AF_UNIX), and
         # broadcasts wake packets and pings (unprivileged ICMP) and SSHes to
         # power hosts off and switch them, on the LAN and the tailnet.
         RestrictAddressFamilies = [
@@ -487,7 +507,7 @@ in
 
     services.nginx.virtualHosts.dashboard.locations = {
       "/api/svc/" = {
-        proxyPass = "http://127.0.0.1:${toString port}";
+        proxyPass = upstream;
         extraConfig = ''
           default_type application/json;
           if ($dashboard_lan_action) {
@@ -500,11 +520,11 @@ in
       # Build and activation output, which says more about a host than the
       # status does: behind the login, like the actions.
       "/api/svc/switch-log/" = {
-        proxyPass = "http://127.0.0.1:${toString port}";
+        proxyPass = upstream;
         extraConfig = tailnetOnlyApi + basicAuth;
       };
       # The host pages' API (host_pages.py); open, read-only.
-      "/api/hosts/".proxyPass = "http://127.0.0.1:${toString port}";
+      "/api/hosts/".proxyPass = upstream;
       # Not every browser asks for a login when a script's request gets a
       # 401 (Firefox for Android doesn't), but every one does for a page, so
       # controls.js sends the user here on a 401. Logged in at this path,
