@@ -22,6 +22,12 @@
           readOnly = true;
           description = "Where the commit each system was built from is recorded, one file per system store hash (services/dotfiles-switch.nix); the Justfile's record-gen hardcodes it.";
         };
+        tagsDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/dotfiles-switch/tags";
+          readOnly = true;
+          description = "Where dotfiles-switch exports each generation tag it creates, as the raw tag object in a file named after the tag, for the dashboard host to publish (services/dotfiles-switch.nix).";
+        };
       };
       remoteTailscale.enable = lib.mkEnableOption "turning Tailscale on and off over SSH from the homelab dashboard (needs my.services.tailscale)";
       remoteUnits = lib.mkOption {

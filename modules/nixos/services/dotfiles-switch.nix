@@ -4,9 +4,9 @@
 # commits onto it, builds and activates this host's system, then switches the
 # primary user's home through the Justfile, as them, and every other user's
 # of this host from root, through sudo. Like `just system-switch` it tags the
-# generation, but only tries to push the tag: commit-gen pushes the branch
-# too, and either needs a GitHub credential the unit usually lacks. Unlike it,
-# it doesn't collect garbage.
+# generation, but pushes nothing: it has no GitHub credential, so it exports
+# the tag for the dashboard host to publish (see `finish`). Unlike it, it
+# doesn't collect garbage.
 #
 # Builds, git and Home Manager run as the primary user in their own checkout;
 # only activation and becoming the other users run as root, through systemd's
@@ -41,7 +41,8 @@ let
   upstream = "https://github.com/eliseuv/dotfiles.git";
   # RuntimeDirectory: owned by `user`, gone after each run.
   systemLink = "/run/dotfiles-switch/system";
-  inherit (config.my.services.dotfilesSwitch) revisionsDir;
+  inherit (config.my.services.dotfilesSwitch) revisionsDir tagsDir;
+  keepTags = 20;
 
   # Runs one step of the unit as stage `name` of this run's status, keeping
   # its stderr for the finish step to find the reason in should it fail. A
@@ -133,9 +134,12 @@ let
   # After every run, successful or not: tags the generation when the system
   # built in this run is the profile (never for a home switch, which builds
   # none: its RuntimeDirectory has no system link), which a failed activation can leave it
-  # as too, and tries to push only the tag. Without an agent or a key the push
-  # usually fails; the tag stays local until the next push from here (the
-  # user's git sets push.followTags, and commit-gen always pushes). Then completes the run's status.
+  # as too. The unit has no GitHub credential, so rather than push the tag it
+  # exports the raw tag object to `tagsDir`, for the remote-control `tags`
+  # verb to hand to whatever publishes it. Publishing that exact object keeps
+  # its SHA, so a later `push --follow-tags` from this checkout is a no-op
+  # rather than an `already exists` rejection. The newest `keepTags` stay.
+  # Then completes the run's status.
   finish = pkgs.writeShellScript "dotfiles-switch-finish" ''
     set -uo pipefail
     dir=$STATE_DIRECTORY
@@ -145,9 +149,14 @@ let
       && tagged=$(${lib.getExe pkgs.just} tag-gen); then
       read -r tag outcome <<<"$tagged"
       echo "dotfiles-switch: $tag $outcome"
-      GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" \
-        timeout 60 git push --quiet origin "refs/tags/$tag" \
-        || echo "dotfiles-switch: couldn't push $tag, kept local" >&2
+      mkdir -p ${tagsDir}
+      if git cat-file tag "$tag" > "${tagsDir}/$tag.new"; then
+        mv --force "${tagsDir}/$tag.new" "${tagsDir}/$tag"
+        (cd ${tagsDir} && ls -1v | grep -v '\.new$' | head -n -${toString keepTags} | xargs -r rm --)
+      else
+        rm -f "${tagsDir}/$tag.new"
+        echo "dotfiles-switch: couldn't export $tag" >&2
+      fi
     fi
 
     result=''${SERVICE_RESULT:-unknown}
@@ -216,11 +225,10 @@ let
         pkgs.git
         pkgs.jq
         pkgs.nh
-        # For the Justfile's tag-gen, and the tag push.
+        # For the Justfile's tag-gen.
         config.system.build.nixos-rebuild
         pkgs.hostname
         pkgs.nvd
-        pkgs.openssh
         pkgs.ripgrep
         pkgs.sd
       ];
