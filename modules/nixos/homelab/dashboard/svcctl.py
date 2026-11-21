@@ -507,6 +507,58 @@ def local_switch():
     return parse_switch(result.stdout)
 
 
+# This host's switch and unit states, which take spawning switch-status
+# (several processes) and systemctl to read: shared by requests less than
+# LOCAL_STATUS_TTL apart, since every open dashboard and bar polls on its own.
+# An action forgets it, so the page's quick re-reads after a button see what
+# it did. The lock also keeps track_switch() for this host on one thread.
+LOCAL_STATUS_TTL = 3
+local_status_lock = threading.Lock()
+local_status_cache = {"at": None, "switch": {}, "units": {}}
+
+
+def local_status():
+    # ({tile: (switch state, detail)}, {tile: unit state}) for this host.
+    with local_status_lock:
+        cached = local_status_cache
+        if cached["at"] is not None and time.monotonic() - cached["at"] < LOCAL_STATUS_TTL:
+            return cached["switch"], cached["units"]
+        switch = {}
+        local = [name for name, target in switchable.items() if not target["hosts"]]
+        if local:
+            reported = local_switch()
+            for name in local:
+                switch[name] = track_switch(name, *reported)
+        unit_states = {}
+        if local_units:
+            names = list(local_units)
+            # One state per line, in argument order; non-zero exit when any
+            # unit is inactive, which is not an error here.
+            result = subprocess.run(
+                ["systemctl", "is-active", *(local_units[name] for name in names)],
+                capture_output=True,
+                text=True,
+            )
+            unit_states = dict(zip(names, result.stdout.split()))
+        cached.update(at=time.monotonic(), switch=switch, units=unit_states)
+        return switch, unit_states
+
+
+def forget_local_status():
+    with local_status_lock:
+        local_status_cache["at"] = None
+
+
+def forgetting_local_status(method):
+    def wrapper(self):
+        try:
+            method(self)
+        finally:
+            forget_local_status()
+
+    return wrapper
+
+
 def watch_switch(name):
     # Polled over SSH only while a switch started from here hasn't been seen
     # to end, and from startup until the host first answers, rather than on
@@ -713,21 +765,10 @@ class Handler(BaseHTTPRequestHandler):
         )
         switch = dict(remote_switch)
         switch_detail = dict(remote_switch_detail)
-        local = [name for name, target in switchable.items() if not target["hosts"]]
-        if local:
-            reported = local_switch()
-            for name in local:
-                switch[name], switch_detail[name] = track_switch(name, *reported)
-        if local_units:
-            names = list(local_units)
-            # One state per line, in argument order; non-zero exit when any
-            # unit is inactive, which is not an error here.
-            result = subprocess.run(
-                ["systemctl", "is-active", *(local_units[name] for name in names)],
-                capture_output=True,
-                text=True,
-            )
-            states.update(zip(names, result.stdout.split()))
+        local_switches, local_states = local_status()
+        for name, (state, detail) in local_switches.items():
+            switch[name], switch_detail[name] = state, detail
+        states.update(local_states)
         # A remote unit's state while its host is up; "down" otherwise.
         states.update(
             (name, state)
@@ -747,6 +788,7 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     @answering_errors
+    @forgetting_local_status
     def do_POST(self):
         if not self.guarded():
             return

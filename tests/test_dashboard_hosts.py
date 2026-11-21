@@ -235,7 +235,7 @@ class SwitchStartTests(unittest.TestCase):
             SWITCH_ACTIONS={"switch": "dotfiles-switch.service",
                             "home-switch": "dotfiles-home-switch.service"},
             SWITCH_STATUS=None, pending_switch={}, remote_switch={}, remote_switch_detail={},
-            start_switch_watch=self.watched.append,
+            start_switch_watch=self.watched.append, forget_local_status=Mock(),
             time=types.SimpleNamespace(monotonic=lambda: 0.0),
         )
 
@@ -260,6 +260,45 @@ class SwitchStartTests(unittest.TestCase):
         self.assertEqual(handler.host_action.call_args.args[1:],
                          ("switch", ["systemctl", "--no-block", "start", "dotfiles-switch.service"]))
         self.assertEqual(self.watched, [])
+
+
+class LocalStatusTests(unittest.TestCase):
+    def setUp(self):
+        self.ns = definitions("svcctl.py")
+        self.clock = [100.0]
+        self.run = Mock(return_value=subprocess.CompletedProcess([], 3, "active\ninactive\n", ""))
+        self.ns.update(
+            switchable={"Here": {"hosts": []}, "There": {"hosts": ["there"]}},
+            local_units={"A": "a.service", "B": "b.service"},
+            local_switch=Mock(return_value=("idle", None, "run")),
+            track_switch=lambda name, state, detail, run: (state, detail),
+            local_status_lock=threading.Lock(), LOCAL_STATUS_TTL=3,
+            local_status_cache={"at": None, "switch": {}, "units": {}},
+            subprocess=types.SimpleNamespace(run=self.run),
+            time=types.SimpleNamespace(monotonic=lambda: self.clock[0]),
+        )
+
+    def test_shared_within_the_ttl_and_forgotten_after_an_action(self):
+        expected = ({"Here": ("idle", None)}, {"A": "active", "B": "inactive"})
+        self.assertEqual(self.ns["local_status"](), expected)
+        self.clock[0] += 2
+        self.assertEqual(self.ns["local_status"](), expected)
+        self.assertEqual(self.run.call_count, 1)
+        self.ns["forget_local_status"]()
+        self.ns["local_status"]()
+        self.clock[0] += 3
+        self.ns["local_status"]()
+        self.assertEqual(self.run.call_count, 3)
+        self.assertEqual(self.ns["local_switch"].call_count, 3)
+
+    def test_post_forgets_even_when_it_fails(self):
+        forget = self.ns["forget_local_status"] = Mock()
+        handler = types.SimpleNamespace(path="/api/svc/start/A", guarded=Mock(side_effect=OSError),
+                                        reply=Mock())
+        with unittest.mock.patch("traceback.print_exc"):
+            self.ns["Handler"].do_POST(handler)
+        forget.assert_called_once()
+        self.assertEqual(handler.reply.call_args.args[0], 500)
 
 
 class SwitchTrackingTests(unittest.TestCase):
