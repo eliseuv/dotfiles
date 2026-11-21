@@ -249,28 +249,32 @@ def diff_file(path, base_path):
     return diffs_dir / f"{store_hash(base_path)}-{store_hash(path)}.json"
 
 
+def request_lock(key):
+    with comparison_lock:
+        return comparison_locks.setdefault(key, threading.Lock())
+
+
 def diff(host, number):
     # The cached diff for generation `number` against the one before it, as
     # the last report has them; otherwise asks the host, which knows best.
-    report = state[host]["report"]
-    if report:
-        numbers = [g["number"] for g in report["generations"]]
-        if number in numbers:
-            index = numbers.index(number)
-            path = report["generations"][index]["path"]
-            base_path = report["generations"][index - 1]["path"] if index else None
-            cached = diff_file(path, base_path)
-            if cached.exists():
-                return json.loads(cached.read_text())
-    result = run_report(host, "diff", str(number))
-    write_atomically(diff_file(result["path"], result["base_path"]), result)
-    return result
+    with request_lock((host, "diff", number)):
+        report = state[host]["report"]
+        if report:
+            numbers = [g["number"] for g in report["generations"]]
+            if number in numbers:
+                index = numbers.index(number)
+                path = report["generations"][index]["path"]
+                base_path = report["generations"][index - 1]["path"] if index else None
+                cached = diff_file(path, base_path)
+                if cached.exists():
+                    return json.loads(cached.read_text())
+        result = run_report(host, "diff", str(number))
+        write_atomically(diff_file(result["path"], result["base_path"]), result)
+        return result
 
 
 def compare(host, base, number):
-    with comparison_lock:
-        lock = comparison_locks.setdefault((host, base, number), threading.Lock())
-    with lock:
+    with request_lock((host, base, number)):
         report = state[host]["report"]
         kept = {g["number"]: g for g in (report or {}).get("generations", [])}
         if base not in kept or number not in kept:

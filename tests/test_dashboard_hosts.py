@@ -64,6 +64,17 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 1)
         self.assertTrue(all(result == results[0] for result in results))
 
+    def test_concurrent_diffs_share_one_report(self):
+        def report(host, verb, number):
+            self.calls.append((host, verb, number))
+            time.sleep(0.01)
+            return {"base_path": "/nix/store/hash1-system",
+                    "path": "/nix/store/hash3-system", "changes": ""}
+        self.ns["run_report"] = report
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            list(pool.map(lambda _: self.ns["diff"]("host", 3), range(8)))
+        self.assertEqual(len(self.calls), 1)
+
     def test_cached_paths_keep_requested_generation_numbers(self):
         self.ns["compare"]("host", 1, 8)
         self.ns["state"]["host"]["report"]["generations"].append(
