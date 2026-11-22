@@ -98,7 +98,7 @@
         "interval": 600,
         "return-type": "json",
         "signal": 8,
-        "on-click": "$TERMINAL -e ~/.config/waybar/scripts/flake_upgrade.sh",
+        "on-click": "systemd-run --user --scope --collect -- $TERMINAL -e ~/.config/waybar/scripts/flake_upgrade.sh",
     },
     "custom/claude-usage": {
         "exec": "~/.config/waybar/scripts/claude_usage.sh",
