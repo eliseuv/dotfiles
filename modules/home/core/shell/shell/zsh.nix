@@ -64,6 +64,23 @@ in
         ''
       ))
 
+      # Hand over to the selected shell (my.home.shell, or shell-toggle's
+      # override) once past the multiplexer and before anything slow. The
+      # parent check keeps a zsh started from nu in zsh; a variable would leak
+      # into the panes of a multiplexer started from nu. With a command to run
+      # (zsh -ic, as editors use to read the environment) zsh stays.
+      (lib.mkOrder 250 ''
+        if [[ -o interactive && -t 0 && -t 1 && -z $ZSH_EXECUTION_STRING && $TERM != dumb ]] \
+          && [[ "$(</proc/$PPID/comm)" != nu ]]; then
+          () {
+            local choice=
+            [[ -r $1 ]] && read -r choice <$1
+            [[ $choice == (zsh|nushell) ]] || choice=${config.my.home.shell}
+            [[ $choice == nushell ]] && exec ${lib.getExe config.programs.nushell.package}
+          } ''${XDG_STATE_HOME:-$HOME/.local/state}/interactive-shell
+        fi
+      '')
+
       (''
         bindkey '^ ' autosuggest-accept
         bindkey  "^[[H"   beginning-of-line

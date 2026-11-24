@@ -36,6 +36,12 @@
       inherit lib;
       cacheTtl = config.services.gpg-agent.maxCacheTtlSsh;
     })
+    # shell-toggle
+    (import ./_shell-toggle.nix {
+      inherit pkgs;
+      inherit lib;
+      defaultShell = config.my.home.shell;
+    })
     # wake
     (import ./_wake.nix {
       inherit pkgs;
