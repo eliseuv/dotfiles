@@ -52,6 +52,18 @@ in
         ''
       ))
 
+      # Ahead of the rest, so a shell zsh hands over to inherits them
+      (lib.mkIf config.my.secrets.user.enable (
+        lib.mkOrder 220 ''
+          export ALPHAVANTAGE_API_KEY=$(<${config.sops.secrets."alphavantage/api-key".path})
+          export DEEPSEEK_API_KEY=$(<${config.sops.secrets."deepseek/api-key".path})
+          export GEMINI_API_KEY=$(<${config.sops.secrets."gemini/api-key".path})
+          export OPENWEATHER_API_KEY=$(<${config.sops.secrets."openweather/api-key".path})
+          export QUANDL_API_KEY=$(<${config.sops.secrets."quandl/api-key".path})
+          export NTFY_TOPIC=$(<${config.sops.secrets."ntfy/topic".path})
+        ''
+      ))
+
       (''
         bindkey '^ ' autosuggest-accept
         bindkey  "^[[H"   beginning-of-line
@@ -64,14 +76,6 @@ in
         else
           ${lib.getExe pkgs.fastfetch}
         fi
-      '' + lib.optionalString config.my.secrets.user.enable ''
-
-        export ALPHAVANTAGE_API_KEY=$(<${config.sops.secrets."alphavantage/api-key".path})
-        export DEEPSEEK_API_KEY=$(<${config.sops.secrets."deepseek/api-key".path})
-        export GEMINI_API_KEY=$(<${config.sops.secrets."gemini/api-key".path})
-        export OPENWEATHER_API_KEY=$(<${config.sops.secrets."openweather/api-key".path})
-        export QUANDL_API_KEY=$(<${config.sops.secrets."quandl/api-key".path})
-        export NTFY_TOPIC=$(<${config.sops.secrets."ntfy/topic".path})
       '')
 
     ];
