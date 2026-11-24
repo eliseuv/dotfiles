@@ -14,6 +14,13 @@ in
 
     home.packages = [ config.my.theme.monoFont.package ];
 
+    # Its ssh wrapper (shell-integration-features below). Ghostty injects this
+    # only into a shell it starts itself, and it starts zsh.
+    programs.nushell.extraConfig = ''
+      source ${config.programs.ghostty.package}/share/ghostty/shell-integration/nushell/vendor/autoload/ghostty.nu
+      use ghostty *
+    '';
+
     programs.ghostty = {
       enable = true;
       enableZshIntegration = true;

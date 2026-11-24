@@ -14,6 +14,9 @@
     # From scratch config
     vv = "NVIM_APPNAME=nvim-scratch nvim";
   };
+  my.home.nuCommands.vv = ''
+    def --wrapped vv [...args] { NVIM_APPNAME=nvim-scratch ^nvim ...$args }
+  '';
 
   home.packages = with pkgs; [
 

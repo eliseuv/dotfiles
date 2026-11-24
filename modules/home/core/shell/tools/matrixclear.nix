@@ -61,4 +61,23 @@ in
     alias c=clear
   '';
 
+  # As matrixclear.zsh, which upstream has no nushell version of. Ctrl+L runs
+  # as a host command, so nu keeps the line being edited.
+  programs.nushell.extraConfig = ''
+    def matrixclear-run [buffer: string, args: list<string>] {
+      let render = {|part| match ($part | describe) { "closure" => (do $part | default ""), _ => ($part | default "") } }
+      let prompt = $"(do $render $env.PROMPT_COMMAND?)(do $render $env.PROMPT_INDICATOR?)($buffer)"
+      MATRIXCLEAR_FINAL_PROMPT=$prompt ^${lib.getExe matrixclear} ...$args
+    }
+    def --wrapped clear [...args: string] { matrixclear-run "" $args }
+    alias c = clear
+    $env.config.keybindings ++= [{
+      name: matrixclear
+      modifier: control
+      keycode: char_l
+      mode: [emacs vi_insert vi_normal]
+      event: { send: executehostcommand, cmd: "matrixclear-run (commandline) []" }
+    }]
+  '';
+
 }

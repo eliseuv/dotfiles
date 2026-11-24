@@ -30,6 +30,11 @@
 
   ];
 
+  programs.nushell.extraConfig = ''
+    def "nu-complete dj" [] { ^dj --summary | complete | get stdout | split row --regex '\s+' | compact --empty }
+    extern dj [recipe?: string@"nu-complete dj", ...args: any]
+  '';
+
   home.shellAliases = {
     j = "just";
     ns = "nix-shell --command zsh --packages";

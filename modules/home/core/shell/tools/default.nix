@@ -121,4 +121,17 @@
           ' | fzf --preview "tldr {1}" --preview-window=right,70% | xargs tldr'';
   };
 
+  my.home.nuCommands.tldrf = ''
+    def tldrf [] {
+      let page = (
+        ^tldr --list
+        | str replace --all --regex "[\\[\\]',]" ""
+        | str replace --all " " "\n"
+        | try { ^fzf --preview "tldr {1}" --preview-window=right,70% } catch { "" }
+        | str trim
+      )
+      if ($page | is-not-empty) { ^tldr $page }
+    }
+  '';
+
 }

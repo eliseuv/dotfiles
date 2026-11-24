@@ -209,6 +209,9 @@ in
     tn = "tmux new-session";
     tl = "tmux list-sessions";
   };
+  my.home.nuCommands.t = ''
+    def t [] { try { ^tmux attach } catch { ^tmux new-session } }
+  '';
 
   # Session mamanger
   programs.smug = {

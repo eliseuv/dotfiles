@@ -33,6 +33,11 @@ in
 
     home.shellAliases.codex-phone =
       ''codex --remote "unix://$XDG_RUNTIME_DIR/codex-remote-control/app-server.sock" resume --all'';
+    my.home.nuCommands.codex-phone = ''
+      def --wrapped codex-phone [...args] {
+        ^codex --remote $"unix://($env.XDG_RUNTIME_DIR)/codex-remote-control/app-server.sock" resume --all ...$args
+      }
+    '';
 
     systemd.user.services.codex-remote-control = {
       Unit = {

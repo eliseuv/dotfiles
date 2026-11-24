@@ -41,6 +41,13 @@
     ];
 
     home.shellAliases.doom-sync = "doom sync -u && doom sync && doom gc -! -v";
+    my.home.nuCommands.doom-sync = ''
+      def doom-sync [] {
+        ^doom sync -u
+        ^doom sync
+        ^doom gc "-!" -v
+      }
+    '';
 
     # # Doom Emacs update
     # systemd.user.services.doom-update = {

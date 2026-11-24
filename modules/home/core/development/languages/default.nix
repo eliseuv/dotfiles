@@ -37,6 +37,20 @@
       enable = true;
       enableZshIntegration = true;
     };
+    # opam has no nushell output. Every line reads `NAME='value'; export NAME;`
+    programs.nushell.extraConfig = ''
+      if ("~/.opam" | path expand | path exists) {
+        let opam_env = (
+          ^${lib.getExe' config.programs.opam.package "opam"} env --shell=bash
+          | complete
+          | get stdout
+          | parse --regex "(?m)^(?<name>\\w+)='(?<value>.*)'; export"
+          | transpose --header-row --as-record
+        )
+        load-env ($opam_env | reject --optional PATH)
+        if "PATH" in $opam_env { $env.PATH = ($opam_env.PATH | split row (char esep)) }
+      }
+    '';
 
   };
 

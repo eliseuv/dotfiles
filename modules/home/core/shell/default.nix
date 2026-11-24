@@ -40,4 +40,23 @@
 
   };
 
+  my.home.nuCommands = {
+    # nu's builtin always creates parents and has no -p
+    mkdir = ''
+      alias mkdir = mkdir -v
+    '';
+    dots =
+      if config.programs.neovim.enable then
+        ''
+          def --env dots [] {
+            cd $env.DOTFILES
+            nvim "+lua Snacks.picker.files()"
+          }
+        ''
+      else
+        ''
+          def dots [] { code $env.DOTFILES }
+        '';
+  };
+
 }

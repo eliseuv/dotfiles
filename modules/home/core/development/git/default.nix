@@ -43,5 +43,11 @@
   # '&&' because a failed unlock leaves every fetch and push inside lazygit
   # spawning pinentry over its screen; ssh-unlock succeeds with no keys.
   home.shellAliases.gg = "ssh-unlock >/dev/null && lazygit";
+  my.home.nuCommands.gg = ''
+    def --wrapped gg [...args] {
+      ^ssh-unlock o> /dev/null
+      ^lazygit ...$args
+    }
+  '';
 
 }
