@@ -14,6 +14,7 @@ This repository contains my personal NixOS and Home Manager configuration, manag
 
 - **OS**: NixOS unstable (a host can follow stable with `my.host.channel`)
 - **Home Environment**: standalone Home Manager, driven by the same host spec as NixOS
+- **Shells**: nushell and zsh, switched with [`shell-toggle`](#shells)
 - **Web Terminal**: `ttyd` for browser-based terminal access on headless nodes
 - **Secrets**: [sops-nix](https://github.com/Mic92/sops-nix)
 - **Editor**: Neovim
@@ -136,6 +137,26 @@ This repository uses [Just](https://github.com/casey/just) to manage common work
   ```
 
   *Cleans up old generations (keeps last 4 by default).*
+
+### Shells
+
+zsh is the login shell and `$SHELL` everywhere; on a terminal it hands over to
+the interactive shell that `my.home.shell` selects. `shell-toggle` overrides
+that on one machine, for shells started from then on:
+
+```bash
+shell-toggle          # flip between nushell and zsh
+shell-toggle zsh      # or nu
+shell-toggle status
+shell-toggle reset    # back to my.home.shell
+```
+
+Typing `zsh` inside nushell stays in zsh. If nushell won't start, run
+`ssh <host> shell-toggle zsh`, which never goes through it.
+
+`home.shellAliases` serves both shells. An alias using POSIX syntax (pipes,
+`&&`, variables) also needs a nushell definition in `my.home.nuCommands`;
+evaluation fails without one.
 
 ### Deploying Local Services
 
