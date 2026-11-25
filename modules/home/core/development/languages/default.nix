@@ -45,7 +45,7 @@
           | complete
           | get stdout
           | parse --regex "(?m)^(?<name>\\w+)='(?<value>.*)'; export"
-          | transpose --header-row --as-record
+          | reduce --fold {} {|row, env_record| $env_record | insert $row.name $row.value }
         )
         load-env ($opam_env | reject --optional PATH)
         if "PATH" in $opam_env { $env.PATH = ($opam_env.PATH | split row (char esep)) }
