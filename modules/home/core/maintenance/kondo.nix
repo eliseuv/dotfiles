@@ -16,7 +16,7 @@ in
     Service = {
       Type = "oneshot";
       # PATCH(kondo-nested-projects): --nested
-      ExecStart = "${lib.getExe kondo} --all --nested --follow-symlinks --same-filesystem --older 1w $HOME";
+      ExecStart = "${lib.getExe kondo} --all --nested --same-filesystem --older 1w $HOME";
     };
     # Not WantedBy default.target: a full $HOME scan would block activation;
     # the timer runs it instead.
