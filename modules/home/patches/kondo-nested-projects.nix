@@ -9,14 +9,15 @@ in
 {
 
   # The fix is the kondo override in modules/home/core/maintenance/kondo.nix,
-  # which applies ./kondo-nested-projects.patch: both the package list and
-  # the unit there need the patched build. kondo.nix is ungated, so neither
-  # is this.
+  # which builds the `kondo` flake input (the fork) instead of the nixpkgs
+  # source: both the package list and the unit there need it. kondo.nix is
+  # ungated, so neither is this.
   config = {
 
     my.patches.${id} = {
       description = ''
-        Adds a --nested flag to kondo and passes it in kondo-clean.service.
+        Builds kondo from a fork (github:eliseuv/kondo, upstream master plus
+        a --nested flag) and passes --nested in kondo-clean.service.
         kondo stops descending at the first directory with a project marker,
         so a root Cargo.toml (Cargo workspaces, the leetcode repo) hides every
         nested project's target or node_modules. With --nested it keeps
@@ -28,7 +29,7 @@ in
         A kondo release in the locked nixpkgs can find nested projects
         (a flag like --nested, or the discovery rework of
         https://github.com/tbillington/kondo/issues/111). Switch the unit to
-        that flag, then drop the override and the patch file.
+        that flag, then drop the override and the `kondo` flake input.
       '';
       added = "2026-11-26";
       status = {
@@ -42,7 +43,10 @@ in
         '';
       };
       staleWhen = lib.versionOlder "0.9" pkgs.kondo.version;
-      locations = [ "modules/home/core/maintenance/kondo.nix" ];
+      locations = [
+        "flake.nix"
+        "modules/home/core/maintenance/kondo.nix"
+      ];
     };
 
   };

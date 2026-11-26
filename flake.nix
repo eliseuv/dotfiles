@@ -111,6 +111,13 @@
       flake = false;
     };
 
+    # PATCH(kondo-nested-projects): kondo with --nested; built by overriding
+    # nixpkgs' kondo in modules/home/core/maintenance/kondo.nix
+    kondo = {
+      url = "github:eliseuv/kondo";
+      flake = false;
+    };
+
   };
 
   outputs =

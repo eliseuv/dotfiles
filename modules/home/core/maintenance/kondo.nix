@@ -1,8 +1,19 @@
-{ pkgs, lib, ... }:
+{
+  inputs,
+  pkgs,
+  lib,
+  ...
+}:
 let
-  # PATCH(kondo-nested-projects): adds --nested
+  # PATCH(kondo-nested-projects): built from the fork, which adds --nested.
+  # importCargoLock reads the fork's own lockfile, so a `nix flake update
+  # kondo` needs no vendor hash bump.
   kondo = pkgs.kondo.overrideAttrs (old: {
-    patches = (old.patches or [ ]) ++ [ ../../patches/kondo-nested-projects.patch ];
+    version = "${old.version}-unstable-${inputs.kondo.lastModifiedDate}";
+    src = inputs.kondo;
+    cargoDeps = pkgs.rustPlatform.importCargoLock {
+      lockFile = "${inputs.kondo}/Cargo.lock";
+    };
   });
 in
 {

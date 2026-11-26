@@ -217,6 +217,22 @@
         "type": "github"
       }
     },
+    "kondo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795663794,
+        "narHash": "sha256-QJfXr7ibrxIjxn/HL9ay+XrZcamXfHI10nQFLfKsEVg=",
+        "owner": "eliseuv",
+        "repo": "kondo",
+        "rev": "8bdcaca075fada7c7754512acbeb954f872fa5a6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "eliseuv",
+        "repo": "kondo",
+        "type": "github"
+      }
+    },
     "matrixclear": {
       "inputs": {
         "nixpkgs": [
@@ -345,6 +361,7 @@
         "fenix": "fenix",
         "firefox-qutebrowser-userchrome": "firefox-qutebrowser-userchrome",
         "home-manager": "home-manager",
+        "kondo": "kondo",
         "matrixclear": "matrixclear",
         "nix-index-database": "nix-index-database",
         "nix-minecraft": "nix-minecraft",
