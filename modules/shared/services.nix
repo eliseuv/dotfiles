@@ -108,7 +108,12 @@
 
     };
 
-    gaming.enable = lib.mkEnableOption "games (Steam on NixOS)";
+    gaming = {
+      enable = lib.mkEnableOption "games (Steam on NixOS)";
+      steam.enable = lib.mkEnableOption "Steam, on NixOS hosts with gaming" // {
+        default = true;
+      };
+    };
 
     homelab = {
       enable = lib.mkEnableOption "the homelab service registry, its firewall policy and dashboard";
