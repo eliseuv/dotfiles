@@ -39,6 +39,18 @@ Delays hyprpaper.service until Hyprland answers IPC. Started as soon as WAYLAND_
 - **Status** (2026-11-02): No upstream report known. Not re-tested without the wait since it was added (hyprpaper 0.8.4 in the current lock).
 - **Active on**: evf@GLaDOS, evf@chell, evf@tardis
 
+## kondo-nested-projects
+
+Adds a --nested flag to kondo and passes it in kondo-clean.service. kondo stops descending at the first directory with a project marker, so a root Cargo.toml (Cargo workspaces, the leetcode repo) hides every nested project's target or node_modules. With --nested it keeps descending, entering everything except the found projects' artifact directories.
+
+- **Module**: [`modules/home/patches/kondo-nested-projects.nix`](modules/home/patches/kondo-nested-projects.nix)
+- **Also changes**: [`modules/home/core/maintenance/kondo.nix`](modules/home/core/maintenance/kondo.nix)
+- **Upstream**: https://github.com/tbillington/kondo/issues/29
+- **Remove when**: A kondo release in the locked nixpkgs can find nested projects (a flag like --nested, or the discovery rework of https://github.com/tbillington/kondo/issues/111). Switch the unit to that flag, then drop the override and the patch file.
+- **Added**: 2026-11-26
+- **Status** (2026-11-26): kondo 0.9 (latest release) on GLaDOS: every daily run of kondo-clean.service reported "Projects cleaned: 0/0"; a dry run of the patched build over ~/Projects found 23 projects (819 MiB), including leetcode/p169-majority-element/target and ledger/ledger-web-ui/node_modules. Issue #29 is open with no PR.
+- **Active on**: dani@chell, evf@GLaDOS, evf@chell, evf@rattmann, evf@tardis, evf@wheatley
+
 ## rtkit-rttime-hyprland-dpms
 
 Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.

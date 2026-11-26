@@ -1,7 +1,13 @@
 { pkgs, lib, ... }:
+let
+  # PATCH(kondo-nested-projects): adds --nested
+  kondo = pkgs.kondo.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ../../patches/kondo-nested-projects.patch ];
+  });
+in
 {
 
-  home.packages = with pkgs; [ kondo ];
+  home.packages = [ kondo ];
 
   systemd.user.services.kondo-clean = {
     Unit = {
@@ -9,7 +15,8 @@
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${lib.getExe pkgs.kondo} --all --follow-symlinks --same-filesystem --older 1w $HOME";
+      # PATCH(kondo-nested-projects): --nested
+      ExecStart = "${lib.getExe kondo} --all --nested --follow-symlinks --same-filesystem --older 1w $HOME";
     };
     # Not WantedBy default.target: a full $HOME scan would block activation;
     # the timer runs it instead.
