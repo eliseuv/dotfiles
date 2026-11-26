@@ -18,8 +18,8 @@
       # Fortran LSP
       fortls
 
-      # Lean
-      lean4
+      # Lean: elan selects the toolchain per project from lean-toolchain
+      elan
 
       # Shell formatter and linter
       shfmt
