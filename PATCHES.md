@@ -40,6 +40,17 @@ Builds kondo from a fork (github:eliseuv/kondo, upstream master plus a --nested 
 - **Status** (2026-11-27): Locked nixpkgs and the latest release are kondo 0.9, whose --help has no --nested. Issues #29 and #111 are open. On GLaDOS the patched kondo-clean.service run of Nov 27 00:09 cleaned 22/22 projects (762.5 MiB).
 - **Active on**: dani@chell, evf@GLaDOS, evf@chell, evf@rattmann, evf@tardis, evf@wheatley
 
+## lean-nvim-setup-removed
+
+In the Neovim config repository (eliseuv/nvim, outside this one), lua/plugins/lean.lua publishes lean.nvim's opts as vim.g.lean_config in `init` and no-ops `config`. lean.nvim removed setup(), which lazy.nvim still calls for the opts of LazyVim's lang.lean extra, so loading it on a Lean file failed.
+
+- **Module**: [`modules/home/patches/lean-nvim-setup-removed.nix`](modules/home/patches/lean-nvim-setup-removed.nix)
+- **Upstream**: https://github.com/LazyVim/LazyVim/pull/7276, https://github.com/Julian/lean.nvim/commit/ca4393dcf762ac7f6ec6dc107f4ae2c7e4a395e2
+- **Remove when**: The installed LazyVim (~/.local/share/nvim/lazy/LazyVim/lua/lazyvim/plugins/extras/lang/lean.lua) no longer leaves lazy.nvim to call setup(): it sets vim.g.lean_config itself, or the extra is gone. Then delete the comment, `init` and `config` from lua/plugins/lean.lua, keeping `opts` (if the extra is gone, the spec also needs its own load trigger and options), commit in that repository, and open a .lean file to confirm it loads without errors.
+- **Added**: 2026-11-27
+- **Status** (2026-11-27): LazyVim #7276, which makes the same change in the extra, is open; a contributor there suggests removing the extra instead. The installed LazyVim (0fa4a847) and the extra on LazyVim's default branch still rely on setup().
+- **Active on**: evf@GLaDOS, evf@chell, evf@rattmann, evf@tardis, evf@wheatley
+
 ## nh-nushell-completer
 
 Removes nh's nushell completion script, leaving nh completion to carapace. The script wraps the existing external completer in a closure taking the positional `spans`, which nushell 0.116 deprecates, and hands that list on to the previous completer; fzf's expects a record, so completing other commands fails with "Cannot find column 'command'".
