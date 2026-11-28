@@ -6,6 +6,7 @@ pull:
 
 # A bare `update` or one naming aven also moves aven to its newest release
 # (see bump-aven); a failed lookup (offline) only skips that.
+# Update flake inputs (all, or those named) and commit the lock
 update *inputs: pull
     #!/usr/bin/env bash
     set -euo pipefail
@@ -26,6 +27,7 @@ update *inputs: pull
 # Point the aven input at the newest release. The URL is versioned because a
 # moving `latest` URL changes underneath the lock's narHash; the lock itself
 # is refreshed by `update`. No-op when already on the newest tag.
+# Point the aven flake input at its newest release
 bump-aven:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -58,6 +60,7 @@ tag-gen:
         echo "$tag created"
     fi
 
+# Tag the current system generation and push commits and tags
 commit-gen:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -107,6 +110,7 @@ sudo-keepalive:
     @sudo -v
     @while kill -0 $PPID 2>/dev/null; do sudo -n -v; sleep 60; done &
 
+# Delete old generations, keeping the newest `keep`, and collect garbage
 gc keep='4': sudo-keepalive
     nh clean all --keep {{keep}} --no-gcroots
 
@@ -116,6 +120,7 @@ gc keep='4': sudo-keepalive
 # ledger-web is stubbed out: its source is fetched from a repo that only
 # exists on wheatley (see README's "Deploying Local Services"), so without
 # the stub wheatley can't be evaluated anywhere else.
+# Print the derivation path of every system and home configuration
 eval-all:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -134,6 +139,7 @@ eval-all:
 
 # Regenerate PATCHES.md from my.patches. New patch files must be tracked
 # (git add) first, or the flake doesn't see them.
+# Regenerate PATCHES.md from my.patches
 patches:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -146,11 +152,12 @@ patches-check:
 
 # `up` refuses unless it repeats every non-default setting, and the operator
 # (my.services.tailscale's extraSetFlags) is one; sudo for the non-operator.
+# Bring Tailscale up and show its status
 vpn:
     sudo tailscale up --operator="$(tailscale debug prefs | jq -r .OperatorUser)"
     tailscale status
 
-# The current user's home, then every other user's on this host.
+# Switch every user's Home Manager configuration on this host
 home-switch: home-switch-self (home-switch-others)
 
 [private]
@@ -182,6 +189,7 @@ home-switch-others except=env('USER'):
         sudo -u "$user" -H env PATH="$PATH" "${session[@]}" "$nh" home switch . --configuration "$config"
     done
 
+# Record, tag and push the generation, switch homes, then gc
 after-switch: record-gen commit-gen home-switch gc
 
 # Both would rebase and build the same checkout at once.
@@ -190,13 +198,16 @@ no-service-switch:
     @! systemctl is-active --quiet dotfiles-switch.service dotfiles-home-switch.service || \
         (echo "a dashboard switch (dotfiles-switch or dotfiles-home-switch) is running, wait for it" >&2 && exit 1)
 
+# Activate the system without a boot entry, then switch homes
 system-test: no-service-switch pull sudo-keepalive && home-switch
     nh os test .
 
+# Switch the system and homes, then tag the generation and gc
 system-switch: no-service-switch pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os switch .
 
+# Build the system for next boot, switch homes, tag and gc
 system-boot: no-service-switch pull sudo-keepalive && after-switch
     git diff -U0 '*.nix'
     nh os boot .
@@ -244,6 +255,7 @@ upgrade-run: no-service-switch sudo-keepalive
 # Pin a locally-packaged service (pkgs/<pkg>/pin.json) to the current HEAD
 # of the repo it points at, and commit that. No-op when already pinned
 # there, so re-running after a partial failure is safe.
+# Pin a local service package to its repo's HEAD and commit
 pin-service pkg: pull
     #!/usr/bin/env bash
     set -euo pipefail
@@ -267,6 +279,7 @@ pin-service pkg: pull
 # switch` needs a real sudo prompt, so over ssh use `-t` (no askpass
 # helper is configured): ssh -t <host> -- dj deploy-service <pkg>.
 # Usage: dj deploy-service ledger-web
+# Pin a local service to its repo's HEAD and switch this host
 deploy-service pkg:
     {{just_executable()}} pin-service {{pkg}}
     {{just_executable()}} system-switch
@@ -274,6 +287,7 @@ deploy-service pkg:
 # Fetch a Claude Code release manifest (default: latest) for the
 # manifestOverride escape hatch in modules/home/core/shell/ai/claude.nix. git-adds it
 # because flakes can't see untracked files.
+# Fetch a Claude Code release manifest for manifestOverride
 pin-claude-code version='':
     #!/usr/bin/env bash
     set -euo pipefail
@@ -293,6 +307,7 @@ pin-claude-code version='':
 # KillMode=process keeps existing sessions alive across the stop, so this
 # is safe to run over ssh; the trap brings the regular sshd back however
 # this exits.
+# Temporarily accept SSH password logins, to allow ssh-copy-id
 ssh-allow-password duration='5m':
     #!/usr/bin/env bash
     set -euo pipefail
