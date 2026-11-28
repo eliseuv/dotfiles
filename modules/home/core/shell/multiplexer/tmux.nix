@@ -101,13 +101,7 @@ in
     newSession = true;
     plugins = with pkgs; [
       tmuxPlugins.sensible
-      {
-        plugin = tmuxPlugins.vim-tmux-navigator;
-        extraConfig = ''
-          # Leave Ctrl+L for the shell's matrixclear widget.
-          set -g @vim_navigator_mapping_right "C-Right"
-        '';
-      }
+      tmuxPlugins.vim-tmux-navigator
       {
         plugin = tmuxPlugins.fingers;
         extraConfig = ''
