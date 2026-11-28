@@ -62,17 +62,6 @@ Removes nh's nushell completion script, leaving nh completion to carapace. The s
 - **Status** (2026-11-27): climax #55 and #56 open. The locked nh 4.5.0 still ships an nh.nu using `spans`. nh 4.5.1 (nixpkgs #594269, not in the lock yet) still locks caress 0.3.0.
 - **Active on**: GLaDOS, chell, rattmann, tardis, wheatley
 
-## rtkit-rttime-hyprland-dpms
-
-Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.
-
-- **Module**: [`modules/nixos/patches/rtkit-rttime-hyprland-dpms.nix`](modules/nixos/patches/rtkit-rttime-hyprland-dpms.nix)
-- **Upstream**: https://github.com/hyprwm/Hyprland/pull/16843
-- **Remove when**: Idle DPMS-off no longer logs "Realtime budget exceeded (SIGXCPU)" from Hyprland (journalctl -g 'Realtime budget'), or Hyprland stops requesting realtime scheduling through rtkit.
-- **Added**: 2026-11-02
-- **Status** (2026-11-27): Condition met on GLaDOS: Hyprland 0.57.2 dropped realtime requests (Hyprland #16843). All its threads are SCHED_OTHER, and rtkit logged no request for it this boot. No SIGXCPU in the journal after Nov 2 13:04. Other hosts not checked. Removal awaits confirmation.
-- **Active on**: GLaDOS, chell, tardis
-
 ## zotero-firefox-esr
 
 Zotero is left out of home.packages. Zotero 10 runs on Firefox ESR 140, which nixpkgs dropped; the fix that landed builds it against a prebuilt Firefox 140 ESR that is marked insecure, so it doesn't evaluate without permitting that package. Don't GC the old zotero store path meanwhile, so its profile compatibility stays around.
