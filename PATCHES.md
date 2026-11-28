@@ -51,6 +51,17 @@ Builds kondo from a fork (github:eliseuv/kondo, upstream master plus a --nested 
 - **Status** (2026-11-26): kondo 0.9 (latest release) on GLaDOS: every daily run of kondo-clean.service reported "Projects cleaned: 0/0"; a dry run of the patched build over ~/Projects found 23 projects (819 MiB), including leetcode/p169-majority-element/target and ledger/ledger-web-ui/node_modules. Issue #29 is open with no PR.
 - **Active on**: dani@chell, evf@GLaDOS, evf@chell, evf@rattmann, evf@tardis, evf@wheatley
 
+## nh-nushell-completer
+
+Removes nh's nushell completion script, leaving nh completion to carapace. The script wraps the existing external completer in a closure taking the positional `spans`, which nushell 0.116 deprecates, and hands that list on to the previous completer; fzf's expects a record, so completing other commands fails with "Cannot find column 'command'".
+
+- **Module**: [`modules/nixos/patches/nh-nushell-completer.nix`](modules/nixos/patches/nh-nushell-completer.nix)
+- **Upstream**: https://github.com/manic-systems/climax/issues/55, https://github.com/manic-systems/climax/pull/56
+- **Remove when**: share/nushell/vendor/autoload/nh.nu of the nh in the locked nixpkgs takes `place` instead of `spans`.
+- **Added**: 2026-11-27
+- **Status** (2026-11-27): nh 4.5.0 with nushell 0.116.1: deprecation warning on completion, and the error above when calling the wrapped completer for git. #55 and #56 open.
+- **Active on**: GLaDOS, chell, rattmann, tardis, wheatley
+
 ## rtkit-rttime-hyprland-dpms
 
 Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.
