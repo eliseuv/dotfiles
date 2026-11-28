@@ -30,12 +30,12 @@ in
       '';
       added = "2026-11-07";
       status = {
-        checked = "2026-11-07";
+        checked = "2026-11-27";
         note = ''
-          Reproduced on GLaDOS (Hyprland 0.57.1, Brave 1.98.63 / Chromium 156,
-          NVIDIA, Odyssey G40B in sRGB): fullscreen washed out, windowed
-          correct; with the flag fullscreen matches windowed. No matching
-          Hyprland issue found.
+          Not re-tested visually. Running on GLaDOS with the flag: Hyprland
+          0.57.2, Brave 1.100.58, all outputs in sRGB. No matching Hyprland
+          issue found. 0.57.2's color management fix (Hyprland #16897)
+          concerns sdrsaturation only, per its description.
         '';
       };
       locations = [ "modules/home/desktop/browser/default.nix" ];

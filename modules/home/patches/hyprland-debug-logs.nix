@@ -23,10 +23,12 @@ in
       '';
       added = "2026-11-02";
       status = {
-        checked = "2026-11-02";
+        checked = "2026-11-27";
         note = ''
-          Enabled; no unexplained Hyprland exit captured with it yet (the
-          session it was first active in ended in a reboot, losing the log).
+          Hyprland 0.57.2 no longer requests realtime scheduling (see
+          rtkit-rttime-hyprland-dpms), the path suspected in the kill. Removal
+          of both awaits confirmation. The log was 1.2 MB after under an hour
+          of this session.
         '';
       };
     };

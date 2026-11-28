@@ -21,6 +21,7 @@ in
         driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was
         SIGKILLed: no crash report, no core, every client dropped.
       '';
+      upstream = [ "https://github.com/hyprwm/Hyprland/pull/16843" ];
       removeWhen = ''
         Idle DPMS-off no longer logs "Realtime budget exceeded (SIGXCPU)" from
         Hyprland (journalctl -g 'Realtime budget'), or Hyprland stops
@@ -28,11 +29,12 @@ in
       '';
       added = "2026-11-02";
       status = {
-        checked = "2026-11-02";
+        checked = "2026-11-27";
         note = ''
-          Not reported upstream. SIGXCPU logged ~1s after DPMS-off on Nov 1
-          21:19 and Nov 2 13:04 (survived); Hyprland killed without a report
-          after DPMS-off on Nov 2 12:33 and 12:47 (before the 2s limit).
+          Condition met on GLaDOS: Hyprland 0.57.2 dropped realtime requests
+          (Hyprland #16843). All its threads are SCHED_OTHER, and rtkit logged
+          no request for it this boot. No SIGXCPU in the journal after Nov 2
+          13:04. Other hosts not checked. Removal awaits confirmation.
         '';
       };
     };

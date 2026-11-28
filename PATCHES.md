@@ -14,7 +14,7 @@ Launches Brave with WaylandWpColorManagerV1 disabled. In fullscreen, native-Wayl
 - **Upstream**: none known
 - **Remove when**: Launched without the flag (brave --disable-features=OutdatedBuildDetector,UseChromeOSDirectVideoDecoder), a fullscreen YouTube video on Hyprland looks the same as windowed. Also drop it if an output is switched to HDR (cm = "hdr"), which the flag prevents Brave from using.
 - **Added**: 2026-11-07
-- **Status** (2026-11-07): Reproduced on GLaDOS (Hyprland 0.57.1, Brave 1.98.63 / Chromium 156, NVIDIA, Odyssey G40B in sRGB): fullscreen washed out, windowed correct; with the flag fullscreen matches windowed. No matching Hyprland issue found.
+- **Status** (2026-11-27): Not re-tested visually. Running on GLaDOS with the flag: Hyprland 0.57.2, Brave 1.100.58, all outputs in sRGB. No matching Hyprland issue found. 0.57.2's color management fix (Hyprland #16897) concerns sdrsaturation only, per its description.
 - **Active on**: evf@GLaDOS, evf@chell, evf@tardis
 
 ## hyprland-debug-logs
@@ -25,7 +25,7 @@ Enables Hyprland's own debug log while the DPMS-off kill (rtkit-rttime-hyprland-
 - **Upstream**: none known
 - **Remove when**: rtkit-rttime-hyprland-dpms is removed, or the DPMS-off kill is diagnosed and no longer needs the log.
 - **Added**: 2026-11-02
-- **Status** (2026-11-02): Enabled; no unexplained Hyprland exit captured with it yet (the session it was first active in ended in a reboot, losing the log).
+- **Status** (2026-11-27): Hyprland 0.57.2 no longer requests realtime scheduling (see rtkit-rttime-hyprland-dpms), the path suspected in the kill. Removal of both awaits confirmation. The log was 1.2 MB after under an hour of this session.
 - **Active on**: evf@GLaDOS, evf@chell, evf@tardis
 
 ## hyprpaper-wait-for-hyprland
@@ -36,7 +36,7 @@ Delays hyprpaper.service until Hyprland answers IPC. Started as soon as WAYLAND_
 - **Upstream**: none known
 - **Remove when**: With the ExecStartPre wait removed, the wallpaper renders at login without restarting hyprpaper.service, over a few logins.
 - **Added**: 2026-08-13
-- **Status** (2026-11-02): No upstream report known. Not re-tested without the wait since it was added (hyprpaper 0.8.4 in the current lock).
+- **Status** (2026-11-27): No upstream report known. Not re-tested without the wait since it was added. The lock has hyprpaper 0.8.5, whose release notes list no startup or rendering fix.
 - **Active on**: evf@GLaDOS, evf@chell, evf@tardis
 
 ## kondo-nested-projects
@@ -48,7 +48,7 @@ Builds kondo from a fork (github:eliseuv/kondo, upstream master plus a --nested 
 - **Upstream**: https://github.com/tbillington/kondo/issues/29
 - **Remove when**: A kondo release in the locked nixpkgs can find nested projects (a flag like --nested, or the discovery rework of https://github.com/tbillington/kondo/issues/111). Switch the unit to that flag, then drop the override and the `kondo` flake input.
 - **Added**: 2026-11-26
-- **Status** (2026-11-26): kondo 0.9 (latest release) on GLaDOS: every daily run of kondo-clean.service reported "Projects cleaned: 0/0"; a dry run of the patched build over ~/Projects found 23 projects (819 MiB), including leetcode/p169-majority-element/target and ledger/ledger-web-ui/node_modules. Issue #29 is open with no PR.
+- **Status** (2026-11-27): Locked nixpkgs and the latest release are kondo 0.9, whose --help has no --nested. Issues #29 and #111 are open. On GLaDOS the patched kondo-clean.service run of Nov 27 00:09 cleaned 22/22 projects (762.5 MiB).
 - **Active on**: dani@chell, evf@GLaDOS, evf@chell, evf@rattmann, evf@tardis, evf@wheatley
 
 ## nh-nushell-completer
@@ -59,7 +59,7 @@ Removes nh's nushell completion script, leaving nh completion to carapace. The s
 - **Upstream**: https://github.com/manic-systems/climax/issues/55, https://github.com/manic-systems/climax/pull/56
 - **Remove when**: share/nushell/vendor/autoload/nh.nu of the nh in the locked nixpkgs takes `place` instead of `spans`.
 - **Added**: 2026-11-27
-- **Status** (2026-11-27): nh 4.5.0 with nushell 0.116.1: deprecation warning on completion, and the error above when calling the wrapped completer for git. #55 and #56 open.
+- **Status** (2026-11-27): climax #55 and #56 open. The locked nh 4.5.0 still ships an nh.nu using `spans`. nh 4.5.1 (nixpkgs #594269, not in the lock yet) still locks caress 0.3.0.
 - **Active on**: GLaDOS, chell, rattmann, tardis, wheatley
 
 ## rtkit-rttime-hyprland-dpms
@@ -67,10 +67,10 @@ Removes nh's nushell completion script, leaving nh completion to carapace. The s
 Raises rtkit's realtime CPU budget from 200ms to 2s. Hyprland 0.57's SCHED_RR main thread, busy through a DPMS-off modeset on the NVIDIA driver (615.78), overran the 200ms RLIMIT_RTTIME hard limit and was SIGKILLed: no crash report, no core, every client dropped.
 
 - **Module**: [`modules/nixos/patches/rtkit-rttime-hyprland-dpms.nix`](modules/nixos/patches/rtkit-rttime-hyprland-dpms.nix)
-- **Upstream**: none known
+- **Upstream**: https://github.com/hyprwm/Hyprland/pull/16843
 - **Remove when**: Idle DPMS-off no longer logs "Realtime budget exceeded (SIGXCPU)" from Hyprland (journalctl -g 'Realtime budget'), or Hyprland stops requesting realtime scheduling through rtkit.
 - **Added**: 2026-11-02
-- **Status** (2026-11-02): Not reported upstream. SIGXCPU logged ~1s after DPMS-off on Nov 1 21:19 and Nov 2 13:04 (survived); Hyprland killed without a report after DPMS-off on Nov 2 12:33 and 12:47 (before the 2s limit).
+- **Status** (2026-11-27): Condition met on GLaDOS: Hyprland 0.57.2 dropped realtime requests (Hyprland #16843). All its threads are SCHED_OTHER, and rtkit logged no request for it this boot. No SIGXCPU in the journal after Nov 2 13:04. Other hosts not checked. Removal awaits confirmation.
 - **Active on**: GLaDOS, chell, tardis
 
 ## zotero-firefox-esr
@@ -82,5 +82,5 @@ Zotero is left out of home.packages. Zotero 10 runs on Firefox ESR 140, which ni
 - **Upstream**: https://github.com/NixOS/nixpkgs/issues/568692, https://github.com/NixOS/nixpkgs/pull/572466
 - **Remove when**: pkgs.zotero evaluates without permitting an insecure package (expected with Zotero 11 on Firefox ESR 153), or permitting firefox-esr-140-bin-unwrapped is accepted.
 - **Added**: 2026-10-01
-- **Status** (2026-11-02): #568692 closed 2026-10-15; #572466 merged and in the locked nixpkgs, but zotero-10.0.4 refuses to evaluate: it depends on insecure firefox-esr-140-bin-unwrapped-140.17.0esr.
+- **Status** (2026-11-27): The lock contains #572466 and has zotero 10.0.9, which still refuses to evaluate: it depends on insecure firefox-esr-140-bin-unwrapped-140.17.0esr.
 - **Active on**: dani@chell, evf@GLaDOS, evf@chell, evf@tardis

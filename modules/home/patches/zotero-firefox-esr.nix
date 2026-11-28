@@ -32,10 +32,10 @@ in
       '';
       added = "2026-10-01";
       status = {
-        checked = "2026-11-02";
+        checked = "2026-11-27";
         note = ''
-          #568692 closed 2026-10-15; #572466 merged and in the locked nixpkgs,
-          but zotero-10.0.4 refuses to evaluate: it depends on insecure
+          The lock contains #572466 and has zotero 10.0.9, which still refuses
+          to evaluate: it depends on insecure
           firefox-esr-140-bin-unwrapped-140.17.0esr.
         '';
       };

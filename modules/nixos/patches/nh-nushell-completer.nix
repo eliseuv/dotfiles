@@ -42,9 +42,9 @@ in
       status = {
         checked = "2026-11-27";
         note = ''
-          nh 4.5.0 with nushell 0.116.1: deprecation warning on completion, and
-          the error above when calling the wrapped completer for git. #55 and
-          #56 open.
+          climax #55 and #56 open. The locked nh 4.5.0 still ships an nh.nu
+          using `spans`. nh 4.5.1 (nixpkgs #594269, not in the lock yet) still
+          locks caress 0.3.0.
         '';
       };
     };

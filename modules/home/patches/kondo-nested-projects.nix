@@ -33,13 +33,12 @@ in
       '';
       added = "2026-11-26";
       status = {
-        checked = "2026-11-26";
+        checked = "2026-11-27";
         note = ''
-          kondo 0.9 (latest release) on GLaDOS: every daily run of
-          kondo-clean.service reported "Projects cleaned: 0/0"; a dry run of
-          the patched build over ~/Projects found 23 projects (819 MiB),
-          including leetcode/p169-majority-element/target and
-          ledger/ledger-web-ui/node_modules. Issue #29 is open with no PR.
+          Locked nixpkgs and the latest release are kondo 0.9, whose --help
+          has no --nested. Issues #29 and #111 are open. On GLaDOS the patched
+          kondo-clean.service run of Nov 27 00:09 cleaned 22/22 projects
+          (762.5 MiB).
         '';
       };
       staleWhen = lib.versionOlder "0.9" pkgs.kondo.version;

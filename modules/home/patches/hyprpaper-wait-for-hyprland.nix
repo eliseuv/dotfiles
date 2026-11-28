@@ -37,10 +37,11 @@ in
       '';
       added = "2026-08-13";
       status = {
-        checked = "2026-11-02";
+        checked = "2026-11-27";
         note = ''
           No upstream report known. Not re-tested without the wait since it
-          was added (hyprpaper 0.8.4 in the current lock).
+          was added. The lock has hyprpaper 0.8.5, whose release notes list no
+          startup or rendering fix.
         '';
       };
     };
