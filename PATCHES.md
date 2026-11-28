@@ -17,17 +17,6 @@ Launches Brave with WaylandWpColorManagerV1 disabled. In fullscreen, native-Wayl
 - **Status** (2026-11-27): Not re-tested visually. Running on GLaDOS with the flag: Hyprland 0.57.2, Brave 1.100.58, all outputs in sRGB. No matching Hyprland issue found. 0.57.2's color management fix (Hyprland #16897) concerns sdrsaturation only, per its description.
 - **Active on**: evf@GLaDOS, evf@chell, evf@tardis
 
-## hyprland-debug-logs
-
-Enables Hyprland's own debug log while the DPMS-off kill (rtkit-rttime-hyprland-dpms) is unresolved. Diagnostic only; the log lives on tmpfs (/run/user) and grows quickly.
-
-- **Module**: [`modules/home/patches/hyprland-debug-logs.nix`](modules/home/patches/hyprland-debug-logs.nix)
-- **Upstream**: none known
-- **Remove when**: rtkit-rttime-hyprland-dpms is removed, or the DPMS-off kill is diagnosed and no longer needs the log.
-- **Added**: 2026-11-02
-- **Status** (2026-11-27): Hyprland 0.57.2 no longer requests realtime scheduling (see rtkit-rttime-hyprland-dpms), the path suspected in the kill. Removal of both awaits confirmation. The log was 1.2 MB after under an hour of this session.
-- **Active on**: evf@GLaDOS, evf@chell, evf@tardis
-
 ## hyprpaper-wait-for-hyprland
 
 Delays hyprpaper.service until Hyprland answers IPC. Started as soon as WAYLAND_DISPLAY is set, hyprpaper found its outputs but never rendered the wallpaper on them until the service was restarted (seen on GLaDOS).
